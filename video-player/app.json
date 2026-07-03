@@ -75,19 +75,3 @@
     }
   }
 }
-        }
-      ],
-      "expo-video"
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "0e0567ec-92e7-4e3d-b127-2e07a8a0452b"
-      }
-    }
-  }
-}
