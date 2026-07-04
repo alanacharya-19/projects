@@ -2,15 +2,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   lockToLandscape,
-  unlockOrientation,
+  lockToPortrait,
   addOrientationListener,
 } from "@/src/utils/orientation";
 import PlayerControls from "@/src/components/PlayerControls";
 
 export default function PlayerScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { uri, title } = useLocalSearchParams<{
     uri: string;
     title: string;
@@ -57,14 +59,14 @@ export default function PlayerScreen() {
   const handleBack = useCallback(() => {
     player.pause();
     if (isFullscreen) {
-      unlockOrientation();
+      lockToPortrait();
     }
     router.back();
   }, [player, router, isFullscreen]);
 
   const toggleFullscreen = useCallback(async () => {
     if (isFullscreen) {
-      await unlockOrientation();
+      await lockToPortrait();
       setIsFullscreen(false);
     } else {
       await lockToLandscape();
@@ -73,13 +75,17 @@ export default function PlayerScreen() {
   }, [isFullscreen]);
 
   useEffect(() => {
+    lockToPortrait();
+  }, []);
+
+  useEffect(() => {
     const unsub = addOrientationListener((isPortrait) => {
-      if (isPortrait) {
+      if (isPortrait && isFullscreen) {
         setIsFullscreen(false);
       }
     });
     return unsub;
-  }, []);
+  }, [isFullscreen]);
 
   if (!uri) {
     return (
@@ -98,7 +104,7 @@ export default function PlayerScreen() {
         player={player}
         style={styles.video}
         nativeControls={false}
-        contentFit="contain"
+        contentFit={isFullscreen ? "cover" : "contain"}
       />
 
       {error && (
@@ -119,6 +125,7 @@ export default function PlayerScreen() {
         title={title ?? "Video"}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
+        safeTop={isFullscreen ? 0 : insets.top}
       />
     </View>
   );
@@ -131,6 +138,8 @@ const styles = StyleSheet.create({
   },
   video: {
     flex: 1,
+    width: "100%",
+    height: "100%",
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

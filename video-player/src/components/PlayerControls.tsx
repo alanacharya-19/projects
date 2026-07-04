@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Dimensions,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import GradientOverlay from "./GradientOverlay";
 import { Ionicons } from "@expo/vector-icons";
 import type { VideoPlayer } from "expo-video";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 function formatTime(seconds: number): string {
   if (!seconds || !isFinite(seconds)) return "0:00";
@@ -26,6 +29,7 @@ interface Props {
   title: string;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  safeTop?: number;
 }
 
 export default function PlayerControls({
@@ -34,6 +38,7 @@ export default function PlayerControls({
   title,
   isFullscreen,
   onToggleFullscreen,
+  safeTop = 0,
 }: Props) {
   const [playing, setPlaying] = useState(player.playing);
   const [currentTime, setCurrentTime] = useState(0);
@@ -43,12 +48,13 @@ export default function PlayerControls({
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const playingRef = useRef(player.playing);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const scrubberWidth = useRef(0);
 
-  const animateControls = useCallback(
+  const animate = useCallback(
     (visible: boolean) => {
       Animated.timing(fadeAnim, {
         toValue: visible ? 1 : 0,
-        duration: 250,
+        duration: 200,
         useNativeDriver: true,
       }).start();
     },
@@ -57,15 +63,15 @@ export default function PlayerControls({
 
   const resetHideTimer = useCallback(() => {
     setShowControls(true);
-    animateControls(true);
+    animate(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
       if (playingRef.current) {
         setShowControls(false);
-        animateControls(false);
+        animate(false);
       }
     }, 4000);
-  }, [animateControls]);
+  }, [animate]);
 
   useEffect(() => {
     resetHideTimer();
@@ -94,7 +100,7 @@ export default function PlayerControls({
         resetHideTimer();
       } else {
         setShowControls(true);
-        animateControls(true);
+        animate(true);
         if (hideTimer.current) clearTimeout(hideTimer.current);
       }
     });
@@ -106,7 +112,7 @@ export default function PlayerControls({
       unsubTime.remove();
       unsubPlaying.remove();
     };
-  }, [player, resetHideTimer, animateControls]);
+  }, [player, resetHideTimer, animate]);
 
   const togglePlay = useCallback(() => {
     if (player.playing) {
@@ -137,13 +143,16 @@ export default function PlayerControls({
     [player, resetHideTimer]
   );
 
+  const onScrubberLayout = useCallback((e: any) => {
+    scrubberWidth.current = e.nativeEvent.layout.width;
+  }, []);
+
   const onBarPress = useCallback(
     (e: any) => {
       const x = e.nativeEvent.locationX;
-      const { width } = e.nativeEvent;
-      if (width > 0 && duration > 0) {
-        const ratio = x / width;
-        player.currentTime = ratio * duration;
+      const w = scrubberWidth.current || SCREEN_WIDTH;
+      if (w > 0 && duration > 0) {
+        player.currentTime = (x / w) * duration;
       }
       resetHideTimer();
     },
@@ -151,7 +160,7 @@ export default function PlayerControls({
   );
 
   const progress = duration > 0 ? currentTime / duration : 0;
-  const topPad = isFullscreen ? 8 : 48;
+  const topPad = safeTop + (isFullscreen ? 8 : 8);
 
   return (
     <View style={styles.container}>
@@ -162,7 +171,7 @@ export default function PlayerControls({
       {!playing && !showControls && (
         <Pressable style={styles.bigPlayOverlay} onPress={togglePlay}>
           <View style={styles.bigPlayCircle}>
-            <Ionicons name="play" size={52} color="#fff" />
+            <Ionicons name="play" size={44} color="#fff" />
           </View>
         </Pressable>
       )}
@@ -171,82 +180,85 @@ export default function PlayerControls({
         style={[styles.controlsOverlay, { opacity: fadeAnim }]}
         pointerEvents={showControls ? "auto" : "none"}
       >
-        <LinearGradient
-          colors={["rgba(0,0,0,0.6)", "transparent"]}
+        <GradientOverlay
           style={styles.topGradient}
           pointerEvents="none"
         />
 
-        <Pressable style={styles.contentArea} onPress={resetHideTimer}>
+        <Pressable style={styles.middleArea} onPress={resetHideTimer}>
           <View style={[styles.topBar, { paddingTop: topPad }]}>
             <Pressable onPress={onBack} style={styles.backBtn}>
-              <Ionicons name="chevron-down-circle-outline" size={30} color="#fff" />
+              <View style={styles.backInner}>
+                <Ionicons name="chevron-down" size={24} color="#fff" />
+              </View>
             </Pressable>
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            <View style={{ width: 36 }} />
+            <View style={{ width: 40 }} />
           </View>
 
           <View style={styles.centerRow}>
-            <Pressable
-              onPress={() => handleSeek("back")}
-              style={styles.skipBtn}
-              hitSlop={16}
-            >
-              <Ionicons name="play-back" size={30} color="#fff" />
+            <Pressable onPress={() => handleSeek("back")} style={styles.skipWrap} hitSlop={20}>
+              <Ionicons name="play-back" size={26} color="#fff" />
+              <Text style={styles.skipLabel}>15</Text>
             </Pressable>
-            <Pressable onPress={togglePlay} style={styles.playBtn} hitSlop={20}>
-              <Ionicons
-                name={playing ? "pause" : "play"}
-                size={44}
-                color="#fff"
-              />
+            <Pressable onPress={togglePlay} style={styles.playBtn} hitSlop={24}>
+              <Ionicons name={playing ? "pause" : "play"} size={36} color="#fff" />
             </Pressable>
-            <Pressable
-              onPress={() => handleSeek("forward")}
-              style={styles.skipBtn}
-              hitSlop={16}
-            >
-              <Ionicons name="play-forward" size={30} color="#fff" />
+            <Pressable onPress={() => handleSeek("forward")} style={styles.skipWrap} hitSlop={20}>
+              <Ionicons name="play-forward" size={26} color="#fff" />
+              <Text style={styles.skipLabel}>15</Text>
             </Pressable>
           </View>
         </Pressable>
 
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.7)"]}
+        <GradientOverlay
+          reverse
           style={styles.bottomGradient}
           pointerEvents="none"
         />
 
-        <View style={styles.bottomBar}>
-          <Text style={styles.time}>{formatTime(currentTime)}</Text>
-          <Pressable style={styles.scrubberTouch} onPress={onBarPress}>
-            <View style={styles.scrubberTrack}>
-              <View
-                style={[styles.scrubberFill, { width: `${progress * 100}%` }]}
+        <View style={styles.transportBar}>
+          <View style={styles.transportInner}>
+            <Pressable onPress={togglePlay} style={styles.transportBtn} hitSlop={12}>
+              <Ionicons name={playing ? "pause" : "play"} size={20} color="#fff" />
+            </Pressable>
+            <Pressable onPress={() => handleSeek("back")} style={styles.transportBtn} hitSlop={12}>
+              <Ionicons name="play-back" size={18} color="#fff" />
+            </Pressable>
+
+            <Text style={styles.time}>{formatTime(currentTime)}</Text>
+
+            <Pressable
+              style={styles.scrubberTouch}
+              onPress={onBarPress}
+              onLayout={onScrubberLayout}
+            >
+              <View style={styles.scrubberTrack}>
+                <View
+                  style={[styles.scrubberFill, { width: `${progress * 100}%` }]}
+                />
+              </View>
+            </Pressable>
+
+            <Text style={styles.time}>{formatTime(duration)}</Text>
+
+            <Pressable onPress={toggleMute} style={styles.transportBtn} hitSlop={8}>
+              <Ionicons
+                name={muted ? "volume-mute" : "volume-high"}
+                size={18}
+                color="#fff"
               />
-            </View>
-          </Pressable>
-          <Text style={styles.time}>{formatTime(duration)}</Text>
-          <Pressable onPress={toggleMute} style={styles.actionBtn} hitSlop={8}>
-            <Ionicons
-              name={muted ? "volume-mute" : "volume-high"}
-              size={22}
-              color="#fff"
-            />
-          </Pressable>
-          <Pressable
-            onPress={toggleFullscreen}
-            style={styles.actionBtn}
-            hitSlop={8}
-          >
-            <Ionicons
-              name={isFullscreen ? "contract-outline" : "expand-outline"}
-              size={22}
-              color="#fff"
-            />
-          </Pressable>
+            </Pressable>
+            <Pressable onPress={toggleFullscreen} style={styles.transportBtn} hitSlop={8}>
+              <Ionicons
+                name={isFullscreen ? "contract-outline" : "expand-outline"}
+                size={18}
+                color="#fff"
+              />
+            </Pressable>
+          </View>
         </View>
       </Animated.View>
     </View>
@@ -263,8 +275,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 3,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    height: 2,
+    backgroundColor: "rgba(255,255,255,0.2)",
     zIndex: 20,
   },
   thinFill: {
@@ -287,92 +299,114 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 160,
+    height: 140,
   },
-  contentArea: {
+  middleArea: {
     flex: 1,
     justifyContent: "space-between",
   },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingBottom: 8,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backInner: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.15)",
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
     flex: 1,
     color: "#fff",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
-    letterSpacing: 0.3,
-    marginHorizontal: 8,
+    letterSpacing: 0.2,
   },
   centerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 36,
-    paddingBottom: 48,
+    gap: 40,
+    paddingBottom: 40,
   },
   playBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255,255,255,0.12)",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.2)",
   },
-  skipBtn: {
-    width: 52,
-    height: 52,
+  skipWrap: {
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
-  bottomBar: {
+  skipLabel: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 9,
+    fontWeight: "600",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  transportBar: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  transportInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  transportBtn: {
+    width: 34,
+    height: 34,
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrubberTouch: {
     flex: 1,
-    height: 32,
+    height: 28,
     justifyContent: "center",
   },
   scrubberTrack: {
-    height: 7,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 3,
     overflow: "hidden",
   },
   scrubberFill: {
     height: "100%",
     backgroundColor: "#fff",
-    borderRadius: 4,
+    borderRadius: 3,
   },
   time: {
-    color: "#fff",
-    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 12,
     fontWeight: "500",
     fontVariant: ["tabular-nums"],
-    minWidth: 42,
+    minWidth: 38,
     textAlign: "center",
-  },
-  actionBtn: {
-    width: 36,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
   },
   bigPlayOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -381,13 +415,13 @@ const styles = StyleSheet.create({
     zIndex: 15,
   },
   bigPlayCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.12)",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.25)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
   },
 });
