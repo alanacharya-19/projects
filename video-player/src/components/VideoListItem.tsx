@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -8,12 +8,15 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import type { VideoAsset } from "@/src/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GAP = 10;
 const PAD = 16;
 const CARD_W = (SCREEN_WIDTH - PAD * 2 - GAP) / 2;
+
+const loadedThumbs = new Map<string, boolean>();
 
 function formatDuration(seconds: number): string {
   if (!seconds || !isFinite(seconds)) return "00:00";
@@ -77,6 +80,27 @@ interface Props {
 export default function VideoListItem({ asset, onPress }: Props) {
   const [color1, color2] = getGradient(asset.id);
   const scale = useRef(new Animated.Value(1)).current;
+  const [state, setState] = useState<"loading" | "ok" | "fail">(
+    loadedThumbs.has(asset.id) ? "ok" : "loading"
+  );
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const handleLoad = useCallback(() => {
+    if (!mounted.current) return;
+    loadedThumbs.set(asset.id, true);
+    setState("ok");
+  }, [asset.id]);
+
+  const handleError = useCallback(() => {
+    if (!mounted.current) return;
+    setState("fail");
+  }, []);
 
   const handlePressIn = () => {
     Animated.spring(scale, {
@@ -104,12 +128,23 @@ export default function VideoListItem({ asset, onPress }: Props) {
     >
       <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
         <View style={[styles.thumb, { backgroundColor: color1 }]}>
-          <View
-            style={[
-              styles.thumbOverlay,
-              { backgroundColor: color2, opacity: 0.55 },
-            ]}
+          <Image
+            source={{ uri: asset.uri, cacheKey: asset.id }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={300}
+            onLoad={handleLoad}
+            onError={handleError}
+            cachePolicy="disk"
           />
+          {state !== "ok" && (
+            <View
+              style={[
+                styles.gradientOverlay,
+                { backgroundColor: color2, opacity: 0.55 },
+              ]}
+            />
+          )}
           <View style={styles.playCircle}>
             <Ionicons name="play" size={20} color="#fff" />
           </View>
@@ -120,7 +155,9 @@ export default function VideoListItem({ asset, onPress }: Props) {
               color="rgba(255,255,255,0.7)"
               style={{ marginRight: 2 }}
             />
-            <Text style={styles.duration}>{formatDuration(asset.duration)}</Text>
+            <Text style={styles.duration}>
+              {formatDuration(asset.duration)}
+            </Text>
           </View>
         </View>
         <View style={styles.body}>
@@ -157,8 +194,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
+    overflow: "hidden",
   },
-  thumbOverlay: {
+  gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
   playCircle: {
@@ -170,6 +208,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.2)",
+    zIndex: 2,
   },
   durationBadge: {
     flexDirection: "row",
@@ -181,6 +220,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
+    zIndex: 2,
   },
   duration: {
     color: "#fff",
