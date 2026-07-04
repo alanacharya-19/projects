@@ -31,6 +31,8 @@ interface Props {
   title: string;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  onTogglePip?: () => void;
+  onShare?: () => void;
   safeTop?: number;
 }
 
@@ -40,6 +42,8 @@ export default function PlayerControls({
   title,
   isFullscreen,
   onToggleFullscreen,
+  onTogglePip,
+  onShare,
   safeTop = 0,
 }: Props) {
   const [playing, setPlaying] = useState(player.playing);
@@ -52,6 +56,7 @@ export default function PlayerControls({
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scrubberWidth = useRef(0);
   const [speedIdx, setSpeedIdx] = useState(() => SPEEDS.indexOf(1));
+  const [buffered, setBuffered] = useState(0);
 
   const animate = useCallback(
     (visible: boolean) => {
@@ -108,21 +113,23 @@ export default function PlayerControls({
       }
     });
 
+    const unsubBuffered = player.addListener("timeUpdate", () => {
+      setBuffered(player.bufferedPosition);
+    });
+
     setDuration(player.duration);
 
     return () => {
       unsubStatus.remove();
       unsubTime.remove();
       unsubPlaying.remove();
+      unsubBuffered.remove();
     };
   }, [player, resetHideTimer, animate]);
 
   const togglePlay = useCallback(() => {
-    if (player.playing) {
-      player.pause();
-    } else {
-      player.play();
-    }
+    if (player.playing) player.pause();
+    else player.play();
     resetHideTimer();
   }, [player, resetHideTimer]);
 
@@ -139,8 +146,7 @@ export default function PlayerControls({
 
   const handleSeek = useCallback(
     (direction: "forward" | "back") => {
-      const delta = direction === "forward" ? 15 : -15;
-      player.seekBy(delta);
+      player.seekBy(direction === "forward" ? 15 : -15);
       resetHideTimer();
     },
     [player, resetHideTimer]
@@ -170,6 +176,7 @@ export default function PlayerControls({
   );
 
   const progress = duration > 0 ? currentTime / duration : 0;
+  const bufferProgress = duration > 0 ? Math.min(buffered / duration, 1) : 0;
   const topPad = safeTop + 8;
   const currentSpeed = SPEEDS[speedIdx];
 
@@ -234,15 +241,10 @@ export default function PlayerControls({
 
             <Text style={styles.time}>{formatTime(currentTime)}</Text>
 
-            <Pressable
-              style={styles.scrubberTouch}
-              onPress={onBarPress}
-              onLayout={onScrubberLayout}
-            >
+            <Pressable style={styles.scrubberTouch} onPress={onBarPress} onLayout={onScrubberLayout}>
               <View style={styles.scrubberTrack}>
-                <View
-                  style={[styles.scrubberFill, { width: `${progress * 100}%` }]}
-                />
+                <View style={[styles.scrubberBuffer, { width: `${bufferProgress * 100}%` }]} />
+                <View style={[styles.scrubberFill, { width: `${progress * 100}%` }]} />
               </View>
             </Pressable>
 
@@ -252,12 +254,16 @@ export default function PlayerControls({
               <Text style={styles.speedText}>{currentSpeed}x</Text>
             </Pressable>
 
+            <Pressable onPress={onShare} style={styles.transportBtn} hitSlop={8}>
+              <Ionicons name="share-outline" size={17} color="#fff" />
+            </Pressable>
+
+            <Pressable onPress={onTogglePip} style={styles.transportBtn} hitSlop={8}>
+              <Ionicons name="tv-outline" size={18} color="#fff" />
+            </Pressable>
+
             <Pressable onPress={toggleMute} style={styles.transportBtn} hitSlop={8}>
-              <Ionicons
-                name={muted ? "volume-mute" : "volume-high"}
-                size={18}
-                color="#fff"
-              />
+              <Ionicons name={muted ? "volume-mute" : "volume-high"} size={18} color="#fff" />
             </Pressable>
             <Pressable onPress={toggleFullscreen} style={styles.transportBtn} hitSlop={8}>
               <Ionicons
@@ -305,23 +311,28 @@ const styles = StyleSheet.create({
   transportBar: { paddingHorizontal: 12, paddingBottom: 8 },
   transportInner: {
     flexDirection: "row", alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 14, paddingHorizontal: 8, paddingVertical: 8, gap: 6,
+    borderRadius: 14, paddingHorizontal: 8, paddingVertical: 8, gap: 4,
     borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(255,255,255,0.08)",
   },
-  transportBtn: { width: 34, height: 34, justifyContent: "center", alignItems: "center" },
+  transportBtn: { width: 30, height: 34, justifyContent: "center", alignItems: "center" },
   speedBtn: {
-    paddingHorizontal: 6, height: 28, justifyContent: "center", alignItems: "center",
+    paddingHorizontal: 5, height: 28, justifyContent: "center", alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 6,
   },
-  speedText: { color: "#fff", fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
+  speedText: { color: "#fff", fontSize: 11, fontWeight: "700", fontVariant: ["tabular-nums"] },
   scrubberTouch: { flex: 1, height: 28, justifyContent: "center" },
   scrubberTrack: {
     height: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden",
+    position: "relative",
   },
-  scrubberFill: { height: "100%", backgroundColor: "#fff", borderRadius: 3 },
+  scrubberBuffer: {
+    position: "absolute", top: 0, left: 0, height: "100%",
+    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 3,
+  },
+  scrubberFill: { height: "100%", backgroundColor: "#fff", borderRadius: 3, position: "relative", zIndex: 1 },
   time: {
-    color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "500",
-    fontVariant: ["tabular-nums"], minWidth: 38, textAlign: "center",
+    color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "500",
+    fontVariant: ["tabular-nums"], minWidth: 34, textAlign: "center",
   },
   bigPlayOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center", zIndex: 15 },
   bigPlayCircle: {

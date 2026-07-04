@@ -1,26 +1,24 @@
 {
   "expo": {
-    "name": "video-player",
-    "slug": "video-player",
+    "name": "CineFlow",
+    "slug": "cineflow",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "videoplayer",
+    "orientation": "all",
+    "icon": "./assets/icon/app_icon.png",
+    "scheme": "cineflow",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Allow video-player to access your photos to play videos.",
-        "NSPhotoLibraryAddUsageDescription": "Allow video-player to save videos."
+        "NSPhotoLibraryUsageDescription": "Allow CineFlow to access your photos to play videos.",
+        "NSPhotoLibraryAddUsageDescription": "Allow CineFlow to save videos."
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icon/app_icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -32,7 +30,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/icon/app_icon.png"
     },
     "plugins": [
       "expo-screen-orientation",
@@ -40,8 +38,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/icon/app_icon.png",
+          "imageWidth": 150,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
@@ -52,15 +50,15 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow video-player to access your photos to play videos.",
-          "savePhotosPermission": "Allow video-player to save videos."
+          "photosPermission": "Allow CineFlow to access your photos to play videos.",
+          "savePhotosPermission": "Allow CineFlow to save videos."
         }
       ],
       [
         "expo-video",
         {
           "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": false
+          "supportsPictureInPicture": true
         }
       ]
     ],

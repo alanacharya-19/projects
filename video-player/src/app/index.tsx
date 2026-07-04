@@ -23,7 +23,7 @@ const GAP = 10;
 const PAD = 16;
 const CARD_W = (SCREEN_WIDTH - PAD * 2 - GAP) / 2;
 
-type SortMode = "date" | "name" | "duration";
+type SortMode = "date" | "name" | "duration" | "folder";
 
 function Skeleton() {
   const shimmer = useRef(new Animated.Value(0)).current;
@@ -81,12 +81,14 @@ const SORT_LABELS: Record<SortMode, string> = {
   date: "Date",
   name: "Name",
   duration: "Duration",
+  folder: "Folder",
 };
 
 const SORT_ICONS: Record<SortMode, keyof typeof Ionicons.glyphMap> = {
   date: "time-outline",
   name: "text-outline",
   duration: "hourglass-outline",
+  folder: "folder-outline",
 };
 
 export default function LibraryScreen() {
@@ -100,6 +102,7 @@ export default function LibraryScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [sortBy, setSortBy] = useState<SortMode>("date");
+  const [albums, setAlbums] = useState<Map<string, VideoAsset[]>>(new Map());
   const searchRef = useRef<TextInput>(null);
 
   const loadVideos = useCallback(async (cursor?: string) => {
@@ -133,7 +136,34 @@ export default function LibraryScreen() {
     }
     (async () => {
       setLoading(true);
-      const result = await loadVideos();
+
+      const albumList = await MediaLibrary.getAlbumsAsync().catch(() => []);
+      const albumMap = new Map<string, VideoAsset[]>();
+      for (const album of albumList) {
+        const res = await MediaLibrary.getAssetsAsync({
+          album,
+          mediaType: "video",
+          first: 200,
+        }).catch(() => null);
+        if (res && res.assets.length > 0) {
+          const mapped = res.assets.map((a) => ({
+            id: a.id,
+            uri: a.uri,
+            filename: a.filename,
+            duration: a.duration,
+            width: a.width,
+            height: a.height,
+            creationTime: a.creationTime,
+          }));
+          albumMap.set(album.title, mapped);
+        }
+      }
+      setAlbums(albumMap);
+
+      const result = albumMap.size > 0
+        ? { assets: [...albumMap.values()].flat(), hasMore: false, endCursor: undefined }
+        : await loadVideos();
+
       setAssets(result.assets);
       setHasMore(result.hasMore);
       setEndCursor(result.endCursor);
@@ -213,6 +243,21 @@ export default function LibraryScreen() {
   }, [assets, searchQuery, sortBy]);
 
   const sections = useMemo(() => {
+    if (sortBy === "folder") {
+      const groups: { title: string; data: VideoAsset[] }[] = [];
+      const used = new Set<string>();
+      for (const [name, list] of albums) {
+        const filtered = list.filter((a) => processedAssets.some((p) => p.id === a.id));
+        if (filtered.length > 0) {
+          groups.push({ title: name, data: filtered });
+          for (const a of filtered) used.add(a.id);
+        }
+      }
+      const leftover = processedAssets.filter((a) => !used.has(a.id));
+      if (leftover.length > 0) groups.push({ title: "Other", data: leftover });
+      return groups;
+    }
+
     if (sortBy !== "date") {
       return [{ title: `${SORT_LABELS[sortBy]} (${processedAssets.length})`, data: processedAssets }];
     }
@@ -234,7 +279,7 @@ export default function LibraryScreen() {
 
     const order = ["Today", "Yesterday", "This Week", "Older"];
     return order.filter((k) => groups[k]).map((k) => ({ title: k, data: groups[k] }));
-  }, [processedAssets, sortBy]);
+  }, [processedAssets, sortBy, albums]);
 
   if (!permissionResponse) {
     return (

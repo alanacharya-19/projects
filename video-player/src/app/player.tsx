@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Dimensions,
   PanResponder,
+  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import {
   lockToPortrait,
   addOrientationListener,
 } from "@/src/utils/orientation";
+import { getPosition, setPosition } from "@/src/utils/history";
 import PlayerControls from "@/src/components/PlayerControls";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -23,22 +25,71 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 export default function PlayerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { uri, title } = useLocalSearchParams<{
-    uri: string;
-    title: string;
-  }>();
+  const { uri, title } = useLocalSearchParams<{ uri: string; title: string }>();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [inPip, setInPip] = useState(false);
   const videoRef = useRef<VideoView>(null);
+  const savedTime = useRef(0);
 
   const player = useVideoPlayer(uri ?? "", (player) => {
     player.loop = false;
-    player.staysActiveInBackground = false;
+    player.staysActiveInBackground = true;
     player.showNowPlayingNotification = false;
   });
 
-  // Double-tap detection
+  // Restore position from history
+  useEffect(() => {
+    if (!uri) return;
+    getPosition(uri).then((pos) => {
+      if (pos > 1) savedTime.current = pos;
+    });
+  }, [uri]);
+
+  const handleReady = useCallback(() => {
+    setReady(true);
+    setError(null);
+    if (savedTime.current > 1) {
+      player.currentTime = savedTime.current;
+      savedTime.current = 0;
+    }
+    player.play();
+  }, [player]);
+
+  useEffect(() => {
+    if (!uri) {
+      setError("No video URI provided");
+      return;
+    }
+    const unsubStatus = player.addListener("statusChange", (e) => {
+      if (e.status === "readyToPlay") {
+        handleReady();
+      } else if (e.status === "error") {
+        setError(e.error?.message ?? "Failed to load video");
+        setReady(false);
+      }
+    });
+    return () => unsubStatus.remove();
+  }, [player, uri, handleReady]);
+
+  useEffect(() => {
+    const unsubEnd = player.addListener("playToEnd", () => {
+      player.currentTime = 0;
+    });
+    return () => unsubEnd.remove();
+  }, [player]);
+
+  // Save position on unmount
+  useEffect(() => {
+    return () => {
+      if (uri && player.currentTime > 3) {
+        setPosition(uri, player.currentTime);
+      }
+    };
+  }, [uri]);
+
+  // Double-tap
   const lastTap = useRef({ x: 0, time: 0 });
   const [showSeekHint, setShowSeekHint] = useState<string | null>(null);
   const seekHintTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -56,7 +107,6 @@ export default function PlayerScreen() {
       const { x: lastX, time: lastTime } = lastTap.current;
 
       if (now - lastTime < 300) {
-        // Double tap detected
         if (locationX < SCREEN_WIDTH / 2) {
           player.seekBy(-10);
           flashSeekHint("back");
@@ -72,7 +122,7 @@ export default function PlayerScreen() {
     [player, flashSeekHint]
   );
 
-  // Volume gesture (right side vertical swipe)
+  // Volume gesture
   const [volumeGesture, setVolumeGesture] = useState(false);
   const lastVolY = useRef(0);
 
@@ -86,61 +136,24 @@ export default function PlayerScreen() {
         }
         return false;
       },
-      onMoveShouldSetPanResponder: (evt) => {
-        if (evt.nativeEvent.locationX > SCREEN_WIDTH / 2) {
-          return true;
-        }
-        return false;
-      },
+      onMoveShouldSetPanResponder: (evt) => evt.nativeEvent.locationX > SCREEN_WIDTH / 2,
       onPanResponderMove: (evt) => {
         const dy = lastVolY.current - evt.nativeEvent.pageY;
         lastVolY.current = evt.nativeEvent.pageY;
         if (dy !== 0) {
-          const step = dy / 200;
-          player.volume = Math.max(0, Math.min(1, player.volume + step));
+          player.volume = Math.max(0, Math.min(1, player.volume + dy / 200));
         }
       },
-      onPanResponderRelease: () => {
-        setVolumeGesture(false);
-      },
+      onPanResponderRelease: () => setVolumeGesture(false),
     })
   ).current;
 
-  useEffect(() => {
-    if (!uri) {
-      setError("No video URI provided");
-      return;
-    }
-    const unsubStatus = player.addListener("statusChange", (e) => {
-      if (e.status === "readyToPlay") {
-        setReady(true);
-        setError(null);
-        player.play();
-      } else if (e.status === "error") {
-        setError(e.error?.message ?? "Failed to load video");
-        setReady(false);
-      }
-    });
-
-    return () => {
-      unsubStatus.remove();
-    };
-  }, [player, uri]);
-
-  useEffect(() => {
-    const unsubEnd = player.addListener("playToEnd", () => {
-      player.currentTime = 0;
-    });
-    return () => unsubEnd.remove();
-  }, [player]);
-
   const handleBack = useCallback(() => {
+    if (uri) setPosition(uri, player.currentTime);
     player.pause();
-    if (isFullscreen) {
-      lockToPortrait();
-    }
+    if (isFullscreen) lockToPortrait();
     router.back();
-  }, [player, router, isFullscreen]);
+  }, [player, router, isFullscreen, uri]);
 
   const toggleFullscreen = useCallback(async () => {
     if (isFullscreen) {
@@ -152,15 +165,27 @@ export default function PlayerScreen() {
     }
   }, [isFullscreen]);
 
+  const togglePip = useCallback(async () => {
+    try {
+      await videoRef.current?.startPictureInPicture?.();
+      setInPip(true);
+    } catch {}
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    if (!uri) return;
+    try {
+      await Share.share({ url: uri, title: title ?? "Video" });
+    } catch {}
+  }, [uri, title]);
+
   useEffect(() => {
     lockToPortrait();
   }, []);
 
   useEffect(() => {
     const unsub = addOrientationListener((isPortrait) => {
-      if (isPortrait && isFullscreen) {
-        setIsFullscreen(false);
-      }
+      if (isPortrait && isFullscreen) setIsFullscreen(false);
     });
     return unsub;
   }, [isFullscreen]);
@@ -175,7 +200,7 @@ export default function PlayerScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden={isFullscreen} />
+      <StatusBar hidden={isFullscreen || inPip} />
 
       <View style={styles.videoWrapper} {...volPan.panHandlers}>
         <VideoView
@@ -184,12 +209,10 @@ export default function PlayerScreen() {
           style={styles.video}
           nativeControls={false}
           contentFit={isFullscreen ? "cover" : "contain"}
+          allowsPictureInPicture
         />
 
-        <View
-          style={StyleSheet.absoluteFill}
-          onTouchEnd={handleVideoPress}
-        />
+        <View style={StyleSheet.absoluteFill} onTouchEnd={handleVideoPress} />
 
         {showSeekHint && (
           <View
@@ -207,9 +230,7 @@ export default function PlayerScreen() {
 
         {volumeGesture && (
           <View style={styles.volBadge}>
-            <Text style={styles.volText}>
-              {Math.round(player.volume * 100)}%
-            </Text>
+            <Text style={styles.volText}>{Math.round(player.volume * 100)}%</Text>
           </View>
         )}
       </View>
@@ -226,12 +247,20 @@ export default function PlayerScreen() {
         </View>
       )}
 
+      {savedTime.current > 1 && ready && (
+        <View style={styles.resumeBadge}>
+          <Text style={styles.resumeText}>Resume from {Math.floor(savedTime.current / 60)}:{(savedTime.current % 60).toString().padStart(2, "0")}</Text>
+        </View>
+      )}
+
       <PlayerControls
         player={player}
         onBack={handleBack}
         title={title ?? "Video"}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
+        onTogglePip={togglePip}
+        onShare={handleShare}
         safeTop={isFullscreen ? 0 : insets.top}
       />
     </View>
@@ -243,42 +272,27 @@ const styles = StyleSheet.create({
   videoWrapper: { flex: 1, position: "relative" },
   video: { flex: 1, width: "100%", height: "100%" },
   seekHint: {
-    position: "absolute",
-    top: "40%",
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    position: "absolute", top: "40%", width: 72, height: 72, borderRadius: 36,
+    backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center",
   },
   seekLeft: { left: 24 },
   seekRight: { right: 24 },
   seekHintIcon: { color: "#fff", fontSize: 28, fontWeight: "700" },
   seekHintText: { color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "600", marginTop: 2 },
   volBadge: {
-    position: "absolute",
-    right: 16,
-    top: "30%",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    position: "absolute", right: 16, top: "30%", backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
   },
   volText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 5,
+  resumeBadge: {
+    position: "absolute", top: "20%", alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8,
   },
+  resumeText: { color: "#fff", fontSize: 12, fontWeight: "500" },
+  loadingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center", zIndex: 5 },
   errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.8)",
-    zIndex: 15,
-    padding: 32,
+    ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.8)", zIndex: 15, padding: 32,
   },
   errorText: { color: "#ff4444", fontSize: 16, textAlign: "center" },
 });
