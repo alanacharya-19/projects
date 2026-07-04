@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import * as MediaLibrary from "expo-media-library";
@@ -21,6 +22,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GAP = 10;
 const PAD = 16;
 const CARD_W = (SCREEN_WIDTH - PAD * 2 - GAP) / 2;
+
+type SortMode = "date" | "name" | "duration";
 
 function Skeleton() {
   const shimmer = useRef(new Animated.Value(0)).current;
@@ -52,31 +55,14 @@ function Skeleton() {
   const Card = () => (
     <View style={{ width: CARD_W, borderRadius: 14, overflow: "hidden" }}>
       <Animated.View
-        style={{
-          width: "100%",
-          aspectRatio: 16 / 9,
-          backgroundColor: "#1c1c1e",
-          opacity,
-        }}
+        style={{ width: "100%", aspectRatio: 16 / 9, backgroundColor: "#1c1c1e", opacity }}
       />
       <View style={{ padding: 10, gap: 6 }}>
         <Animated.View
-          style={{
-            height: 11,
-            borderRadius: 3,
-            backgroundColor: "#1c1c1e",
-            opacity,
-            width: "85%",
-          }}
+          style={{ height: 11, borderRadius: 3, backgroundColor: "#1c1c1e", opacity, width: "85%" }}
         />
         <Animated.View
-          style={{
-            height: 9,
-            borderRadius: 3,
-            backgroundColor: "#1c1c1e",
-            opacity,
-            width: "45%",
-          }}
+          style={{ height: 9, borderRadius: 3, backgroundColor: "#1c1c1e", opacity, width: "45%" }}
         />
       </View>
     </View>
@@ -91,26 +77,17 @@ function Skeleton() {
   );
 }
 
-function groupByDate(assets: VideoAsset[]): { title: string; data: VideoAsset[] }[] {
-  const groups: Record<string, VideoAsset[]> = {};
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const yesterday = today - 86400000;
+const SORT_LABELS: Record<SortMode, string> = {
+  date: "Date",
+  name: "Name",
+  duration: "Duration",
+};
 
-  for (const a of assets) {
-    const ts = a.creationTime;
-    let key: string;
-    if (ts >= today) key = "Today";
-    else if (ts >= yesterday) key = "Yesterday";
-    else if (ts >= today - 6 * 86400000) key = "This Week";
-    else key = "Older";
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(a);
-  }
-
-  const order = ["Today", "Yesterday", "This Week", "Older"];
-  return order.filter((k) => groups[k]).map((k) => ({ title: k, data: groups[k] }));
-}
+const SORT_ICONS: Record<SortMode, keyof typeof Ionicons.glyphMap> = {
+  date: "time-outline",
+  name: "text-outline",
+  duration: "hourglass-outline",
+};
 
 export default function LibraryScreen() {
   const router = useRouter();
@@ -120,6 +97,10 @@ export default function LibraryScreen() {
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [hasMore, setHasMore] = useState(true);
   const [endCursor, setEndCursor] = useState<string | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [sortBy, setSortBy] = useState<SortMode>("date");
+  const searchRef = useRef<TextInput>(null);
 
   const loadVideos = useCallback(async (cursor?: string) => {
     try {
@@ -187,6 +168,74 @@ export default function LibraryScreen() {
     [router]
   );
 
+  const handleDelete = useCallback(async (asset: VideoAsset) => {
+    try {
+      await MediaLibrary.deleteAssetsAsync([asset.id]);
+      setAssets((prev) => prev.filter((a) => a.id !== asset.id));
+    } catch {}
+  }, []);
+
+  const toggleSearch = useCallback(() => {
+    setShowSearch((s) => {
+      if (!s) {
+        setTimeout(() => searchRef.current?.focus(), 100);
+      } else {
+        setSearchQuery("");
+      }
+      return !s;
+    });
+  }, []);
+
+  const cycleSort = useCallback(() => {
+    setSortBy((prev) => {
+      const order: SortMode[] = ["date", "name", "duration"];
+      return order[(order.indexOf(prev) + 1) % order.length];
+    });
+  }, []);
+
+  const processedAssets = useMemo(() => {
+    let list = [...assets];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((a) => a.filename.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.filename.localeCompare(b.filename);
+        case "duration":
+          return b.duration - a.duration;
+        default:
+          return b.creationTime - a.creationTime;
+      }
+    });
+    return list;
+  }, [assets, searchQuery, sortBy]);
+
+  const sections = useMemo(() => {
+    if (sortBy !== "date") {
+      return [{ title: `${SORT_LABELS[sortBy]} (${processedAssets.length})`, data: processedAssets }];
+    }
+    const groups: Record<string, VideoAsset[]> = {};
+    const now = Date.now();
+    const today = new Date(now).setHours(0, 0, 0, 0);
+    const yesterday = today - 86400000;
+
+    for (const a of processedAssets) {
+      const ts = a.creationTime * 1000;
+      let key: string;
+      if (ts >= today) key = "Today";
+      else if (ts >= yesterday) key = "Yesterday";
+      else if (ts >= today - 6 * 86400000) key = "This Week";
+      else key = "Older";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(a);
+    }
+
+    const order = ["Today", "Yesterday", "This Week", "Older"];
+    return order.filter((k) => groups[k]).map((k) => ({ title: k, data: groups[k] }));
+  }, [processedAssets, sortBy]);
+
   if (!permissionResponse) {
     return (
       <View style={styles.loadingScreen}>
@@ -212,22 +261,46 @@ export default function LibraryScreen() {
     );
   }
 
-  const sections = groupByDate(assets);
-
   if (loading && assets.length === 0) return <Skeleton />;
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Videos</Text>
-          <Text style={styles.headerCount}>
-            {assets.length} file{assets.length !== 1 ? "s" : ""}
-          </Text>
-        </View>
-        <Pressable style={styles.searchBtn}>
-          <Ionicons name="search" size={20} color="#fff" />
-        </Pressable>
+        {showSearch ? (
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={18} color="#555" />
+            <TextInput
+              ref={searchRef}
+              style={styles.searchInput}
+              placeholder="Search videos..."
+              placeholderTextColor="#555"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+            />
+            <Pressable onPress={toggleSearch} hitSlop={8}>
+              <Ionicons name="close" size={18} color="#888" />
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>Videos</Text>
+              <Text style={styles.headerCount}>
+                {processedAssets.length}/{assets.length} file{assets.length !== 1 ? "s" : ""}
+              </Text>
+            </View>
+            <View style={styles.headerRight}>
+              <Pressable onPress={cycleSort} style={styles.sortBtn}>
+                <Ionicons name={SORT_ICONS[sortBy]} size={18} color="#fff" />
+                <Text style={styles.sortLabel}>{SORT_LABELS[sortBy]}</Text>
+              </Pressable>
+              <Pressable onPress={toggleSearch} style={styles.searchBtn}>
+                <Ionicons name="search" size={20} color="#fff" />
+              </Pressable>
+            </View>
+          </>
+        )}
       </View>
 
       <ScrollView
@@ -249,8 +322,7 @@ export default function LibraryScreen() {
             }
           },
           [loadMore]
-        )
-        }
+        )}
         scrollEventThrottle={16}
       >
         {sections.map((section) => (
@@ -266,26 +338,31 @@ export default function LibraryScreen() {
                   key={asset.id}
                   asset={asset}
                   onPress={handlePress}
+                  onDelete={handleDelete}
                 />
               ))}
             </View>
           </View>
         ))}
 
-        {hasMore && assets.length > 0 && (
+        {hasMore && processedAssets.length > 0 && (
           <View style={styles.loadingMore}>
             <ActivityIndicator size="small" color="#555" />
           </View>
         )}
 
-        {assets.length === 0 && (
+        {processedAssets.length === 0 && (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
               <Ionicons name="film-outline" size={28} color="#fff" />
             </View>
-            <Text style={styles.emptyTitle}>No videos found</Text>
+            <Text style={styles.emptyTitle}>
+              {searchQuery ? "No matching videos" : "No videos found"}
+            </Text>
             <Text style={styles.emptyDesc}>
-              Videos saved to your device will appear here.
+              {searchQuery
+                ? "Try a different search term."
+                : "Videos saved to your device will appear here."}
             </Text>
           </View>
         )}
@@ -295,17 +372,8 @@ export default function LibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  loadingScreen: {
-    flex: 1,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 32,
-  },
+  screen: { flex: 1, backgroundColor: "#000" },
+  loadingScreen: { flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center", padding: 32 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -315,18 +383,22 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerLeft: {},
-  headerTitle: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headerTitle: { color: "#fff", fontSize: 32, fontWeight: "700", letterSpacing: 0.5 },
+  headerCount: { color: "#555", fontSize: 13, fontWeight: "500", marginTop: 1 },
+  searchRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#121212",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 40,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
+    gap: 8,
   },
-  headerCount: {
-    color: "#555",
-    fontSize: 13,
-    fontWeight: "500",
-    marginTop: 1,
-  },
+  searchInput: { flex: 1, color: "#fff", fontSize: 15, padding: 0 },
   searchBtn: {
     width: 38,
     height: 38,
@@ -337,110 +409,41 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.08)",
   },
-  scroll: {
-    paddingHorizontal: PAD,
-    paddingBottom: 40,
-    flexGrow: 1,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
+  sortBtn: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
-    paddingHorizontal: 2,
-  },
-  sectionDot: {
-    width: 4,
-    height: 16,
-    borderRadius: 2,
-    backgroundColor: "#fff",
-    marginRight: 8,
-  },
-  sectionTitle: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "600",
-    letterSpacing: 0.2,
-  },
-  sectionCount: {
-    color: "#555",
-    fontSize: 13,
-    fontWeight: "500",
-    marginLeft: 6,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: GAP,
-  },
-  permissionIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
     backgroundColor: "#121212",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  permissionTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  permissionDesc: {
-    color: "#666",
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-    maxWidth: 280,
-  },
-  permissionBtn: {
-    marginTop: 28,
-    backgroundColor: "#fff",
-    paddingHorizontal: 28,
-    paddingVertical: 14,
+    paddingHorizontal: 10,
+    height: 38,
     borderRadius: 10,
-  },
-  permissionBtnText: {
-    color: "#000",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  empty: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 80,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: "#121212",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 14,
+    gap: 5,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.08)",
   },
-  emptyTitle: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "600",
-    marginBottom: 4,
+  sortLabel: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  scroll: { paddingHorizontal: PAD, paddingBottom: 40, flexGrow: 1 },
+  section: { marginBottom: 20 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10, paddingHorizontal: 2 },
+  sectionDot: { width: 4, height: 16, borderRadius: 2, backgroundColor: "#fff", marginRight: 8 },
+  sectionTitle: { color: "#fff", fontSize: 17, fontWeight: "600", letterSpacing: 0.2 },
+  sectionCount: { color: "#555", fontSize: 13, fontWeight: "500", marginLeft: 6 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
+  permissionIcon: {
+    width: 64, height: 64, borderRadius: 20, backgroundColor: "#121212",
+    justifyContent: "center", alignItems: "center", marginBottom: 20,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(255,255,255,0.08)",
   },
-  emptyDesc: {
-    color: "#555",
-    fontSize: 13,
-    textAlign: "center",
+  permissionTitle: { color: "#fff", fontSize: 20, fontWeight: "600", marginBottom: 8 },
+  permissionDesc: { color: "#666", fontSize: 14, textAlign: "center", lineHeight: 20, maxWidth: 280 },
+  permissionBtn: { marginTop: 28, backgroundColor: "#fff", paddingHorizontal: 28, paddingVertical: 14, borderRadius: 10 },
+  permissionBtnText: { color: "#000", fontSize: 15, fontWeight: "600" },
+  empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
+  emptyIcon: {
+    width: 64, height: 64, borderRadius: 20, backgroundColor: "#121212",
+    justifyContent: "center", alignItems: "center", marginBottom: 14,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(255,255,255,0.08)",
   },
-  loadingMore: {
-    paddingVertical: 20,
-    alignItems: "center",
-  },
+  emptyTitle: { color: "#fff", fontSize: 17, fontWeight: "600", marginBottom: 4 },
+  emptyDesc: { color: "#555", fontSize: 13, textAlign: "center" },
+  loadingMore: { paddingVertical: 20, alignItems: "center" },
 });
