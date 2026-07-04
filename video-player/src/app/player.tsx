@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
+import {
+  lockToLandscape,
+  unlockOrientation,
+  addOrientationListener,
+} from "@/src/utils/orientation";
 import PlayerControls from "@/src/components/PlayerControls";
 
 export default function PlayerScreen() {
@@ -12,6 +17,8 @@ export default function PlayerScreen() {
   }>();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoRef = useRef<VideoView>(null);
 
   const player = useVideoPlayer(uri ?? "", (player) => {
     player.loop = false;
@@ -49,8 +56,30 @@ export default function PlayerScreen() {
 
   const handleBack = useCallback(() => {
     player.pause();
+    if (isFullscreen) {
+      unlockOrientation();
+    }
     router.back();
-  }, [player, router]);
+  }, [player, router, isFullscreen]);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (isFullscreen) {
+      await unlockOrientation();
+      setIsFullscreen(false);
+    } else {
+      await lockToLandscape();
+      setIsFullscreen(true);
+    }
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    const unsub = addOrientationListener((isPortrait) => {
+      if (isPortrait) {
+        setIsFullscreen(false);
+      }
+    });
+    return unsub;
+  }, []);
 
   if (!uri) {
     return (
@@ -62,7 +91,10 @@ export default function PlayerScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar hidden={isFullscreen} />
+
       <VideoView
+        ref={videoRef}
         player={player}
         style={styles.video}
         nativeControls={false}
@@ -81,7 +113,13 @@ export default function PlayerScreen() {
         </View>
       )}
 
-      <PlayerControls player={player} onBack={handleBack} title={title ?? "Video"} />
+      <PlayerControls
+        player={player}
+        onBack={handleBack}
+        title={title ?? "Video"}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
+      />
     </View>
   );
 }
