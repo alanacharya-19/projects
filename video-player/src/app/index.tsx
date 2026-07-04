@@ -3,10 +3,10 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  FlatList,
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -18,75 +18,98 @@ import VideoListItem from "@/src/components/VideoListItem";
 import type { VideoAsset } from "@/src/types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const COLUMN_GAP = 12;
-const HORIZONTAL_PADDING = 16;
-const COLUMN_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - COLUMN_GAP) / 2;
+const GAP = 10;
+const PAD = 16;
+const CARD_W = (SCREEN_WIDTH - PAD * 2 - GAP) / 2;
 
-function SkeletonCard() {
-  const opacity = useRef(new Animated.Value(0.3)).current;
+function Skeleton() {
+  const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.7,
-          duration: 800,
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1000,
           useNativeDriver: true,
         }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 800,
+        Animated.timing(shimmer, {
+          toValue: 0,
+          duration: 1000,
           useNativeDriver: true,
         }),
       ])
     );
     anim.start();
     return () => anim.stop();
-  }, [opacity]);
+  }, [shimmer]);
 
-  return (
-    <View style={{ width: COLUMN_WIDTH, marginBottom: 16 }}>
+  const opacity = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.6],
+  });
+
+  const Card = () => (
+    <View style={{ width: CARD_W, borderRadius: 14, overflow: "hidden" }}>
       <Animated.View
-        style={[
-          {
-            width: "100%",
-            aspectRatio: 16 / 9,
-            borderRadius: 12,
-            backgroundColor: "#1c1c1e",
-            opacity,
-          },
-        ]}
+        style={{
+          width: "100%",
+          aspectRatio: 16 / 9,
+          backgroundColor: "#1c1c1e",
+          opacity,
+        }}
       />
-      <View style={{ paddingTop: 8, gap: 6, paddingHorizontal: 2 }}>
+      <View style={{ padding: 10, gap: 6 }}>
         <Animated.View
           style={{
-            height: 12,
-            borderRadius: 4,
+            height: 11,
+            borderRadius: 3,
             backgroundColor: "#1c1c1e",
             opacity,
-            width: "90%",
+            width: "85%",
           }}
         />
         <Animated.View
           style={{
-            height: 10,
-            borderRadius: 4,
+            height: 9,
+            borderRadius: 3,
             backgroundColor: "#1c1c1e",
             opacity,
-            width: "50%",
+            width: "45%",
           }}
         />
       </View>
     </View>
   );
+
+  return (
+    <View style={styles.grid}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} />
+      ))}
+    </View>
+  );
 }
 
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size));
+function groupByDate(assets: VideoAsset[]): { title: string; data: VideoAsset[] }[] {
+  const groups: Record<string, VideoAsset[]> = {};
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterday = today - 86400000;
+
+  for (const a of assets) {
+    const ts = a.creationTime;
+    let key: string;
+    if (ts >= today) key = "Today";
+    else if (ts >= yesterday) key = "Yesterday";
+    else if (ts >= today - 6 * 86400000) key = "This Week";
+    else key = "Older";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(a);
   }
-  return result;
+
+  const order = ["Today", "Yesterday", "This Week", "Older"];
+  return order.filter((k) => groups[k]).map((k) => ({ title: k, data: groups[k] }));
 }
 
 export default function LibraryScreen() {
@@ -115,11 +138,7 @@ export default function LibraryScreen() {
         height: a.height,
         creationTime: a.creationTime,
       }));
-      return {
-        assets: mapped,
-        hasMore: result.hasNextPage,
-        endCursor: result.endCursor,
-      };
+      return { assets: mapped, hasMore: result.hasNextPage, endCursor: result.endCursor };
     } catch {
       return { assets: [], hasMore: false, endCursor: undefined };
     }
@@ -170,7 +189,7 @@ export default function LibraryScreen() {
 
   if (!permissionResponse) {
     return (
-      <View style={styles.center}>
+      <View style={styles.loadingScreen}>
         <ActivityIndicator size="large" color="#fff" />
       </View>
     );
@@ -178,92 +197,109 @@ export default function LibraryScreen() {
 
   if (!permissionResponse.granted) {
     return (
-      <View style={styles.center}>
-        <View style={styles.lockIconWrap}>
-          <Ionicons name="videocam-outline" size={32} color="#fff" />
+      <View style={styles.loadingScreen}>
+        <View style={styles.permissionIcon}>
+          <Ionicons name="folder-open-outline" size={28} color="#fff" />
         </View>
-        <Text style={styles.permissionTitle}>Video Access</Text>
-        <Text style={styles.permissionText}>
-          Allow access to your photo library to browse and play videos.
+        <Text style={styles.permissionTitle}>Access Your Videos</Text>
+        <Text style={styles.permissionDesc}>
+          We need access to your photo library to browse and play your videos.
         </Text>
         <Pressable style={styles.permissionBtn} onPress={requestPermission}>
-          <Text style={styles.permissionBtnText}>Grant Access</Text>
+          <Text style={styles.permissionBtnText}>Enable Access</Text>
         </Pressable>
       </View>
     );
   }
 
-  const rows = chunkArray(assets, 2);
+  const sections = groupByDate(assets);
+
+  if (loading && assets.length === 0) return <Skeleton />;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Library</Text>
-          <Text style={styles.headerSubtitle}>
-            {assets.length} video{assets.length !== 1 ? "s" : ""}
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Videos</Text>
+          <Text style={styles.headerCount}>
+            {assets.length} file{assets.length !== 1 ? "s" : ""}
           </Text>
         </View>
         <Pressable style={styles.searchBtn}>
-          <Ionicons name="search" size={22} color="#fff" />
+          <Ionicons name="search" size={20} color="#fff" />
         </Pressable>
       </View>
 
-      {loading && assets.length === 0 ? (
-        <View style={styles.grid}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </View>
-      ) : (
-        <FlatList
-          data={rows}
-          keyExtractor={(_, i) => String(i)}
-          renderItem={({ item: row }) => (
-            <View style={styles.row}>
-              {row.map((asset) => (
-                <View key={asset.id} style={{ width: COLUMN_WIDTH }}>
-                  <VideoListItem asset={asset} onPress={handlePress} />
-                </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#fff"
+            progressBackgroundColor="#1c1c1e"
+          />
+        }
+        onScroll={useCallback(
+          ({ nativeEvent }: any) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 300) {
+              loadMore();
+            }
+          },
+          [loadMore]
+        )
+        }
+        scrollEventThrottle={16}
+      >
+        {sections.map((section) => (
+          <View key={section.title} style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionDot} />
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <Text style={styles.sectionCount}>{section.data.length}</Text>
+            </View>
+            <View style={styles.grid}>
+              {section.data.map((asset) => (
+                <VideoListItem
+                  key={asset.id}
+                  asset={asset}
+                  onPress={handlePress}
+                />
               ))}
-              {row.length === 1 && <View style={{ width: COLUMN_WIDTH }} />}
             </View>
-          )}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#fff"
-              progressBackgroundColor="#1c1c1e"
-            />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={3}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconWrap}>
-                <Ionicons name="film-outline" size={40} color="#fff" />
-              </View>
-              <Text style={styles.emptyTitle}>No videos yet</Text>
-              <Text style={styles.emptySubtext}>
-                Videos from your library will appear here.
-              </Text>
+          </View>
+        ))}
+
+        {hasMore && assets.length > 0 && (
+          <View style={styles.loadingMore}>
+            <ActivityIndicator size="small" color="#555" />
+          </View>
+        )}
+
+        {assets.length === 0 && (
+          <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="film-outline" size={28} color="#fff" />
             </View>
-          }
-        />
-      )}
+            <Text style={styles.emptyTitle}>No videos found</Text>
+            <Text style={styles.emptyDesc}>
+              Videos saved to your device will appear here.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: "#000",
   },
-  center: {
+  loadingScreen: {
     flex: 1,
     backgroundColor: "#000",
     justifyContent: "center",
@@ -273,55 +309,82 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: HORIZONTAL_PADDING,
+    alignItems: "center",
+    paddingHorizontal: PAD,
     paddingTop: Platform.OS === "ios" ? 60 : 48,
-    paddingBottom: 20,
+    paddingBottom: 14,
   },
+  headerLeft: {},
   headerTitle: {
     color: "#fff",
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
-  headerSubtitle: {
-    color: "#666",
-    fontSize: 14,
-    marginTop: 2,
+  headerCount: {
+    color: "#555",
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: 1,
   },
   searchBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "#1c1c1e",
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#121212",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
   },
-  listContent: {
-    paddingHorizontal: HORIZONTAL_PADDING,
-    paddingBottom: 24,
+  scroll: {
+    paddingHorizontal: PAD,
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sectionDot: {
+    width: 4,
+    height: 16,
+    borderRadius: 2,
+    backgroundColor: "#fff",
+    marginRight: 8,
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  sectionCount: {
+    color: "#555",
+    fontSize: 13,
+    fontWeight: "500",
+    marginLeft: 6,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: COLUMN_GAP,
-    paddingHorizontal: HORIZONTAL_PADDING,
-    paddingBottom: 24,
+    gap: GAP,
   },
-  row: {
-    flexDirection: "row",
-    gap: COLUMN_GAP,
-    marginBottom: 0,
-  },
-  lockIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#1c1c1e",
+  permissionIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "#121212",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   permissionTitle: {
     color: "#fff",
@@ -329,51 +392,55 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 8,
   },
-  permissionText: {
-    color: "#888",
-    fontSize: 15,
+  permissionDesc: {
+    color: "#666",
+    fontSize: 14,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
     maxWidth: 280,
   },
   permissionBtn: {
     marginTop: 28,
     backgroundColor: "#fff",
-    paddingHorizontal: 32,
+    paddingHorizontal: 28,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   permissionBtnText: {
     color: "#000",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
-  emptyState: {
+  empty: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 80,
-    paddingHorizontal: 32,
   },
-  emptyIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#1c1c1e",
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "#121212",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   emptyTitle: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  emptySubtext: {
-    color: "#666",
-    fontSize: 14,
+  emptyDesc: {
+    color: "#555",
+    fontSize: 13,
     textAlign: "center",
-    lineHeight: 20,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: "center",
   },
 });
