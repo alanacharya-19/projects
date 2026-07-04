@@ -13,6 +13,8 @@ import type { VideoPlayer } from "expo-video";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
 function formatTime(seconds: number): string {
   if (!seconds || !isFinite(seconds)) return "0:00";
   const h = Math.floor(seconds / 3600);
@@ -49,6 +51,7 @@ export default function PlayerControls({
   const playingRef = useRef(player.playing);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scrubberWidth = useRef(0);
+  const [speedIdx, setSpeedIdx] = useState(() => SPEEDS.indexOf(1));
 
   const animate = useCallback(
     (visible: boolean) => {
@@ -143,6 +146,13 @@ export default function PlayerControls({
     [player, resetHideTimer]
   );
 
+  const cycleSpeed = useCallback(() => {
+    const next = (speedIdx + 1) % SPEEDS.length;
+    setSpeedIdx(next);
+    player.playbackRate = SPEEDS[next];
+    resetHideTimer();
+  }, [player, speedIdx, resetHideTimer]);
+
   const onScrubberLayout = useCallback((e: any) => {
     scrubberWidth.current = e.nativeEvent.layout.width;
   }, []);
@@ -160,7 +170,8 @@ export default function PlayerControls({
   );
 
   const progress = duration > 0 ? currentTime / duration : 0;
-  const topPad = safeTop + (isFullscreen ? 8 : 8);
+  const topPad = safeTop + 8;
+  const currentSpeed = SPEEDS[speedIdx];
 
   return (
     <View style={styles.container}>
@@ -180,10 +191,7 @@ export default function PlayerControls({
         style={[styles.controlsOverlay, { opacity: fadeAnim }]}
         pointerEvents={showControls ? "auto" : "none"}
       >
-        <GradientOverlay
-          style={styles.topGradient}
-          pointerEvents="none"
-        />
+        <GradientOverlay style={styles.topGradient} pointerEvents="none" />
 
         <Pressable style={styles.middleArea} onPress={resetHideTimer}>
           <View style={[styles.topBar, { paddingTop: topPad }]}>
@@ -213,11 +221,7 @@ export default function PlayerControls({
           </View>
         </Pressable>
 
-        <GradientOverlay
-          reverse
-          style={styles.bottomGradient}
-          pointerEvents="none"
-        />
+        <GradientOverlay reverse style={styles.bottomGradient} pointerEvents="none" />
 
         <View style={styles.transportBar}>
           <View style={styles.transportInner}>
@@ -244,6 +248,10 @@ export default function PlayerControls({
 
             <Text style={styles.time}>{formatTime(duration)}</Text>
 
+            <Pressable onPress={cycleSpeed} style={styles.speedBtn} hitSlop={8}>
+              <Text style={styles.speedText}>{currentSpeed}x</Text>
+            </Pressable>
+
             <Pressable onPress={toggleMute} style={styles.transportBtn} hitSlop={8}>
               <Ionicons
                 name={muted ? "volume-mute" : "volume-high"}
@@ -266,162 +274,59 @@ export default function PlayerControls({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 10,
-  },
+  container: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
   thinBar: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    zIndex: 20,
+    position: "absolute", top: 0, left: 0, right: 0, height: 2,
+    backgroundColor: "rgba(255,255,255,0.2)", zIndex: 20,
   },
-  thinFill: {
-    height: "100%",
-    backgroundColor: "#fff",
-  },
-  controlsOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "space-between",
-  },
-  topGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 140,
-  },
-  bottomGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 140,
-  },
-  middleArea: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  thinFill: { height: "100%", backgroundColor: "#fff" },
+  controlsOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "space-between" },
+  topGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
+  bottomGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: 140 },
+  middleArea: { flex: 1, justifyContent: "space-between" },
+  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingBottom: 8 },
+  backBtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
   backInner: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center", alignItems: "center",
   },
-  title: {
-    flex: 1,
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: 0.2,
-  },
+  title: { flex: 1, color: "#fff", fontSize: 16, fontWeight: "600", textAlign: "center", letterSpacing: 0.2 },
   centerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 40,
-    paddingBottom: 40,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 40, paddingBottom: 40,
   },
   playBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.2)",
+    width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.12)",
+    justifyContent: "center", alignItems: "center",
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.2)",
   },
-  skipWrap: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  skipLabel: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 9,
-    fontWeight: "600",
-    marginTop: 2,
-    textAlign: "center",
-  },
-  transportBar: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
+  skipWrap: { width: 48, height: 48, justifyContent: "center", alignItems: "center" },
+  skipLabel: { color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "600", marginTop: 2, textAlign: "center" },
+  transportBar: { paddingHorizontal: 12, paddingBottom: 8 },
   transportInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 14,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    gap: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.08)",
+    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 14, paddingHorizontal: 8, paddingVertical: 8, gap: 6,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(255,255,255,0.08)",
   },
-  transportBtn: {
-    width: 34,
-    height: 34,
-    justifyContent: "center",
-    alignItems: "center",
+  transportBtn: { width: 34, height: 34, justifyContent: "center", alignItems: "center" },
+  speedBtn: {
+    paddingHorizontal: 6, height: 28, justifyContent: "center", alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 6,
   },
-  scrubberTouch: {
-    flex: 1,
-    height: 28,
-    justifyContent: "center",
-  },
+  speedText: { color: "#fff", fontSize: 12, fontWeight: "700", fontVariant: ["tabular-nums"] },
+  scrubberTouch: { flex: 1, height: 28, justifyContent: "center" },
   scrubberTrack: {
-    height: 6,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 3,
-    overflow: "hidden",
+    height: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden",
   },
-  scrubberFill: {
-    height: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 3,
-  },
+  scrubberFill: { height: "100%", backgroundColor: "#fff", borderRadius: 3 },
   time: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 12,
-    fontWeight: "500",
-    fontVariant: ["tabular-nums"],
-    minWidth: 38,
-    textAlign: "center",
+    color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "500",
+    fontVariant: ["tabular-nums"], minWidth: 38, textAlign: "center",
   },
-  bigPlayOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 15,
-  },
+  bigPlayOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center", zIndex: 15 },
   bigPlayCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.2)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.12)",
+    justifyContent: "center", alignItems: "center",
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.2)",
   },
 });
