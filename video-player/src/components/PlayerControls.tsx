@@ -1,40 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
+  View,
+  Text,
   Pressable,
   StyleSheet,
-  Text,
-  View,
+  Animated,
+  Dimensions,
 } from "react-native";
-import GradientOverlay from "./GradientOverlay";
 import { Ionicons } from "@expo/vector-icons";
-import type { VideoPlayer } from "expo-video";
+import { colors, typography, spacing, borderRadius } from "../theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const AUTO_HIDE_DELAY = 4000;
 
-const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-
-function formatTime(seconds: number): string {
-  if (!seconds || !isFinite(seconds)) return "0:00";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
-  return `${m}:${pad(s)}`;
-}
-
-interface Props {
-  player: VideoPlayer;
+interface PlayerControlsProps {
+  player: any;
   onBack: () => void;
   title: string;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
-  onTogglePip?: () => void;
-  onShare?: () => void;
-  safeTop?: number;
+  onTogglePip: () => void;
+  onShare: () => void;
+  safeTop: number;
 }
+
+const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 export default function PlayerControls({
   player,
@@ -44,300 +34,385 @@ export default function PlayerControls({
   onToggleFullscreen,
   onTogglePip,
   onShare,
-  safeTop = 0,
-}: Props) {
-  const [playing, setPlaying] = useState(player.playing);
+  safeTop,
+}: PlayerControlsProps) {
+  const [controlsVisible, setControlsVisible] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [muted, setMuted] = useState(player.muted);
-  const [showControls, setShowControls] = useState(true);
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const playingRef = useRef(player.playing);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const scrubberWidth = useRef(0);
-  const [speedIdx, setSpeedIdx] = useState(() => SPEEDS.indexOf(1));
   const [buffered, setBuffered] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
-  const animate = useCallback(
-    (visible: boolean) => {
-      Animated.timing(fadeAnim, {
-        toValue: visible ? 1 : 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    },
-    [fadeAnim]
-  );
+  const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const controlsOpacity = useRef(new Animated.Value(1)).current;
+  const lastTap = useRef({ x: 0, time: 0 });
+  const [seekHint, setSeekHint] = useState<string | null>(null);
 
   const resetHideTimer = useCallback(() => {
-    setShowControls(true);
-    animate(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => {
-      if (playingRef.current) {
-        setShowControls(false);
-        animate(false);
-      }
-    }, 4000);
-  }, [animate]);
+    if (isPlaying) {
+      hideTimer.current = setTimeout(() => {
+        Animated.timing(controlsOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => setControlsVisible(false));
+      }, AUTO_HIDE_DELAY);
+    }
+  }, [isPlaying, controlsOpacity]);
 
-  useEffect(() => {
+  const showControls = useCallback(() => {
+    setControlsVisible(true);
+    controlsOpacity.setValue(1);
     resetHideTimer();
-    return () => {
-      if (hideTimer.current) clearTimeout(hideTimer.current);
-    };
-  }, [resetHideTimer]);
+  }, [controlsOpacity, resetHideTimer]);
 
   useEffect(() => {
-    player.timeUpdateEventInterval = 0.25;
-
-    const unsubStatus = player.addListener("statusChange", (e) => {
-      if (e.status === "readyToPlay" || e.status === "idle") {
+    if (!player) return;
+    const unsubStatus = player.addListener("statusChange", (e: any) => {
+      if (e.status === "readyToPlay") {
         setDuration(player.duration);
       }
     });
-
-    const unsubTime = player.addListener("timeUpdate", (e) => {
-      setCurrentTime(e.currentTime);
+    const unsubTime = player.addListener("timeUpdate", () => {
+      setCurrentTime(player.currentTime);
     });
-
-    const unsubPlaying = player.addListener("playingChange", (e) => {
-      setPlaying(e.isPlaying);
-      playingRef.current = e.isPlaying;
-      if (e.isPlaying) {
-        resetHideTimer();
-      } else {
-        setShowControls(true);
-        animate(true);
-        if (hideTimer.current) clearTimeout(hideTimer.current);
-      }
+    const unsubPlaying = player.addListener("playingChange", (e: any) => {
+      setIsPlaying(e.isPlaying);
     });
-
-    const unsubBuffered = player.addListener("timeUpdate", () => {
-      setBuffered(player.bufferedPosition);
-    });
-
-    setDuration(player.duration);
-
     return () => {
       unsubStatus.remove();
       unsubTime.remove();
       unsubPlaying.remove();
-      unsubBuffered.remove();
     };
-  }, [player, resetHideTimer, animate]);
+  }, [player]);
+
+  // Sync buffered position
+  useEffect(() => {
+    if (!player) return;
+    const interval = setInterval(() => {
+      setBuffered(player.bufferedPosition);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [player]);
+
+  // Auto-hide
+  useEffect(() => {
+    if (isPlaying) resetHideTimer();
+    else {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      showControls();
+    }
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [isPlaying, resetHideTimer, showControls]);
 
   const togglePlay = useCallback(() => {
-    if (player.playing) player.pause();
+    if (isPlaying) player.pause();
     else player.play();
-    resetHideTimer();
-  }, [player, resetHideTimer]);
+    showControls();
+  }, [player, isPlaying, showControls]);
 
-  const toggleMute = useCallback(() => {
-    player.muted = !player.muted;
-    setMuted(player.muted);
-    resetHideTimer();
-  }, [player, resetHideTimer]);
-
-  const toggleFullscreen = useCallback(() => {
-    onToggleFullscreen();
-    resetHideTimer();
-  }, [onToggleFullscreen, resetHideTimer]);
-
-  const handleSeek = useCallback(
-    (direction: "forward" | "back") => {
-      player.seekBy(direction === "forward" ? 15 : -15);
-      resetHideTimer();
+  const seekBy = useCallback(
+    (seconds: number) => {
+      player.seekBy(seconds);
+      setSeekHint(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
+      if (seekHintTimer.current) clearTimeout(seekHintTimer.current);
+      seekHintTimer.current = setTimeout(() => setSeekHint(null), 600);
+      showControls();
     },
-    [player, resetHideTimer]
+    [player, showControls]
   );
+
+  const seekHintTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const cycleSpeed = useCallback(() => {
-    const next = (speedIdx + 1) % SPEEDS.length;
-    setSpeedIdx(next);
-    player.playbackRate = SPEEDS[next];
-    resetHideTimer();
-  }, [player, speedIdx, resetHideTimer]);
+    const idx = SPEED_OPTIONS.indexOf(playbackSpeed);
+    const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
+    setPlaybackSpeed(next);
+    player.playbackRate = next;
+    setShowSpeedMenu(false);
+    showControls();
+  }, [playbackSpeed, player, showControls]);
 
-  const onScrubberLayout = useCallback((e: any) => {
-    scrubberWidth.current = e.nativeEvent.layout.width;
-  }, []);
+  const toggleMute = useCallback(() => {
+    setIsMuted((m) => {
+      player.muted = !m;
+      return !m;
+    });
+    showControls();
+  }, [player, showControls]);
 
-  const onBarPress = useCallback(
-    (e: any) => {
-      const x = e.nativeEvent.locationX;
-      const w = scrubberWidth.current || SCREEN_WIDTH;
-      if (w > 0 && duration > 0) {
-        player.currentTime = (x / w) * duration;
-      }
-      resetHideTimer();
+  const handleProgressPress = useCallback(
+    (evt: any) => {
+      if (!duration) return;
+      const { locationX } = evt.nativeEvent;
+      const ratio = Math.max(0, Math.min(1, locationX / SCREEN_WIDTH));
+      player.currentTime = ratio * duration;
+      showControls();
     },
-    [player, duration, resetHideTimer]
+    [duration, player, showControls]
   );
 
+  const formatTime = (s: number) => {
+    if (!s || !isFinite(s)) return "0:00";
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = Math.floor(s % 60);
+    if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
   const progress = duration > 0 ? currentTime / duration : 0;
-  const bufferProgress = duration > 0 ? Math.min(buffered / duration, 1) : 0;
-  const topPad = safeTop + 8;
-  const currentSpeed = SPEEDS[speedIdx];
+  const bufferedProgress = duration > 0 ? buffered / duration : 0;
+  const remaining = Math.max(0, duration - currentTime);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.thinBar}>
-        <View style={[styles.thinFill, { width: `${progress * 100}%` }]} />
+    <Animated.View
+      style={[styles.container, { opacity: controlsOpacity }]}
+      pointerEvents={controlsVisible ? "auto" : "none"}
+    >
+      {/* Touch to show overlay */}
+      <Pressable style={StyleSheet.absoluteFill} onPress={showControls} />
+
+      {/* Top Bar */}
+      <View style={[styles.topBar, { paddingTop: safeTop + spacing.sm }]}>
+        <Pressable onPress={onBack} style={styles.topBtn}>
+          <Ionicons name="chevron-down" size={22} color={colors.text.primary} />
+        </Pressable>
+        <Text style={styles.title} numberOfLines={1}>
+          {title.replace(/\.[^/.]+$/, "")}
+        </Text>
+        <View style={styles.topRight}>
+          <Pressable onPress={onTogglePip} style={styles.topBtn} hitSlop={8}>
+            <Ionicons name="tv-outline" size={18} color={colors.text.primary} />
+          </Pressable>
+          <Pressable onPress={onShare} style={styles.topBtn} hitSlop={8}>
+            <Ionicons name="share-outline" size={18} color={colors.text.primary} />
+          </Pressable>
+        </View>
       </View>
 
-      {!playing && !showControls && (
-        <Pressable style={styles.bigPlayOverlay} onPress={togglePlay}>
-          <View style={styles.bigPlayCircle}>
-            <Ionicons name="play" size={44} color="#fff" />
-          </View>
+      {/* Center Controls */}
+      <View style={styles.center}>
+        <Pressable onPress={() => seekBy(-15)} style={styles.centerBtn} hitSlop={16}>
+          <Ionicons name="play-back" size={28} color={colors.text.primary} />
+          <Text style={styles.seekLabel}>15</Text>
         </Pressable>
+        <Pressable onPress={togglePlay} style={styles.playBtn}>
+          <Ionicons
+            name={isPlaying ? "pause" : "play"}
+            size={36}
+            color={colors.text.primary}
+            style={isPlaying ? undefined : { marginLeft: 3 }}
+          />
+        </Pressable>
+        <Pressable onPress={() => seekBy(15)} style={styles.centerBtn} hitSlop={16}>
+          <Ionicons name="play-forward" size={28} color={colors.text.primary} />
+          <Text style={styles.seekLabel}>15</Text>
+        </Pressable>
+      </View>
+
+      {/* Seek Hint */}
+      {seekHint && (
+        <View style={styles.seekHintBadge}>
+          <Text style={styles.seekHintText}>{seekHint}</Text>
+        </View>
       )}
 
-      <Animated.View
-        style={[styles.controlsOverlay, { opacity: fadeAnim }]}
-        pointerEvents={showControls ? "auto" : "none"}
-      >
-        <GradientOverlay style={styles.topGradient} pointerEvents="none" />
-
-        <Pressable style={styles.middleArea} onPress={resetHideTimer}>
-          <View style={[styles.topBar, { paddingTop: topPad }]}>
-            <Pressable onPress={onBack} style={styles.backBtn}>
-              <View style={styles.backInner}>
-                <Ionicons name="chevron-down" size={24} color="#fff" />
-              </View>
-            </Pressable>
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          <View style={styles.centerRow}>
-            <Pressable onPress={() => handleSeek("back")} style={styles.skipWrap} hitSlop={20}>
-              <Ionicons name="play-back" size={26} color="#fff" />
-              <Text style={styles.skipLabel}>15</Text>
-            </Pressable>
-            <Pressable onPress={togglePlay} style={styles.playBtn} hitSlop={24}>
-              <Ionicons name={playing ? "pause" : "play"} size={36} color="#fff" />
-            </Pressable>
-            <Pressable onPress={() => handleSeek("forward")} style={styles.skipWrap} hitSlop={20}>
-              <Ionicons name="play-forward" size={26} color="#fff" />
-              <Text style={styles.skipLabel}>15</Text>
-            </Pressable>
+      {/* Bottom Bar */}
+      <View style={styles.bottomBar}>
+        {/* Progress Bar */}
+        <Pressable onPress={handleProgressPress} style={styles.progressContainer}>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressBuffered, { width: `${bufferedProgress * 100}%` }]} />
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            <View style={[styles.progressThumb, { left: `${progress * 100}%` }]} />
           </View>
         </Pressable>
 
-        <GradientOverlay reverse style={styles.bottomGradient} pointerEvents="none" />
+        {/* Transport */}
+        <View style={styles.transport}>
+          <Text style={styles.timeText}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </Text>
 
-        <View style={styles.transportBar}>
-          <View style={styles.transportInner}>
-            <Pressable onPress={togglePlay} style={styles.transportBtn} hitSlop={12}>
-              <Ionicons name={playing ? "pause" : "play"} size={20} color="#fff" />
+          <View style={styles.transportRight}>
+            <Pressable onPress={cycleSpeed} style={styles.transportBtn}>
+              <Text style={styles.speedText}>{playbackSpeed}x</Text>
             </Pressable>
-            <Pressable onPress={() => handleSeek("back")} style={styles.transportBtn} hitSlop={12}>
-              <Ionicons name="play-back" size={18} color="#fff" />
+            <Pressable onPress={toggleMute} style={styles.transportBtn}>
+              <Ionicons
+                name={isMuted ? "volume-mute" : "volume-high"}
+                size={18}
+                color={colors.text.primary}
+              />
             </Pressable>
-
-            <Text style={styles.time}>{formatTime(currentTime)}</Text>
-
-            <Pressable style={styles.scrubberTouch} onPress={onBarPress} onLayout={onScrubberLayout}>
-              <View style={styles.scrubberTrack}>
-                <View style={[styles.scrubberBuffer, { width: `${bufferProgress * 100}%` }]} />
-                <View style={[styles.scrubberFill, { width: `${progress * 100}%` }]} />
-              </View>
-            </Pressable>
-
-            <Text style={styles.time}>{formatTime(duration)}</Text>
-
-            <Pressable onPress={cycleSpeed} style={styles.speedBtn} hitSlop={8}>
-              <Text style={styles.speedText}>{currentSpeed}x</Text>
-            </Pressable>
-
-            <Pressable onPress={onShare} style={styles.transportBtn} hitSlop={8}>
-              <Ionicons name="share-outline" size={17} color="#fff" />
-            </Pressable>
-
-            <Pressable onPress={onTogglePip} style={styles.transportBtn} hitSlop={8}>
-              <Ionicons name="tv-outline" size={18} color="#fff" />
-            </Pressable>
-
-            <Pressable onPress={toggleMute} style={styles.transportBtn} hitSlop={8}>
-              <Ionicons name={muted ? "volume-mute" : "volume-high"} size={18} color="#fff" />
-            </Pressable>
-            <Pressable onPress={toggleFullscreen} style={styles.transportBtn} hitSlop={8}>
+            <Pressable onPress={onToggleFullscreen} style={styles.transportBtn}>
               <Ionicons
                 name={isFullscreen ? "contract-outline" : "expand-outline"}
                 size={18}
-                color="#fff"
+                color={colors.text.primary}
               />
             </Pressable>
           </View>
         </View>
-      </Animated.View>
-    </View>
+      </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { ...StyleSheet.absoluteFillObject, zIndex: 10 },
-  thinBar: {
-    position: "absolute", top: 0, left: 0, right: 0, height: 2,
-    backgroundColor: "rgba(255,255,255,0.2)", zIndex: 20,
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "space-between",
+    backgroundColor: "rgba(0,0,0,0.4)",
+    zIndex: 10,
   },
-  thinFill: { height: "100%", backgroundColor: "#fff" },
-  controlsOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "space-between" },
-  topGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 140 },
-  bottomGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: 140 },
-  middleArea: { flex: 1, justifyContent: "space-between" },
-  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
-  backInner: {
-    width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.15)",
-    justifyContent: "center", alignItems: "center",
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
   },
-  title: { flex: 1, color: "#fff", fontSize: 16, fontWeight: "600", textAlign: "center", letterSpacing: 0.2 },
-  centerRow: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 40, paddingBottom: 40,
+  topBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  topRight: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+
+  // Center
+  center: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing["4xl"],
+  },
+  centerBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  seekLabel: {
+    position: "absolute",
+    bottom: 6,
+    color: colors.text.secondary,
+    fontSize: 9,
+    fontWeight: typography.weights.bold,
   },
   playBtn: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.12)",
-    justifyContent: "center", alignItems: "center",
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.2)",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  skipWrap: { width: 48, height: 48, justifyContent: "center", alignItems: "center" },
-  skipLabel: { color: "rgba(255,255,255,0.6)", fontSize: 9, fontWeight: "600", marginTop: 2, textAlign: "center" },
-  transportBar: { paddingHorizontal: 12, paddingBottom: 8 },
-  transportInner: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 14, paddingHorizontal: 8, paddingVertical: 8, gap: 4,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(255,255,255,0.08)",
+
+  // Seek hint
+  seekHintBadge: {
+    position: "absolute",
+    top: "40%",
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
-  transportBtn: { width: 30, height: 34, justifyContent: "center", alignItems: "center" },
-  speedBtn: {
-    paddingHorizontal: 5, height: 28, justifyContent: "center", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 6,
+  seekHintText: {
+    color: colors.text.primary,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
   },
-  speedText: { color: "#fff", fontSize: 11, fontWeight: "700", fontVariant: ["tabular-nums"] },
-  scrubberTouch: { flex: 1, height: 28, justifyContent: "center" },
-  scrubberTrack: {
-    height: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden",
+
+  // Bottom
+  bottomBar: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing["4xl"],
+    gap: spacing.md,
+  },
+  progressContainer: {
+    height: 32,
+    justifyContent: "center",
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.2)",
     position: "relative",
+    overflow: "visible",
   },
-  scrubberBuffer: {
-    position: "absolute", top: 0, left: 0, height: "100%",
-    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 3,
+  progressBuffered: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 2,
   },
-  scrubberFill: { height: "100%", backgroundColor: "#fff", borderRadius: 3, position: "relative", zIndex: 1 },
-  time: {
-    color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "500",
-    fontVariant: ["tabular-nums"], minWidth: 34, textAlign: "center",
+  progressFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: colors.accent.primary,
+    borderRadius: 2,
   },
-  bigPlayOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center", zIndex: 15 },
-  bigPlayCircle: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.12)",
-    justifyContent: "center", alignItems: "center",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.2)",
+  progressThumb: {
+    position: "absolute",
+    top: -4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.accent.primary,
+    marginLeft: -6,
+  },
+  transport: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  timeText: {
+    color: colors.text.secondary,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
+  },
+  transportRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  transportBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  speedText: {
+    color: colors.text.primary,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
   },
 });

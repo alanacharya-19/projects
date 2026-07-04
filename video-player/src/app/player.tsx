@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Dimensions,
   PanResponder,
   Share,
@@ -12,6 +11,13 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from "react-native-reanimated";
 import {
   lockToLandscape,
   lockToPortrait,
@@ -19,8 +25,10 @@ import {
 } from "@/src/utils/orientation";
 import { getPosition, setPosition } from "@/src/utils/history";
 import PlayerControls from "@/src/components/PlayerControls";
+import { colors, typography, spacing, borderRadius } from "../theme";
+import { usePlayerStore } from "../stores/usePlayerStore";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -33,13 +41,27 @@ export default function PlayerScreen() {
   const videoRef = useRef<VideoView>(null);
   const savedTime = useRef(0);
 
+  // Gesture state
+  const [volumeGesture, setVolumeGesture] = useState(false);
+  const [brightnessGesture, setBrightnessGesture] = useState(false);
+  const lastGestureY = useRef(0);
+  const lastVolume = useRef(1);
+
+  // Brightness indicator
+  const brightnessValue = useSharedValue(0);
+  const brightnessOpacity = useSharedValue(0);
+
+  const brightnessStyle = useAnimatedStyle(() => ({
+    opacity: brightnessOpacity.value,
+  }));
+
   const player = useVideoPlayer(uri ?? "", (player) => {
     player.loop = false;
     player.staysActiveInBackground = true;
     player.showNowPlayingNotification = false;
   });
 
-  // Restore position from history
+  // Restore position
   useEffect(() => {
     if (!uri) return;
     getPosition(uri).then((pos) => {
@@ -62,10 +84,9 @@ export default function PlayerScreen() {
       setError("No video URI provided");
       return;
     }
-    const unsubStatus = player.addListener("statusChange", (e) => {
-      if (e.status === "readyToPlay") {
-        handleReady();
-      } else if (e.status === "error") {
+    const unsubStatus = player.addListener("statusChange", (e: any) => {
+      if (e.status === "readyToPlay") handleReady();
+      else if (e.status === "error") {
         setError(e.error?.message ?? "Failed to load video");
         setReady(false);
       }
@@ -89,7 +110,46 @@ export default function PlayerScreen() {
     };
   }, [uri]);
 
-  // Double-tap
+  // Gesture PanResponder
+  const gesturePan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: (evt) => {
+        const x = evt.nativeEvent.locationX;
+        const half = SCREEN_WIDTH / 2;
+        if (x < half) {
+          setBrightnessGesture(true);
+        } else {
+          setVolumeGesture(true);
+          lastVolume.current = player.volume;
+        }
+        lastGestureY.current = evt.nativeEvent.pageY;
+        return true;
+      },
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (evt) => {
+        const dy = lastGestureY.current - evt.nativeEvent.pageY;
+        lastGestureY.current = evt.nativeEvent.pageY;
+        const delta = dy / 200;
+
+        if (brightnessGesture) {
+          const newVal = Math.max(0, Math.min(1, brightnessValue.value + delta));
+          brightnessValue.value = newVal;
+          brightnessOpacity.value = withTiming(1, { duration: 100 });
+        }
+        if (volumeGesture) {
+          const newVol = Math.max(0, Math.min(1, lastVolume.current + delta));
+          player.volume = newVol;
+        }
+      },
+      onPanResponderRelease: () => {
+        setVolumeGesture(false);
+        setBrightnessGesture(false);
+        brightnessOpacity.value = withTiming(0, { duration: 500 });
+      },
+    })
+  ).current;
+
+  // Double-tap seek
   const lastTap = useRef({ x: 0, time: 0 });
   const [showSeekHint, setShowSeekHint] = useState<string | null>(null);
   const seekHintTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -121,32 +181,6 @@ export default function PlayerScreen() {
     },
     [player, flashSeekHint]
   );
-
-  // Volume gesture
-  const [volumeGesture, setVolumeGesture] = useState(false);
-  const lastVolY = useRef(0);
-
-  const volPan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: (evt) => {
-        if (evt.nativeEvent.locationX > SCREEN_WIDTH / 2) {
-          setVolumeGesture(true);
-          lastVolY.current = evt.nativeEvent.pageY;
-          return true;
-        }
-        return false;
-      },
-      onMoveShouldSetPanResponder: (evt) => evt.nativeEvent.locationX > SCREEN_WIDTH / 2,
-      onPanResponderMove: (evt) => {
-        const dy = lastVolY.current - evt.nativeEvent.pageY;
-        lastVolY.current = evt.nativeEvent.pageY;
-        if (dy !== 0) {
-          player.volume = Math.max(0, Math.min(1, player.volume + dy / 200));
-        }
-      },
-      onPanResponderRelease: () => setVolumeGesture(false),
-    })
-  ).current;
 
   const handleBack = useCallback(() => {
     if (uri) setPosition(uri, player.currentTime);
@@ -184,7 +218,7 @@ export default function PlayerScreen() {
   }, []);
 
   useEffect(() => {
-    const unsub = addOrientationListener((isPortrait) => {
+    const unsub = addOrientationListener((isPortrait: boolean) => {
       if (isPortrait && isFullscreen) setIsFullscreen(false);
     });
     return unsub;
@@ -199,60 +233,96 @@ export default function PlayerScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...gesturePan.panHandlers}>
       <StatusBar hidden={isFullscreen || inPip} />
 
-      <View style={styles.videoWrapper} {...volPan.panHandlers}>
-        <VideoView
-          ref={videoRef}
-          player={player}
-          style={styles.video}
-          nativeControls={false}
-          contentFit={isFullscreen ? "cover" : "contain"}
-          allowsPictureInPicture
-        />
+      {/* Video Player */}
+      <VideoView
+        ref={videoRef}
+        player={player}
+        style={styles.video}
+        nativeControls={false}
+        contentFit={isFullscreen ? "cover" : "contain"}
+        allowsPictureInPicture
+      />
 
-        <View style={StyleSheet.absoluteFill} onTouchEnd={handleVideoPress} />
+      {/* Touch handler for double-tap */}
+      <View style={styles.touchOverlay} onTouchEnd={handleVideoPress} />
 
-        {showSeekHint && (
+      {/* Seek Hint */}
+      {showSeekHint && (
+        <View
+          style={[
+            styles.seekHint,
+            showSeekHint === "back" ? styles.seekLeft : styles.seekRight,
+          ]}
+        >
+          <Text style={styles.seekHintIcon}>
+            {showSeekHint === "back" ? "⟲" : "⟳"}
+          </Text>
+          <Text style={styles.seekHintText}>10s</Text>
+        </View>
+      )}
+
+      {/* Volume Indicator */}
+      {volumeGesture && (
+        <View style={styles.gestureIndicator}>
+          <Ionicons name="volume-high" size={20} color={colors.text.primary} />
+          <View style={styles.gestureBar}>
+            <View
+              style={[
+                styles.gestureBarFill,
+                { height: `${player.volume * 100}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.gestureText}>
+            {Math.round(player.volume * 100)}%
+          </Text>
+        </View>
+      )}
+
+      {/* Brightness Indicator */}
+      <Animated.View style={[styles.gestureIndicator, styles.brightnessIndicator, brightnessStyle]}>
+        <Ionicons name="sunny" size={20} color={colors.text.primary} />
+        <View style={styles.gestureBar}>
           <View
             style={[
-              styles.seekHint,
-              showSeekHint === "back" ? styles.seekLeft : styles.seekRight,
+              styles.gestureBarFill,
+              { height: `${brightnessValue.value * 100}%` },
             ]}
-          >
-            <Text style={styles.seekHintIcon}>
-              {showSeekHint === "back" ? "⟲" : "⟳"}
-            </Text>
-            <Text style={styles.seekHintText}>10s</Text>
-          </View>
-        )}
+          />
+        </View>
+        <Text style={styles.gestureText}>
+          {Math.round(brightnessValue.value * 100)}%
+        </Text>
+      </Animated.View>
 
-        {volumeGesture && (
-          <View style={styles.volBadge}>
-            <Text style={styles.volText}>{Math.round(player.volume * 100)}%</Text>
-          </View>
-        )}
-      </View>
-
+      {/* Error */}
       {error && (
         <View style={styles.errorOverlay}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
+      {/* Loading */}
       {!ready && !error && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
+          <View style={styles.spinner} />
         </View>
       )}
 
+      {/* Resume badge */}
       {savedTime.current > 1 && ready && (
         <View style={styles.resumeBadge}>
-          <Text style={styles.resumeText}>Resume from {Math.floor(savedTime.current / 60)}:{(savedTime.current % 60).toString().padStart(2, "0")}</Text>
+          <Text style={styles.resumeText}>
+            Resume from {Math.floor(savedTime.current / 60)}:
+            {(savedTime.current % 60).toString().padStart(2, "0")}
+          </Text>
         </View>
       )}
 
+      {/* Controls Overlay */}
       <PlayerControls
         player={player}
         onBack={handleBack}
@@ -261,7 +331,7 @@ export default function PlayerScreen() {
         onToggleFullscreen={toggleFullscreen}
         onTogglePip={togglePip}
         onShare={handleShare}
-        safeTop={isFullscreen ? 0 : insets.top}
+        safeTop={isFullscreen ? 0 : Math.max(insets.top, 20)}
       />
     </View>
   );
@@ -269,30 +339,103 @@ export default function PlayerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
-  videoWrapper: { flex: 1, position: "relative" },
   video: { flex: 1, width: "100%", height: "100%" },
+  touchOverlay: StyleSheet.absoluteFillObject,
   seekHint: {
-    position: "absolute", top: "40%", width: 72, height: 72, borderRadius: 36,
-    backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center",
+    position: "absolute",
+    top: "40%",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   seekLeft: { left: 24 },
   seekRight: { right: 24 },
   seekHintIcon: { color: "#fff", fontSize: 28, fontWeight: "700" },
-  seekHintText: { color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "600", marginTop: 2 },
-  volBadge: {
-    position: "absolute", right: 16, top: "30%", backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
+  seekHintText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
   },
-  volText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+
+  // Gesture indicators
+  gestureIndicator: {
+    position: "absolute",
+    right: spacing.xl,
+    top: "30%",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+    gap: spacing.sm,
+    minWidth: 48,
+  },
+  brightnessIndicator: {
+    left: spacing.xl,
+    right: undefined,
+  },
+  gestureBar: {
+    width: 4,
+    height: 80,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  gestureBarFill: {
+    width: "100%",
+    backgroundColor: colors.accent.primary,
+    borderRadius: 2,
+    position: "absolute",
+    bottom: 0,
+  },
+  gestureText: {
+    color: colors.text.primary,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+  },
+
+  // Resume
   resumeBadge: {
-    position: "absolute", top: "20%", alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8,
+    position: "absolute",
+    top: "20%",
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
   },
-  resumeText: { color: "#fff", fontSize: 12, fontWeight: "500" },
-  loadingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center", zIndex: 5 },
+  resumeText: {
+    color: "#fff",
+    fontSize: typography.sizes.sm,
+    fontWeight: "500",
+  },
+
+  // States
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 5,
+  },
+  spinner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: colors.bg.glassBorder,
+    borderTopColor: colors.accent.primary,
+  },
   errorOverlay: {
-    ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.8)", zIndex: 15, padding: 32,
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.8)",
+    zIndex: 15,
+    padding: spacing["4xl"],
   },
-  errorText: { color: "#ff4444", fontSize: 16, textAlign: "center" },
+  errorText: { color: colors.status.error, fontSize: typography.sizes.md, textAlign: "center" },
 });
