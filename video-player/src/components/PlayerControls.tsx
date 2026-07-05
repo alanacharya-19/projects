@@ -5,12 +5,11 @@ import {
   Pressable,
   StyleSheet,
   Animated,
-  Dimensions,
+  LayoutChangeEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, typography, spacing, borderRadius } from "../theme";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const AUTO_HIDE_DELAY = 4000;
 
 interface PlayerControlsProps {
@@ -43,13 +42,10 @@ export default function PlayerControls({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [progressBarWidth, setProgressBarWidth] = useState(0);
 
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const controlsOpacity = useRef(new Animated.Value(1)).current;
-  const lastTap = useRef({ x: 0, time: 0 });
-  const [seekHint, setSeekHint] = useState<string | null>(null);
-
   const resetHideTimer = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     if (isPlaying) {
@@ -119,22 +115,16 @@ export default function PlayerControls({
   const seekBy = useCallback(
     (seconds: number) => {
       player.seekBy(seconds);
-      setSeekHint(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
-      if (seekHintTimer.current) clearTimeout(seekHintTimer.current);
-      seekHintTimer.current = setTimeout(() => setSeekHint(null), 600);
       showControls();
     },
     [player, showControls]
   );
-
-  const seekHintTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const cycleSpeed = useCallback(() => {
     const idx = SPEED_OPTIONS.indexOf(playbackSpeed);
     const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
     setPlaybackSpeed(next);
     player.playbackRate = next;
-    setShowSpeedMenu(false);
     showControls();
   }, [playbackSpeed, player, showControls]);
 
@@ -146,16 +136,25 @@ export default function PlayerControls({
     showControls();
   }, [player, showControls]);
 
+  const handleFullscreen = useCallback(() => {
+    onToggleFullscreen();
+    showControls();
+  }, [onToggleFullscreen, showControls]);
+
   const handleProgressPress = useCallback(
     (evt: any) => {
-      if (!duration) return;
+      if (!duration || !progressBarWidth) return;
       const { locationX } = evt.nativeEvent;
-      const ratio = Math.max(0, Math.min(1, locationX / SCREEN_WIDTH));
+      const ratio = Math.max(0, Math.min(1, locationX / progressBarWidth));
       player.currentTime = ratio * duration;
       showControls();
     },
-    [duration, player, showControls]
+    [duration, player, showControls, progressBarWidth]
   );
+
+  const onProgressLayout = useCallback((e: LayoutChangeEvent) => {
+    setProgressBarWidth(e.nativeEvent.layout.width);
+  }, []);
 
   const formatTime = (s: number) => {
     if (!s || !isFinite(s)) return "0:00";
@@ -168,7 +167,6 @@ export default function PlayerControls({
 
   const progress = duration > 0 ? currentTime / duration : 0;
   const bufferedProgress = duration > 0 ? buffered / duration : 0;
-  const remaining = Math.max(0, duration - currentTime);
 
   return (
     <Animated.View
@@ -216,17 +214,10 @@ export default function PlayerControls({
         </Pressable>
       </View>
 
-      {/* Seek Hint */}
-      {seekHint && (
-        <View style={styles.seekHintBadge}>
-          <Text style={styles.seekHintText}>{seekHint}</Text>
-        </View>
-      )}
-
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         {/* Progress Bar */}
-        <Pressable onPress={handleProgressPress} style={styles.progressContainer}>
+        <Pressable onLayout={onProgressLayout} onPress={handleProgressPress} style={styles.progressContainer}>
           <View style={styles.progressTrack}>
             <View style={[styles.progressBuffered, { width: `${bufferedProgress * 100}%` }]} />
             <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
@@ -251,7 +242,7 @@ export default function PlayerControls({
                 color={colors.text.primary}
               />
             </Pressable>
-            <Pressable onPress={onToggleFullscreen} style={styles.transportBtn}>
+            <Pressable onPress={handleFullscreen} style={styles.transportBtn}>
               <Ionicons
                 name={isFullscreen ? "contract-outline" : "expand-outline"}
                 size={18}
@@ -327,22 +318,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)",
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  // Seek hint
-  seekHintBadge: {
-    position: "absolute",
-    top: "40%",
-    alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
-  seekHintText: {
-    color: colors.text.primary,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
   },
 
   // Bottom

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
   PanResponder,
   Share,
   StatusBar,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -16,30 +16,33 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
 } from "react-native-reanimated";
 import {
   lockToLandscape,
   lockToPortrait,
-  addOrientationListener,
 } from "@/src/utils/orientation";
 import { getPosition, setPosition } from "@/src/utils/history";
 import PlayerControls from "@/src/components/PlayerControls";
 import { colors, typography, spacing, borderRadius } from "../theme";
-import { usePlayerStore } from "../stores/usePlayerStore";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const PORTRAIT_PLAYER_HEIGHT = 260;
 
 export default function PlayerScreen() {
   const router = useRouter();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { uri, title } = useLocalSearchParams<{ uri: string; title: string }>();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [inPip, setInPip] = useState(false);
+  const [videoWidth, setVideoWidth] = useState(0);
+  const [videoHeight, setVideoHeight] = useState(0);
   const videoRef = useRef<VideoView>(null);
   const savedTime = useRef(0);
+
+  const isVertical = videoWidth > 0 && videoHeight > 0 && videoHeight > videoWidth;
+  const isLandscape = screenWidth > screenHeight;
 
   // Gesture state
   const [volumeGesture, setVolumeGesture] = useState(false);
@@ -72,6 +75,8 @@ export default function PlayerScreen() {
   const handleReady = useCallback(() => {
     setReady(true);
     setError(null);
+    setVideoWidth(player.videoWidth);
+    setVideoHeight(player.videoHeight);
     if (savedTime.current > 1) {
       player.currentTime = savedTime.current;
       savedTime.current = 0;
@@ -110,12 +115,19 @@ export default function PlayerScreen() {
     };
   }, [uri]);
 
+  // Ensure portrait when leaving player
+  useEffect(() => {
+    return () => {
+      lockToPortrait();
+    };
+  }, []);
+
   // Gesture PanResponder
   const gesturePan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: (evt) => {
         const x = evt.nativeEvent.locationX;
-        const half = SCREEN_WIDTH / 2;
+        const half = screenWidth / 2;
         if (x < half) {
           setBrightnessGesture(true);
         } else {
@@ -164,10 +176,10 @@ export default function PlayerScreen() {
     (evt: any) => {
       const { locationX } = evt.nativeEvent;
       const now = Date.now();
-      const { x: lastX, time: lastTime } = lastTap.current;
+      const { time: lastTime } = lastTap.current;
 
       if (now - lastTime < 300) {
-        if (locationX < SCREEN_WIDTH / 2) {
+        if (locationX < screenWidth / 2) {
           player.seekBy(-10);
           flashSeekHint("back");
         } else {
@@ -179,23 +191,23 @@ export default function PlayerScreen() {
         lastTap.current = { x: locationX, time: now };
       }
     },
-    [player, flashSeekHint]
+    [player, flashSeekHint, screenWidth]
   );
 
   const handleBack = useCallback(() => {
     if (uri) setPosition(uri, player.currentTime);
     player.pause();
-    if (isFullscreen) lockToPortrait();
+    lockToPortrait();
     router.back();
-  }, [player, router, isFullscreen, uri]);
+  }, [player, router, uri]);
 
   const toggleFullscreen = useCallback(async () => {
     if (isFullscreen) {
       await lockToPortrait();
       setIsFullscreen(false);
     } else {
-      await lockToLandscape();
       setIsFullscreen(true);
+      await lockToLandscape();
     }
   }, [isFullscreen]);
 
@@ -213,16 +225,7 @@ export default function PlayerScreen() {
     } catch {}
   }, [uri, title]);
 
-  useEffect(() => {
-    lockToPortrait();
-  }, []);
-
-  useEffect(() => {
-    const unsub = addOrientationListener((isPortrait: boolean) => {
-      if (isPortrait && isFullscreen) setIsFullscreen(false);
-    });
-    return unsub;
-  }, [isFullscreen]);
+  const videoContainerHeight = isFullscreen || isLandscape ? screenHeight : PORTRAIT_PLAYER_HEIGHT;
 
   if (!uri) {
     return (
@@ -236,18 +239,20 @@ export default function PlayerScreen() {
     <View style={styles.container} {...gesturePan.panHandlers}>
       <StatusBar hidden={isFullscreen || inPip} />
 
-      {/* Video Player */}
-      <VideoView
-        ref={videoRef}
-        player={player}
-        style={styles.video}
-        nativeControls={false}
-        contentFit={isFullscreen ? "cover" : "contain"}
-        allowsPictureInPicture
-      />
+      {/* Video Player - dynamic height from tutorial pattern */}
+      <View style={[styles.videoWrapper, { height: videoContainerHeight }]}>
+        <VideoView
+          ref={videoRef}
+          player={player}
+          style={styles.video}
+          nativeControls={false}
+          contentFit={isFullscreen && isLandscape && !isVertical ? "cover" : "contain"}
+          allowsPictureInPicture
+        />
 
-      {/* Touch handler for double-tap */}
-      <View style={styles.touchOverlay} onTouchEnd={handleVideoPress} />
+        {/* Touch handler for double-tap - only on video area */}
+        <View style={StyleSheet.absoluteFill} onTouchEnd={handleVideoPress} />
+      </View>
 
       {/* Seek Hint */}
       {showSeekHint && (
@@ -312,6 +317,21 @@ export default function PlayerScreen() {
         </View>
       )}
 
+      {/* Orientation badge */}
+      {ready && videoWidth > 0 && (
+        <View style={styles.orientationBadge}>
+          <Ionicons
+            name={isVertical ? "phone-portrait" : "phone-landscape"}
+            size={12}
+            color={colors.text.primary}
+          />
+          <Text style={styles.orientationText}>
+            {videoWidth}×{videoHeight}{" "}
+            {isVertical ? "Vertical" : "Horizontal"}
+          </Text>
+        </View>
+      )}
+
       {/* Resume badge */}
       {savedTime.current > 1 && ready && (
         <View style={styles.resumeBadge}>
@@ -331,16 +351,26 @@ export default function PlayerScreen() {
         onToggleFullscreen={toggleFullscreen}
         onTogglePip={togglePip}
         onShare={handleShare}
-        safeTop={isFullscreen ? 0 : Math.max(insets.top, 20)}
+        safeTop={isFullscreen ? 0 : Math.max(insets.top, 12)}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  video: { flex: 1, width: "100%", height: "100%" },
-  touchOverlay: StyleSheet.absoluteFillObject,
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+  videoWrapper: {
+    width: "100%",
+    overflow: "hidden",
+  },
+  video: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
   seekHint: {
     position: "absolute",
     top: "40%",
@@ -411,6 +441,25 @@ const styles = StyleSheet.create({
   resumeText: {
     color: "#fff",
     fontSize: typography.sizes.sm,
+    fontWeight: "500",
+  },
+
+  // Orientation badge
+  orientationBadge: {
+    position: "absolute",
+    top: spacing["4xl"],
+    right: spacing.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+  orientationText: {
+    color: colors.text.secondary,
+    fontSize: typography.sizes.xs,
     fontWeight: "500",
   },
 

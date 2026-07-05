@@ -416,29 +416,9 @@ export default function HomeScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.bottomNav, { paddingBottom: insets.bottom + spacing.sm }]}>
-        {navItems.map((item) => (
-          <Pressable
-            key={item.path}
-            onPress={() => router.push(item.path as any)}
-            style={styles.navItem}
-          >
-            <Ionicons name={item.icon} size={22} color={colors.text.tertiary} />
-            <Text style={styles.navLabel}>{item.label}</Text>
-          </Pressable>
-        ))}
-      </View>
     </View>
   );
 }
-
-const navItems = [
-  { label: "Home", icon: "home" as const, path: "/home" },
-  { label: "Library", icon: "layers-outline" as const, path: "/library" },
-  { label: "Search", icon: "search" as const, path: "/search" },
-  { label: "Settings", icon: "settings-outline" as const, path: "/settings" },
-];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
@@ -649,29 +629,5 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
 
-  // Bottom Nav
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingTop: spacing.sm,
-    backgroundColor: "rgba(10,10,15,0.95)",
-    borderTopWidth: 1,
-    borderTopColor: colors.bg.glassBorder,
-  },
-  navItem: {
-    alignItems: "center",
-    gap: spacing.xxs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.lg,
-  },
-  navLabel: {
-    color: colors.text.tertiary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.medium,
-  },
+
 });

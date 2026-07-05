@@ -27,7 +27,6 @@ export default function RootLayout() {
           name="player"
           options={{
             animation: "slide_from_bottom",
-            presentation: "fullScreenModal",
           }}
         />
       </Stack>

@@ -1,13 +1,7 @@
+import * as ScreenOrientation from "expo-screen-orientation";
 import { Dimensions, Platform } from "react-native";
 
-let ScreenOrientation: any = null;
-
-try {
-  ScreenOrientation = require("expo-screen-orientation");
-} catch {}
-
 export async function lockToLandscape() {
-  if (!ScreenOrientation) return;
   if (Platform.OS === "web") {
     try {
       const orient = (screen as any)?.orientation;
@@ -15,17 +9,14 @@ export async function lockToLandscape() {
         await orient.lock("landscape");
       }
     } catch {}
-  } else {
-    try {
-      await ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.LANDSCAPE
-      );
-    } catch {}
+    return;
   }
+  await ScreenOrientation.lockAsync(
+    ScreenOrientation.OrientationLock.LANDSCAPE
+  );
 }
 
 export async function lockToPortrait() {
-  if (!ScreenOrientation) return;
   if (Platform.OS === "web") {
     try {
       const orient = (screen as any)?.orientation;
@@ -33,17 +24,14 @@ export async function lockToPortrait() {
         await orient.lock("portrait");
       }
     } catch {}
-  } else {
-    try {
-      await ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP
-      );
-    } catch {}
+    return;
   }
+  await ScreenOrientation.lockAsync(
+    ScreenOrientation.OrientationLock.PORTRAIT_UP
+  );
 }
 
 export async function unlockOrientation() {
-  if (!ScreenOrientation) return;
   if (Platform.OS === "web") {
     try {
       const orient = (screen as any)?.orientation;
@@ -51,17 +39,13 @@ export async function unlockOrientation() {
         orient.unlock();
       }
     } catch {}
-  } else {
-    try {
-      await ScreenOrientation.unlockAsync();
-    } catch {}
+    return;
   }
+  await ScreenOrientation.unlockAsync();
 }
 
-export function addOrientationListener(
-  callback: (isPortrait: boolean) => void
-) {
-  if (ScreenOrientation && Platform.OS !== "web") {
+export function addOrientationListener(callback: (isPortrait: boolean) => void) {
+  if (Platform.OS !== "web") {
     const sub = ScreenOrientation.addOrientationChangeListener(
       (e: any) => {
         const isPortrait =
@@ -78,7 +62,6 @@ export function addOrientationListener(
     return () => ScreenOrientation.removeOrientationChangeListener(sub);
   }
 
-  // Fallback: listen to dimension changes (web or missing native module)
   const handler = ({
     window,
   }: {
