@@ -105,7 +105,7 @@ export default function SettingsScreen() {
           onToggle: () => toggle("rememberPosition"),
         },
         {
-          icon: "fast-forward-outline" as const,
+          icon: "play-forward-outline" as const,
           label: "Skip Intro",
           toggle: settings.skipIntro,
           onToggle: () => toggle("skipIntro"),

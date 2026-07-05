@@ -88,7 +88,7 @@ export default function LibraryScreen() {
         after: cursor,
       });
       return {
-        assets: result.assets.map((a) => ({
+        assets:         result.assets.map((a) => ({
           id: a.id,
           uri: a.uri,
           filename: a.filename,
@@ -96,7 +96,7 @@ export default function LibraryScreen() {
           width: a.width,
           height: a.height,
           creationTime: a.creationTime,
-          fileSize: a.fileSize ?? undefined,
+          fileSize: (a as any).fileSize ?? undefined,
         })),
         hasMore: result.hasNextPage,
         endCursor: result.endCursor,
@@ -591,7 +591,6 @@ export default function LibraryScreen() {
         <FlashList
           data={filteredVideos}
           numColumns={columns}
-          estimatedItemSize={CARD_HEIGHT}
           keyExtractor={(item) => item.id}
           renderItem={renderGridItem}
           onEndReached={loadMore}
@@ -610,7 +609,6 @@ export default function LibraryScreen() {
       ) : (
         <FlashList
           data={filteredVideos}
-          estimatedItemSize={LIST_ITEM_HEIGHT}
           keyExtractor={(item) => item.id}
           renderItem={renderListItem}
           onEndReached={loadMore}

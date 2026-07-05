@@ -1,25 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Paths, File } from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, typography, spacing, borderRadius } from "../theme";
 import { Badge } from "../components/ui/Badge";
-import { useIsLandscape } from "../hooks/useOrientation";
-import { CARD_WIDTH } from "../constants/layout";
 
-const RECENT_SEARCHES_KEY = "@cineflow/recent_searches";
+const RECENT_FILE = new File(Paths.document, "recent_searches.json");
 const MAX_RECENT = 10;
 
 const TRENDING_KEYWORDS = [
@@ -30,22 +26,30 @@ const TRENDING_KEYWORDS = [
 export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isLandscape = useIsLandscape();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasPermission, setHasPermission] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
+  const persistRecent = useCallback(async (searches: string[]) => {
+    try {
+      RECENT_FILE.write(JSON.stringify(searches));
+    } catch {}
+  }, []);
+
+  const loadRecent = useCallback(async () => {
+    try {
+      if (RECENT_FILE.exists) {
+        const data = await RECENT_FILE.text();
+        setRecentSearches(JSON.parse(data));
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
-    AsyncStorage.getItem(RECENT_SEARCHES_KEY).then((data) => {
-      if (data) setRecentSearches(JSON.parse(data));
-    });
+    loadRecent();
     MediaLibrary.requestPermissionsAsync().then((res) => {
       if (res.granted) {
-        setHasPermission(true);
         MediaLibrary.getAssetsAsync({ mediaType: "video", first: 200 }).then((r) =>
           setVideos(
             r.assets.map((a) => ({
@@ -61,20 +65,16 @@ export default function SearchScreen() {
         );
       }
     });
-  }, []);
+  }, [loadRecent]);
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
-    const filtered = videos.filter((v) => v.filename.toLowerCase().includes(q));
-    return filtered.sort((a, b) => b.creationTime - a.creationTime).slice(0, 50);
+    return videos
+      .filter((v) => v.filename.toLowerCase().includes(q))
+      .sort((a: any, b: any) => b.creationTime - a.creationTime)
+      .slice(0, 50);
   }, [query, videos]);
-
-  const suggestions = useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return TRENDING_KEYWORDS.filter((k) => k.toLowerCase().includes(q)).slice(0, 5);
-  }, [query]);
 
   const handleSearch = useCallback(
     (q: string) => {
@@ -82,26 +82,31 @@ export default function SearchScreen() {
       if (q.trim()) {
         setRecentSearches((prev) => {
           const next = [q, ...prev.filter((s) => s !== q)].slice(0, MAX_RECENT);
-          AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+          persistRecent(next);
           return next;
         });
       }
     },
-    []
+    [persistRecent]
   );
 
   const clearRecent = useCallback(async () => {
     setRecentSearches([]);
-    await AsyncStorage.removeItem(RECENT_SEARCHES_KEY);
+    try {
+      if (RECENT_FILE.exists) RECENT_FILE.delete();
+    } catch {}
   }, []);
 
-  const removeRecent = useCallback((term: string) => {
-    setRecentSearches((prev) => prev.filter((s) => s !== term));
-    AsyncStorage.setItem(
-      RECENT_SEARCHES_KEY,
-      JSON.stringify(recentSearches.filter((s) => s !== term))
-    );
-  }, [recentSearches]);
+  const removeRecent = useCallback(
+    (term: string) => {
+      setRecentSearches((prev) => {
+        const next = prev.filter((s) => s !== term);
+        persistRecent(next);
+        return next;
+      });
+    },
+    [persistRecent]
+  );
 
   const formatDuration = (s: number) => {
     if (!s) return "0:00";
@@ -153,7 +158,6 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.lg }]}>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={18} color={colors.text.tertiary} />
@@ -178,7 +182,6 @@ export default function SearchScreen() {
         </Pressable>
       </View>
 
-      {/* Results */}
       {query.trim().length > 0 ? (
         searchResults.length > 0 ? (
           <FlatList
@@ -204,7 +207,6 @@ export default function SearchScreen() {
           renderItem={() => null}
           ListHeaderComponent={
             <View style={styles.suggestionsContainer}>
-              {/* Trending Keywords */}
               <Text style={styles.sectionLabel}>Trending</Text>
               <View style={styles.chipsRow}>
                 {TRENDING_KEYWORDS.map((kw) => (
@@ -219,7 +221,6 @@ export default function SearchScreen() {
                 ))}
               </View>
 
-              {/* Recent Searches */}
               {recentSearches.length > 0 && (
                 <>
                   <View style={styles.recentHeader}>
@@ -255,7 +256,6 @@ export default function SearchScreen() {
         />
       )}
 
-      {/* Bottom Nav */}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + spacing.sm }]}>
         {navItems.map((item) => (
           <Pressable
@@ -309,8 +309,6 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
   },
-
-  // Results
   resultsList: { paddingHorizontal: spacing.xl },
   resultItem: {
     flexDirection: "row",
@@ -340,8 +338,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
   },
   resultMetaDot: { color: colors.text.tertiary, fontSize: typography.sizes.xs },
-
-  // Suggestions
   suggestionsContainer: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
   sectionLabel: {
     color: colors.text.secondary,
@@ -373,8 +369,6 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
   },
-
-  // Recent
   recentHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -404,8 +398,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-  // Empty
   emptyState: {
     flex: 1,
     justifyContent: "center",
@@ -424,8 +416,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-
-  // Bottom Nav
   bottomNav: {
     position: "absolute",
     bottom: 0, left: 0, right: 0,

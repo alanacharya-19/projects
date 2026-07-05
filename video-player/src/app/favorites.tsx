@@ -46,7 +46,6 @@ export default function FavoritesScreen() {
 
       <FlashList
         data={favorites}
-        estimatedItemSize={72}
         keyExtractor={(item) => item.id}
         renderItem={() => null}
         ListEmptyComponent={renderEmpty}
