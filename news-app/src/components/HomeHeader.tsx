@@ -8,8 +8,8 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 
-export const HEADER_EXPANDED_HEIGHT = 150;
-export const HEADER_MIN_HEIGHT = 60;
+export const HEADER_EXPANDED_HEIGHT = 120;
+export const HEADER_MIN_HEIGHT = 50;
 
 interface HomeHeaderProps {
   scrollY: SharedValue<number>;
@@ -23,7 +23,7 @@ export default function HomeHeader({ scrollY, unreadCount = 0 }: HomeHeaderProps
     const height = interpolate(
       scrollY.value,
       [0, 100],
-      [HEADER_EXPANDED_HEIGHT + insets.top, HEADER_MIN_HEIGHT + insets.top],
+      [HEADER_EXPANDED_HEIGHT, HEADER_MIN_HEIGHT],
       Extrapolate.CLAMP
     );
     return { height };
@@ -44,7 +44,7 @@ export default function HomeHeader({ scrollY, unreadCount = 0 }: HomeHeaderProps
 
   return (
     <Animated.View style={[styles.container, headerAnimatedStyle]}>
-      <View style={styles.topRow}>
+      <View style={[styles.topRow, { paddingTop: insets.top }]}>
         <View style={styles.left}>
           <Ionicons name="newspaper" size={28} color="white" />
           <Text style={styles.appName}>NewsApp</Text>
@@ -105,7 +105,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 8,
   },
   left: {
     flexDirection: 'row',
