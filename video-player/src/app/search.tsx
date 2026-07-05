@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
 import { colors, typography, spacing, borderRadius } from "../theme";
 import { Badge } from "../components/ui/Badge";
+import { ThumbnailImage } from "../hooks/useThumbnail";
 
 const RECENT_FILE = new File(Paths.document, "recent_searches.json");
 const MAX_RECENT = 10;
@@ -126,17 +127,11 @@ export default function SearchScreen() {
         }
         style={styles.resultItem}
       >
-        <View
-          style={[
-            styles.resultThumb,
-            {
-              backgroundColor: `hsl(${
-                (item.id.charCodeAt(0) * 50) % 360
-              }, 40%, 20%)`,
-            },
-          ]}
-        >
-          <Ionicons name="play" size={16} color={colors.text.primary} />
+        <View style={styles.resultThumb}>
+          <ThumbnailImage uri={item.uri} style={StyleSheet.absoluteFill} />
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Ionicons name="play" size={16} color={colors.text.primary} style={styles.playIcon} />
+          </View>
         </View>
         <View style={styles.resultBody}>
           <Text style={styles.resultTitle} numberOfLines={1}>
@@ -322,8 +317,14 @@ const styles = StyleSheet.create({
     width: 56,
     height: 40,
     borderRadius: borderRadius.sm,
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
+  },
+  playIcon: {
+    position: "absolute",
+    alignSelf: "center",
+    top: 12,
   },
   resultBody: { flex: 1, gap: spacing.xxs },
   resultTitle: {

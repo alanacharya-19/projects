@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, typography, spacing, borderRadius } from "../theme";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { ThumbnailImage } from "../hooks/useThumbnail";
 import { SCREEN_WIDTH } from "../constants/layout";
 
 const { width } = Dimensions.get("window");
@@ -83,16 +84,8 @@ export default function DetailsScreen() {
     <View style={styles.container}>
       {/* Poster */}
       <View style={[styles.posterContainer, { paddingTop: insets.top }]}>
-        <View
-          style={[
-            styles.poster,
-            {
-              backgroundColor: `hsl(${
-                (id ? id.charCodeAt(0) * 50 : 0) % 360
-              }, 40%, 20%)`,
-            },
-          ]}
-        >
+        <View style={styles.poster}>
+          {uri && <ThumbnailImage uri={uri} style={StyleSheet.absoluteFill} />}
           <View style={styles.posterOverlay} />
           <View style={styles.posterActions}>
             <Pressable onPress={() => router.back()} style={styles.posterBtn} hitSlop={8}>
@@ -178,6 +171,7 @@ const styles = StyleSheet.create({
     height: width * 0.6,
     maxHeight: 300,
     justifyContent: "space-between",
+    overflow: "hidden",
   },
   posterOverlay: {
     ...StyleSheet.absoluteFillObject,

@@ -22,6 +22,7 @@ import { colors, typography, spacing, borderRadius, shadows } from "../theme";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useIsLandscape } from "../hooks/useOrientation";
+import { ThumbnailImage } from "../hooks/useThumbnail";
 import { COLUMN_COUNT, CARD_WIDTH, CARD_HEIGHT, LIST_ITEM_HEIGHT } from "../constants/layout";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -286,16 +287,7 @@ export default function LibraryScreen() {
             ]}
           >
             <View style={styles.gridThumb}>
-              <View
-                style={[
-                  styles.gridThumbBg,
-                  {
-                    backgroundColor: `hsl(${
-                      (item.id.charCodeAt(0) * 50) % 360
-                    }, 40%, 20%)`,
-                  },
-                ]}
-              />
+              <ThumbnailImage uri={item.uri} style={styles.gridThumbBg} />
               <View style={styles.gridBadges}>
                 <Badge label={formatDuration(item.duration)} size="sm" />
               </View>
@@ -336,16 +328,8 @@ export default function LibraryScreen() {
           onLongPress={() => handleLongPress(item.id)}
           style={[styles.listItem, selected && styles.listItemSelected]}
         >
-          <View
-            style={[
-              styles.listThumb,
-              {
-                backgroundColor: `hsl(${
-                  (item.id.charCodeAt(0) * 50) % 360
-                }, 40%, 20%)`,
-              },
-            ]}
-          >
+          <View style={styles.listThumb}>
+            <ThumbnailImage uri={item.uri} style={StyleSheet.absoluteFill} />
             {selected && (
               <View style={styles.checkOverlay}>
                 <Ionicons name="checkmark-circle" size={22} color={colors.accent.primary} />

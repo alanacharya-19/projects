@@ -20,6 +20,7 @@ import { SectionHeader } from "../components/ui/SectionHeader";
 import { Badge } from "../components/ui/Badge";
 import { HeroSkeleton, SectionSkeleton } from "../components/ui/Skeleton";
 import { useIsLandscape } from "../hooks/useOrientation";
+import { ThumbnailImage } from "../hooks/useThumbnail";
 import { SCREEN_WIDTH, CARD_WIDTH, HERO_HEIGHT, IS_TABLET } from "../constants/layout";
 
 const { width } = Dimensions.get("window");
@@ -185,16 +186,7 @@ export default function HomeScreen() {
             ]}
           >
             <View style={styles.cardThumb}>
-              <View
-                style={[
-                  styles.cardThumbBg,
-                  {
-                    backgroundColor: `hsl(${
-                      (item.id.charCodeAt(0) * 50 + item.id.length * 30) % 360
-                    }, 40%, 20%)`,
-                  },
-                ]}
-              />
+              <ThumbnailImage uri={item.uri} style={styles.cardThumbBg} />
               <View style={styles.cardBadges}>
                 <Badge label={formatDuration(item.duration)} size="sm" />
                 {res && <Badge label={res.label} variant={res.variant} size="sm" />}
@@ -338,16 +330,8 @@ export default function HomeScreen() {
                 pressed && { transform: [{ scale: 0.98 }] },
               ]}
             >
-              <View
-                style={[
-                  styles.heroBg,
-                  {
-                    backgroundColor: `hsl(${
-                      (heroVideo.id.charCodeAt(0) * 50) % 360
-                    }, 40%, 15%)`,
-                  },
-                ]}
-              >
+              <View style={styles.heroBg}>
+                <ThumbnailImage uri={heroVideo.uri} style={StyleSheet.absoluteFill} />
                 <View style={styles.heroOverlay} />
                 <View style={styles.heroGradient} />
               </View>
