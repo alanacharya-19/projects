@@ -34,9 +34,9 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
               </View>
             )}
           </TouchableOpacity>
-          <View style={styles.avatar}>
+          <TouchableOpacity style={styles.avatar} onPress={() => router.push('/profile')}>
             <Ionicons name="person" size={20} color="white" />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
