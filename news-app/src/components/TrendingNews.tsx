@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -93,7 +94,12 @@ export default function TrendingNews() {
         onMomentumScrollEnd={handleScroll}
       >
         {TRENDING.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.card}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+          >
             <View style={[styles.imageLayer, { backgroundColor: item.gradient[0] }]}>
               <View style={styles.imageOverlay} />
               <View style={styles.cardContent}>
