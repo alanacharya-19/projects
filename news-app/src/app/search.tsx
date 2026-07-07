@@ -13,9 +13,9 @@ const MOCK_RESULTS = [
   { id: '6', title: 'New Study Reveals Benefits of Plant-Based Diet', source: 'Healthline', category: 'Health', time: '5h ago' },
 ];
 
-const TRENDING_TOPICS = ['Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'World', 'Business'];
+const TOPICS = ['Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'World', 'Business'];
 
-const RECENT_SEARCHES = [
+const RECENT = [
   { term: 'climate change', time: '2 days ago' },
   { term: 'AI technology', time: '5 days ago' },
   { term: 'stock market', time: '1 week ago' },
@@ -55,17 +55,17 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.topBar, { paddingTop: insets.top }]}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <View style={styles.searchRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="search" size={18} color="#ccc" />
+          <View style={styles.inputWrap}>
+            <Ionicons name="search" size={18} color="rgba(255,255,255,0.5)" />
             <TextInput
               style={styles.input}
               placeholder="Search news..."
-              placeholderTextColor="rgba(255,255,255,0.5)"
+              placeholderTextColor="rgba(255,255,255,0.45)"
               value={query}
               onChangeText={setQuery}
               autoFocus
@@ -73,7 +73,7 @@ export default function SearchScreen() {
             />
             {query.length > 0 && (
               <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-                <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.6)" />
+                <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
               </TouchableOpacity>
             )}
           </View>
@@ -82,16 +82,16 @@ export default function SearchScreen() {
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.body}
       >
         {query.trim() === '' ? (
           <>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Trending Topics</Text>
+              <Text style={styles.sectionTitle}>Explore Topics</Text>
               <View style={styles.chipsRow}>
-                {TRENDING_TOPICS.map((topic) => (
+                {TOPICS.map((topic) => (
                   <TouchableOpacity key={topic} style={styles.chip} onPress={() => setQuery(topic)}>
-                    <Ionicons name="trending-up" size={14} color="#c62828" />
                     <Text style={styles.chipText}>{topic}</Text>
                   </TouchableOpacity>
                 ))}
@@ -99,18 +99,29 @@ export default function SearchScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recent Searches</Text>
-              {RECENT_SEARCHES.map((item) => (
+              <View style={styles.recentHeader}>
+                <Text style={styles.sectionTitle}>Recent Searches</Text>
+                {RECENT.length > 0 && (
+                  <TouchableOpacity>
+                    <Text style={styles.clearText}>Clear</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {RECENT.map((item) => (
                 <TouchableOpacity key={item.term} style={styles.recentRow} onPress={() => setQuery(item.term)}>
-                  <Ionicons name="time-outline" size={18} color="#999" />
+                  <View style={styles.recentIcon}>
+                    <Ionicons name="time-outline" size={16} color="#999" />
+                  </View>
                   <Text style={styles.recentTerm}>{item.term}</Text>
                   <Text style={styles.recentTime}>{item.time}</Text>
+                  <Ionicons name="close" size={16} color="#ddd" />
                 </TouchableOpacity>
               ))}
             </View>
           </>
         ) : suggestions.length > 0 && results.length === 0 ? (
           <View style={styles.suggestionsWrap}>
+            <Text style={styles.suggestionHint}>Suggestions</Text>
             {suggestions.map((s) => (
               <TouchableOpacity key={s} style={styles.suggestionRow} onPress={() => setQuery(s)}>
                 <Ionicons name="search-outline" size={18} color="#999" />
@@ -120,23 +131,22 @@ export default function SearchScreen() {
           </View>
         ) : results.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="search-outline" size={40} color="#ccc" />
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="search-outline" size={36} color="#ccc" />
             </View>
-            <Text style={styles.emptyTitle}>No Results Found</Text>
+            <Text style={styles.emptyTitle}>No Results</Text>
             <Text style={styles.emptySub}>
-              {`No articles match "${query}". Try a different keyword or browse topics.`}
+              {`No articles match "${query}"`}
             </Text>
+            <Text style={styles.emptyHint}>Try a different keyword or browse topics</Text>
           </View>
         ) : (
           <View style={styles.resultsWrap}>
             <Text style={styles.resultCount}>{results.length} result{results.length > 1 ? 's' : ''}</Text>
             {results.map((item) => (
               <TouchableOpacity key={item.id} style={styles.card}>
-                <View style={styles.cardLeft}>
-                  <View style={styles.thumb}>
-                    <Ionicons name="newspaper-outline" size={24} color="#ddd" />
-                  </View>
+                <View style={styles.thumb}>
+                  <Ionicons name="newspaper-outline" size={24} color="#ddd" />
                 </View>
                 <View style={styles.cardRight}>
                   <View style={styles.meta}>
@@ -158,17 +168,19 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f2f5',
+    backgroundColor: '#f5f6f8',
   },
   topBar: {
     backgroundColor: '#c62828',
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 10,
+    gap: 12,
   },
   backBtn: {
     width: 36,
@@ -178,15 +190,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  inputWrapper: {
+  inputWrap: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 40,
-    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    gap: 10,
   },
   input: {
     flex: 1,
@@ -202,14 +214,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   section: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: 24,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1a1a2e',
-    marginBottom: 12,
+    marginBottom: 14,
+    letterSpacing: 0.2,
   },
   chipsRow: {
     flexDirection: 'row',
@@ -217,16 +230,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
     backgroundColor: 'white',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
   },
@@ -235,54 +245,82 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
+  recentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  clearText: {
+    fontSize: 13,
+    color: '#c62828',
+    fontWeight: '600',
+  },
   recentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
+    gap: 12,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    borderBottomColor: '#f0f0f0',
+  },
+  recentIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   recentTerm: {
     flex: 1,
     fontSize: 14,
     color: '#333',
+    fontWeight: '500',
   },
   recentTime: {
     fontSize: 12,
-    color: '#999',
+    color: '#ccc',
   },
   suggestionsWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  suggestionHint: {
+    fontSize: 12,
+    color: '#bbb',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   suggestionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
+    gap: 12,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    borderBottomColor: '#f0f0f0',
   },
   suggestionText: {
     fontSize: 14,
     color: '#555',
+    fontWeight: '500',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    gap: 8,
+    gap: 6,
   },
-  emptyIcon: {
+  emptyIconWrap: {
     width: 80,
     height: 80,
     borderRadius: 40,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptyTitle: {
     fontSize: 18,
@@ -290,40 +328,44 @@ const styles = StyleSheet.create({
     color: '#1a1a2e',
   },
   emptySub: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: 15,
+    color: '#333',
     textAlign: 'center',
-    lineHeight: 20,
+  },
+  emptyHint: {
+    fontSize: 13,
+    color: '#bbb',
+    textAlign: 'center',
+    marginTop: 4,
   },
   resultsWrap: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 20,
   },
   resultCount: {
     fontSize: 13,
     color: '#999',
-    marginBottom: 12,
+    fontWeight: '600',
+    marginBottom: 14,
+    marginLeft: 4,
   },
   card: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 3,
-    gap: 12,
-  },
-  cardLeft: {
-    justifyContent: 'center',
+    elevation: 2,
+    gap: 14,
   },
   thumb: {
-    width: 64,
-    height: 64,
-    borderRadius: 8,
+    width: 70,
+    height: 70,
+    borderRadius: 10,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
@@ -336,17 +378,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   category: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#c62828',
     textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   time: {
     fontSize: 11,
-    color: '#bbb',
+    color: '#ccc',
   },
   title: {
     fontSize: 14,
@@ -357,6 +400,7 @@ const styles = StyleSheet.create({
   },
   source: {
     fontSize: 12,
-    color: '#999',
+    color: '#bbb',
+    fontWeight: '500',
   },
 });

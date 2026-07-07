@@ -19,7 +19,9 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.topRow}>
         <View style={styles.left}>
-          <Ionicons name="newspaper" size={28} color="white" />
+          <View style={styles.logoCircle}>
+            <Ionicons name="newspaper" size={18} color="#c62828" />
+          </View>
           <Text style={styles.appName}>NewsApp</Text>
         </View>
         <View style={styles.right}>
@@ -42,7 +44,10 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
 
       <View style={styles.expandedSection}>
         <Text style={styles.greeting}>{greeting}</Text>
-        <Text style={styles.date}>{today}</Text>
+        <View style={styles.dateRow}>
+          <Ionicons name="calendar-outline" size={14} color="rgba(255,255,255,0.6)" />
+          <Text style={styles.date}>{today}</Text>
+        </View>
       </View>
     </View>
   );
@@ -66,68 +71,100 @@ function getFormattedDate(): string {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#c62828',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 8,
   },
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+  },
+  logoCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   appName: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
     color: 'white',
+    letterSpacing: 0.3,
   },
   right: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 18,
   },
   iconBtn: {
     position: 'relative',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -6,
-    backgroundColor: '#ff4444',
+    top: -2,
+    right: -2,
+    backgroundColor: '#ffd600',
     borderRadius: 8,
     minWidth: 16,
     height: 16,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#c62828',
   },
   badgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '700',
+    color: '#c62828',
+    fontSize: 9,
+    fontWeight: '800',
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#b71c1c',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   expandedSection: {
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingTop: 14,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
   },
   greeting: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '700',
     color: 'white',
-    marginBottom: 4,
+    letterSpacing: 0.2,
   },
   date: {
-    fontSize: 14,
-    color: '#a0a0b0',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.65)',
+    letterSpacing: 0.2,
   },
 });

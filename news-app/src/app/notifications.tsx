@@ -31,7 +31,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.topBar, { paddingTop: insets.top }]}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="white" />
@@ -45,50 +45,79 @@ export default function NotificationsScreen() {
             )}
           </View>
           {unreadCount > 0 && (
-            <TouchableOpacity onPress={markAllRead}>
+            <TouchableOpacity onPress={markAllRead} style={styles.markAllBtn}>
+              <Ionicons name="checkmark-done" size={16} color="rgba(255,255,255,0.8)" />
               <Text style={styles.markAll}>Mark All Read</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.body}
+      >
         {data.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="notifications-off-outline" size={40} color="#ccc" />
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="notifications-off-outline" size={36} color="#ccc" />
             </View>
             <Text style={styles.emptyTitle}>All Caught Up</Text>
-            <Text style={styles.emptySub}>No new notifications</Text>
+            <Text style={styles.emptySub}>No new notifications at this time</Text>
           </View>
         ) : (
-          data.map((item, index) => {
-            const isFirstUnread = !item.read && (index === 0 || data[index - 1]?.read);
-            return (
+          <>
+            {unreadCount > 0 && (
+              <Text style={styles.sectionLabel}>New</Text>
+            )}
+            {data.filter((n) => !n.read).map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={[styles.card, !item.read && styles.unreadCard]}
+                style={styles.unreadCard}
                 onPress={() => toggleRead(item.id)}
               >
-                {isFirstUnread && index > 0 && <View style={styles.separator} />}
                 <View style={styles.cardContent}>
-                  <View style={[styles.iconCircle, !item.read && styles.unreadIcon]}>
-                    <Ionicons name={item.icon} size={20} color={item.read ? '#999' : '#c62828'} />
+                  <View style={styles.iconWrap}>
+                    <Ionicons name={item.icon} size={20} color="#c62828" />
+                    <View style={styles.iconDot} />
                   </View>
                   <View style={styles.textBlock}>
                     <View style={styles.cardHeader}>
-                      <Text style={[styles.cardTitle, !item.read && styles.unreadText]}>
-                        {item.title}
-                      </Text>
-                      {!item.read && <View style={styles.dot} />}
+                      <Text style={styles.cardTitle}>{item.title}</Text>
                     </View>
                     <Text style={styles.cardBody} numberOfLines={2}>{item.body}</Text>
                     <Text style={styles.time}>{item.time}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
-            );
-          })
+            ))}
+
+            {data.some((n) => n.read) && (
+              <>
+                <Text style={[styles.sectionLabel, { marginTop: 24 }]}>Earlier</Text>
+                {data.filter((n) => n.read).map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.readCard}
+                    onPress={() => toggleRead(item.id)}
+                  >
+                    <View style={styles.cardContent}>
+                      <View style={[styles.iconWrap, styles.readIconWrap]}>
+                        <Ionicons name={item.icon} size={20} color="#bbb" />
+                      </View>
+                      <View style={styles.textBlock}>
+                        <View style={styles.cardHeader}>
+                          <Text style={[styles.cardTitle, styles.readTitle]}>{item.title}</Text>
+                        </View>
+                        <Text style={[styles.cardBody, { color: '#bbb' }]} numberOfLines={2}>{item.body}</Text>
+                        <Text style={[styles.time, { color: '#ddd' }]}>{item.time}</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -98,17 +127,19 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f2f5',
+    backgroundColor: '#f5f6f8',
   },
   topBar: {
     backgroundColor: '#c62828',
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 10,
+    gap: 12,
   },
   backBtn: {
     width: 36,
@@ -125,12 +156,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: 'white',
+    letterSpacing: 0.2,
   },
   countBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: '#ffd600',
     borderRadius: 10,
     minWidth: 22,
     height: 22,
@@ -139,18 +171,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   countText: {
-    color: 'white',
+    color: '#c62828',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+  },
+  markAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
   },
   markAll: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
     fontWeight: '600',
   },
   body: {
-    paddingVertical: 8,
+    padding: 20,
     flexGrow: 1,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    marginLeft: 4,
   },
   emptyState: {
     flex: 1,
@@ -158,14 +208,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  emptyIcon: {
+  emptyIconWrap: {
     width: 80,
     height: 80,
     borderRadius: 40,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptyTitle: {
     fontSize: 18,
@@ -174,67 +224,84 @@ const styles = StyleSheet.create({
   },
   emptySub: {
     fontSize: 14,
-    color: '#999',
-  },
-  card: {
-    backgroundColor: 'white',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    color: '#bbb',
   },
   unreadCard: {
-    backgroundColor: '#fff8f8',
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: '#c62828',
   },
-  separator: {
-    height: 1,
-    backgroundColor: '#e8e8e8',
-    marginBottom: 14,
+  readCard: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   cardContent: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+  iconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#fef0f0',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
-  unreadIcon: {
-    backgroundColor: '#fef0f0',
+  readIconWrap: {
+    backgroundColor: '#f5f5f5',
+  },
+  iconDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#c62828',
+    borderWidth: 1.5,
+    borderColor: 'white',
   },
   textBlock: {
     flex: 1,
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
     marginBottom: 4,
   },
   cardTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a2e',
-  },
-  unreadText: {
     fontWeight: '700',
+    color: '#1a1a2e',
+    lineHeight: 20,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#c62828',
+  readTitle: {
+    fontWeight: '500',
+    color: '#999',
   },
   cardBody: {
     fontSize: 13,
     color: '#666',
     lineHeight: 18,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   time: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#bbb',
+    fontWeight: '500',
   },
 });
