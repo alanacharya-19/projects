@@ -33,7 +33,7 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.replace('/')} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
           <View style={styles.titleRow}>
