@@ -26,7 +26,7 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
           <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/search')}>
             <Ionicons name="search" size={22} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/notifications')}>
             <Ionicons name="notifications-outline" size={22} color="white" />
             {unreadCount > 0 && (
               <View style={styles.badge}>
