@@ -44,7 +44,7 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.topSection, { paddingTop: insets.top + 16 }]}>
-          <TouchableOpacity onPress={() => router.replace('/')} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
 

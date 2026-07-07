@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useCallback } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const NOTIFICATIONS = [
-  { id: '1', title: 'Breaking: Major Climate Deal Signed', body: 'Global leaders reach historic agreement at the climate summit.', time: '5m ago', read: false, icon: 'globe' as const },
-  { id: '2', title: 'Tech Stock Surge', body: 'Tech stocks hit new records as AI sector continues to grow.', time: '1h ago', read: false, icon: 'trending-up' as const },
-  { id: '3', title: 'New Study Released', body: 'Research shows promising results in quantum computing applications.', time: '3h ago', read: false, icon: 'flask' as const },
-  { id: '4', title: 'Sports Update', body: 'Local team advances to championship finals after overtime win.', time: '6h ago', read: true, icon: 'football' as const },
-  { id: '5', title: 'Weather Alert', body: 'Heavy rainfall expected in your area this weekend.', time: '8h ago', read: true, icon: 'rainy' as const },
-  { id: '6', title: 'Market Report', body: 'Markets close higher amid positive economic data.', time: '12h ago', read: true, icon: 'bar-chart' as const },
-  { id: '7', title: 'Election Updates', body: 'New polling data shows shifting voter preferences.', time: '1d ago', read: true, icon: 'megaphone' as const },
-  { id: '8', title: 'Health Advisory', body: 'New health guidelines released by national authorities.', time: '2d ago', read: true, icon: 'medkit' as const },
+  { id: '1', title: 'Breaking: Major Climate Deal Signed', body: 'Global leaders reach historic agreement at the climate summit.', time: '5m ago', read: false, icon: 'globe' as const, articleId: '4' },
+  { id: '2', title: 'Tech Stock Surge', body: 'Tech stocks hit new records as AI sector continues to grow.', time: '1h ago', read: false, icon: 'trending-up' as const, articleId: '1' },
+  { id: '3', title: 'New Study Released', body: 'Research shows promising results in quantum computing applications.', time: '3h ago', read: false, icon: 'flask' as const, articleId: '6' },
+  { id: '4', title: 'Sports Update', body: 'Local team advances to championship finals after overtime win.', time: '6h ago', read: true, icon: 'football' as const, articleId: '5' },
+  { id: '5', title: 'Weather Alert', body: 'Heavy rainfall expected in your area this weekend.', time: '8h ago', read: true, icon: 'rainy' as const, articleId: undefined },
+  { id: '6', title: 'Market Report', body: 'Markets close higher amid positive economic data.', time: '12h ago', read: true, icon: 'bar-chart' as const, articleId: '7' },
+  { id: '7', title: 'Election Updates', body: 'New polling data shows shifting voter preferences.', time: '1d ago', read: true, icon: 'megaphone' as const, articleId: '11' },
+  { id: '8', title: 'Health Advisory', body: 'New health guidelines released by national authorities.', time: '2d ago', read: true, icon: 'medkit' as const, articleId: '3' },
 ];
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const [data, setData] = useState(NOTIFICATIONS);
+  const [refreshing, setRefreshing] = useState(false);
 
   const unreadCount = data.filter((n) => !n.read).length;
 
@@ -29,11 +30,23 @@ export default function NotificationsScreen() {
     setData((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)));
   };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1200);
+  }, []);
+
+  const handlePress = (item: typeof NOTIFICATIONS[number]) => {
+    toggleRead(item.id);
+    if (item.articleId) {
+      router.push({ pathname: '/article/[id]', params: { id: item.articleId } });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={() => router.replace('/')} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
           <View style={styles.titleRow}>
@@ -56,6 +69,14 @@ export default function NotificationsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.body}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#c62828"
+            colors={['#c62828']}
+          />
+        }
       >
         {data.length === 0 ? (
           <View style={styles.emptyState}>
@@ -74,7 +95,7 @@ export default function NotificationsScreen() {
               <TouchableOpacity
                 key={item.id}
                 style={styles.unreadCard}
-                onPress={() => toggleRead(item.id)}
+                onPress={() => handlePress(item)}
               >
                 <View style={styles.cardContent}>
                   <View style={styles.iconWrap}>
@@ -99,7 +120,7 @@ export default function NotificationsScreen() {
                   <TouchableOpacity
                     key={item.id}
                     style={styles.readCard}
-                    onPress={() => toggleRead(item.id)}
+                    onPress={() => handlePress(item)}
                   >
                     <View style={styles.cardContent}>
                       <View style={[styles.iconWrap, styles.readIconWrap]}>

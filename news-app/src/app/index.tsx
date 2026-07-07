@@ -1,24 +1,33 @@
-import { Text, View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
 import TrendingNews from '../components/TrendingNews';
-
-const ARTICLES = [
-  { id: '1', title: 'Global Markets Rally as Tech Sector Posts Record Earnings', source: 'Reuters', category: 'Finance', time: '2h ago', reads: '1.2k' },
-  { id: '2', title: 'Revolutionary Battery Technology Could Double EV Range', source: 'TechCrunch', category: 'Technology', time: '4h ago', reads: '3.4k' },
-  { id: '3', title: 'Health Officials Announce Breakthrough in Cancer Research', source: 'BBC News', category: 'Health', time: '5h ago', reads: '2.8k' },
-  { id: '4', title: 'New Climate Policy Framework Gains International Support', source: 'The Guardian', category: 'Politics', time: '7h ago', reads: '956' },
-  { id: '5', title: 'Professional Soccer League Announces Expansion to 32 Teams', source: 'ESPN', category: 'Sports', time: '8h ago', reads: '4.1k' },
-  { id: '6', title: 'Quantum Computing Milestone Achieved by Research Team', source: 'Nature', category: 'Science', time: '10h ago', reads: '2.2k' },
-  { id: '7', title: 'Housing Market Shows Signs of Recovery After Rate Cuts', source: 'Bloomberg', category: 'Finance', time: '12h ago', reads: '1.8k' },
-  { id: '8', title: 'Streaming Platform Announces Major Original Content Slate', source: 'Variety', category: 'Entertainment', time: '14h ago', reads: '5.6k' },
-  { id: '9', title: 'NASA Reveals Plans for Permanent Lunar Base by 2035', source: 'Space News', category: 'Science', time: '16h ago', reads: '7.2k' },
-  { id: '10', title: 'New AI Tool Could Revolutionize Medical Diagnostics', source: 'Wired', category: 'Technology', time: '18h ago', reads: '3.9k' },
-  { id: '11', title: 'Global Trade Agreement Reached After Months of Negotiations', source: 'Reuters', category: 'Politics', time: '20h ago', reads: '1.5k' },
-  { id: '12', title: 'Electric Vehicle Sales Surge Past 50% Market Share', source: 'Bloomberg', category: 'Finance', time: '22h ago', reads: '2.6k' },
-];
+import { ArticleSkeleton } from '../components/Skeleton';
+import { ARTICLES, CATEGORIES } from '../data/articles';
+import { useBookmarks } from '../context/BookmarkContext';
 
 export default function Index() {
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const { toggleBookmark, isBookmarked } = useBookmarks();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const filtered = selectedCategory === 'All'
+    ? ARTICLES
+    : ARTICLES.filter((a) => a.category === selectedCategory);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1200);
+  }, []);
+
   return (
     <View style={styles.container}>
       <HomeHeader unreadCount={3} />
@@ -26,43 +35,90 @@ export default function Index() {
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#c62828"
+            colors={['#c62828']}
+          />
+        }
       >
         <TrendingNews />
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>Latest News</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <View style={styles.list}>
-          {ARTICLES.map((item, i) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.card, i === ARTICLES.length - 1 && { marginBottom: 0 }]}
+        {loading ? (
+          <View style={styles.list}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <ArticleSkeleton key={i} />
+            ))}
+          </View>
+        ) : (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsContainer}
             >
-              <View style={styles.cardTop}>
-                <View style={styles.metaRow}>
-                  <View style={styles.categoryPill}>
-                    <Text style={styles.categoryText}>{item.category}</Text>
-                  </View>
-                  <Text style={styles.timeText}>{item.time}</Text>
-                </View>
-                <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                <Text style={styles.sourceText}>{item.source}</Text>
-              </View>
-              <View style={styles.cardBottom}>
-                <View style={styles.statRow}>
-                  <Ionicons name="eye-outline" size={13} color="#bbb" />
-                  <Text style={styles.statText}>{item.reads}</Text>
-                </View>
-                <TouchableOpacity style={styles.bookmarkBtn}>
-                  <Ionicons name="bookmark-outline" size={18} color="#bbb" />
+              {CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.chip, selectedCategory === cat && styles.chipActive]}
+                  onPress={() => setSelectedCategory(cat)}
+                >
+                  <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive]}>
+                    {cat}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Latest News</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.list}>
+              {filtered.map((item, i) => {
+                const bookmarked = isBookmarked(item.id);
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.card, i === filtered.length - 1 && { marginBottom: 0 }]}
+                    onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+                  >
+                    <View style={styles.cardTop}>
+                      <View style={styles.metaRow}>
+                        <View style={styles.categoryPill}>
+                          <Text style={styles.categoryText}>{item.category}</Text>
+                        </View>
+                        <Text style={styles.timeText}>{item.time}</Text>
+                      </View>
+                      <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                      <Text style={styles.sourceText}>{item.source}</Text>
+                    </View>
+                    <View style={styles.cardBottom}>
+                      <View style={styles.statRow}>
+                        <Ionicons name="eye-outline" size={13} color="#bbb" />
+                        <Text style={styles.statText}>{item.reads}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.bookmarkBtn}
+                        onPress={() => toggleBookmark(item.id)}
+                      >
+                        <Ionicons
+                          name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                          size={18}
+                          color={bookmarked ? '#c62828' : '#bbb'}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -72,6 +128,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f6f8',
+  },
+  chipsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: 'white',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chipActive: {
+    backgroundColor: '#c62828',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+  },
+  chipTextActive: {
+    color: 'white',
   },
   divider: {
     flexDirection: 'row',
