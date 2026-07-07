@@ -1,5 +1,9 @@
-import { Text, View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = SCREEN_WIDTH;
 
 const TRENDING = [
   {
@@ -41,6 +45,18 @@ const TRENDING = [
 ];
 
 export default function TrendingNews() {
+  const scrollRef = useRef<ScrollView>(null);
+  const indexRef = useRef(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      indexRef.current = (indexRef.current + 1) % TRENDING.length;
+      const offset = indexRef.current * CARD_WIDTH;
+      scrollRef.current?.scrollTo({ x: offset, animated: true });
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
@@ -53,9 +69,12 @@ export default function TrendingNews() {
         </TouchableOpacity>
       </View>
       <ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        snapToInterval={CARD_WIDTH}
+        decelerationRate="fast"
       >
         {TRENDING.map((item) => (
           <TouchableOpacity key={item.id} style={styles.card}>
@@ -103,13 +122,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   scrollContent: {
-    gap: 12,
-    paddingRight: 16,
   },
   card: {
-    width: 220,
+    width: CARD_WIDTH,
     backgroundColor: 'white',
-    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

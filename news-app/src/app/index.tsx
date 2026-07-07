@@ -1,26 +1,13 @@
-import { Text, View, StyleSheet } from 'react-native';
-import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import HomeHeader, { HEADER_EXPANDED_HEIGHT } from '../components/HomeHeader';
+import { Text, View, ScrollView, StyleSheet } from 'react-native';
+import HomeHeader from '../components/HomeHeader';
 import TrendingNews from '../components/TrendingNews';
 
 export default function Index() {
-  const scrollY = useSharedValue(0);
-  const insets = useSafeAreaInsets();
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
-
   return (
     <View style={styles.container}>
-      <Animated.ScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
+      <HomeHeader unreadCount={3} />
+      <ScrollView
         contentContainerStyle={{
-          paddingTop: HEADER_EXPANDED_HEIGHT + insets.top,
           paddingBottom: 32,
         }}
       >
@@ -39,8 +26,7 @@ export default function Index() {
             </View>
           ))}
         </View>
-      </Animated.ScrollView>
-      <HomeHeader scrollY={scrollY} unreadCount={3} />
+      </ScrollView>
     </View>
   );
 }

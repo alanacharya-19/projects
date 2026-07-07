@@ -1,50 +1,22 @@
 import { Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useAnimatedStyle,
-  interpolate,
-  Extrapolate,
-  SharedValue,
-} from 'react-native-reanimated';
 
-export const HEADER_EXPANDED_HEIGHT = 120;
-export const HEADER_MIN_HEIGHT = 50;
+export const HEADER_HEIGHT = 120;
 
 interface HomeHeaderProps {
-  scrollY: SharedValue<number>;
   unreadCount?: number;
 }
 
-export default function HomeHeader({ scrollY, unreadCount = 0 }: HomeHeaderProps) {
+export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
   const insets = useSafeAreaInsets();
-
-  const headerAnimatedStyle = useAnimatedStyle(() => {
-    const height = interpolate(
-      scrollY.value,
-      [0, 100],
-      [HEADER_EXPANDED_HEIGHT, HEADER_MIN_HEIGHT],
-      Extrapolate.CLAMP
-    );
-    return { height };
-  });
-
-  const expandedContentStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      scrollY.value,
-      [0, 80],
-      [1, 0],
-      Extrapolate.CLAMP
-    );
-    return { opacity };
-  });
 
   const greeting = getGreeting();
   const today = getFormattedDate();
 
   return (
-    <Animated.View style={[styles.container, headerAnimatedStyle]}>
-      <View style={[styles.topRow, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.topRow}>
         <View style={styles.left}>
           <Ionicons name="newspaper" size={28} color="white" />
           <Text style={styles.appName}>NewsApp</Text>
@@ -67,11 +39,11 @@ export default function HomeHeader({ scrollY, unreadCount = 0 }: HomeHeaderProps
         </View>
       </View>
 
-      <Animated.View style={[styles.expandedSection, expandedContentStyle]}>
+      <View style={styles.expandedSection}>
         <Text style={styles.greeting}>{greeting}</Text>
         <Text style={styles.date}>{today}</Text>
-      </Animated.View>
-    </Animated.View>
+      </View>
+    </View>
   );
 }
 
@@ -92,14 +64,8 @@ function getFormattedDate(): string {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     backgroundColor: '#c62828',
-    zIndex: 100,
     paddingHorizontal: 16,
-    overflow: 'hidden',
   },
   topRow: {
     flexDirection: 'row',
