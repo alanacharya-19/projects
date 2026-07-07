@@ -1,5 +1,6 @@
 import { Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export const HEADER_HEIGHT = 120;
@@ -22,7 +23,7 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
           <Text style={styles.appName}>NewsApp</Text>
         </View>
         <View style={styles.right}>
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/search')}>
             <Ionicons name="search" size={22} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn}>

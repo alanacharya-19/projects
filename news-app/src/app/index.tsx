@@ -7,6 +7,7 @@ export default function Index() {
     <View style={styles.container}>
       <HomeHeader unreadCount={3} />
       <ScrollView
+        style={{ flex: 1 }}
         contentContainerStyle={{
           paddingBottom: 32,
         }}
