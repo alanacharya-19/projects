@@ -32,21 +32,46 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const indexRef = useRef(0);
+  const isTransitioning = useRef(false);
+
+  const displayArticles = articles.length > 0
+    ? [...articles, articles[0]]
+    : [];
 
   useEffect(() => {
     if (articles.length === 0) return;
     const interval = setInterval(() => {
-      const next = (indexRef.current + 1) % articles.length;
-      indexRef.current = next;
-      setActiveIndex(next);
-      scrollRef.current?.scrollTo({ x: next * CARD_WIDTH, animated: true });
+      if (isTransitioning.current) return;
+      const next = indexRef.current + 1;
+
+      if (next >= articles.length) {
+        isTransitioning.current = true;
+        scrollRef.current?.scrollTo({ x: next * CARD_WIDTH, animated: true });
+        setTimeout(() => {
+          indexRef.current = 0;
+          setActiveIndex(0);
+          scrollRef.current?.scrollTo({ x: 0, animated: false });
+          isTransitioning.current = false;
+        }, 350);
+      } else {
+        indexRef.current = next;
+        setActiveIndex(next);
+        scrollRef.current?.scrollTo({ x: next * CARD_WIDTH, animated: true });
+      }
     }, 3500);
     return () => clearInterval(interval);
   }, [articles.length]);
 
-  const handleScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
+  const handleScrollEnd = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
-    if (idx !== activeIndex) setActiveIndex(idx);
+    if (idx >= articles.length) {
+      setActiveIndex(0);
+      indexRef.current = 0;
+      scrollRef.current?.scrollTo({ x: 0, animated: false });
+    } else {
+      setActiveIndex(idx);
+      indexRef.current = idx;
+    }
   };
 
   if (articles.length === 0) return null;
@@ -71,13 +96,13 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH}
         decelerationRate="fast"
-        onMomentumScrollEnd={handleScroll}
+        onMomentumScrollEnd={handleScrollEnd}
       >
-        {articles.map((item) => {
+        {displayArticles.map((item, i) => {
           const [color1, color2] = getGradient(item.category);
           return (
             <TouchableOpacity
-              key={item.id}
+              key={`${item.id}-${i}`}
               style={styles.card}
               activeOpacity={0.9}
               onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
