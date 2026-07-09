@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Text, View, TextInput, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { Text, View, TextInput, ScrollView, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -131,9 +131,13 @@ export default function SearchScreen() {
                 style={styles.card}
                 onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
               >
-                <View style={styles.thumb}>
-                  <Ionicons name="newspaper-outline" size={24} color="#ddd" />
-                </View>
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={styles.thumbImage} />
+                ) : (
+                  <View style={styles.thumb}>
+                    <Ionicons name="newspaper-outline" size={24} color="#ddd" />
+                  </View>
+                )}
                 <View style={styles.cardRight}>
                   <View style={styles.meta}>
                     <Text style={styles.category}>{item.category}</Text>
@@ -341,6 +345,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  thumbImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    backgroundColor: '#f5f5f5',
   },
   cardRight: {
     flex: 1,

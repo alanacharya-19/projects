@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { Article } from '../data/articles';
@@ -82,19 +82,35 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
               activeOpacity={0.9}
               onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
             >
-              <View style={[styles.imageLayer, { backgroundColor: color1 }]}>
-                <View style={styles.imageOverlay} />
-                <View style={styles.cardContent}>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryText}>{item.category}</Text>
+              {item.image ? (
+                <ImageBackground source={{ uri: item.image }} style={styles.imageLayer} resizeMode="cover">
+                  <View style={styles.imageOverlay} />
+                  <View style={styles.cardContent}>
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryText}>{item.category}</Text>
+                    </View>
+                    <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                    <View style={styles.sourceRow}>
+                      <Ionicons name="globe-outline" size={12} color="rgba(255,255,255,0.6)" />
+                      <Text style={styles.source}>{item.source}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                  <View style={styles.sourceRow}>
-                    <Ionicons name="globe-outline" size={12} color="rgba(255,255,255,0.6)" />
-                    <Text style={styles.source}>{item.source}</Text>
+                </ImageBackground>
+              ) : (
+                <View style={[styles.imageLayer, { backgroundColor: color1 }]}>
+                  <View style={styles.imageOverlay} />
+                  <View style={styles.cardContent}>
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryText}>{item.category}</Text>
+                    </View>
+                    <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                    <View style={styles.sourceRow}>
+                      <Ionicons name="globe-outline" size={12} color="rgba(255,255,255,0.6)" />
+                      <Text style={styles.source}>{item.source}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              )}
             </TouchableOpacity>
           );
         })}

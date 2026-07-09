@@ -1,4 +1,4 @@
-import { Text, View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -71,10 +71,14 @@ export default function ArticleDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.imagePlaceholder}>
-          <Ionicons name="image-outline" size={40} color="#ddd" />
-          <Text style={styles.imageLabel}>Lead Image</Text>
-        </View>
+        {article.image ? (
+          <Image source={{ uri: article.image }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="image-outline" size={40} color="#ddd" />
+            <Text style={styles.imageLabel}>Lead Image</Text>
+          </View>
+        )}
 
         <View style={styles.contentBlock}>
           {article.body.split('\n\n').map((paragraph, i) => (
@@ -192,6 +196,13 @@ const styles = StyleSheet.create({
     width: 1,
     height: 32,
     backgroundColor: '#f0f0f0',
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 14,
+    marginBottom: 20,
+    backgroundColor: '#eee',
   },
   imagePlaceholder: {
     height: 200,

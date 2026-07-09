@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Image, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
@@ -109,31 +109,38 @@ export default function Index() {
                       style={[styles.card, i === articles.length - 1 && { marginBottom: 0 }]}
                       onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
                     >
-                      <View style={styles.cardTop}>
-                        <View style={styles.metaRow}>
-                          <View style={styles.categoryPill}>
-                            <Text style={styles.categoryText}>{item.category}</Text>
+                      <View style={styles.cardRow}>
+                        {item.image && (
+                          <Image source={{ uri: item.image }} style={styles.cardImage} />
+                        )}
+                        <View style={styles.cardContent}>
+                          <View style={styles.cardTop}>
+                            <View style={styles.metaRow}>
+                              <View style={styles.categoryPill}>
+                                <Text style={styles.categoryText}>{item.category}</Text>
+                              </View>
+                              <Text style={styles.timeText}>{item.time}</Text>
+                            </View>
+                            <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                            <Text style={styles.sourceText}>{item.source}</Text>
                           </View>
-                          <Text style={styles.timeText}>{item.time}</Text>
+                          <View style={styles.cardBottom}>
+                            <View style={styles.statRow}>
+                              <Ionicons name="eye-outline" size={13} color="#bbb" />
+                              <Text style={styles.statText}>{item.reads}</Text>
+                            </View>
+                            <TouchableOpacity
+                              style={styles.bookmarkBtn}
+                              onPress={() => toggleBookmark(item.id)}
+                            >
+                              <Ionicons
+                                name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                                size={18}
+                                color={bookmarked ? '#c62828' : '#bbb'}
+                              />
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                        <Text style={styles.sourceText}>{item.source}</Text>
-                      </View>
-                      <View style={styles.cardBottom}>
-                        <View style={styles.statRow}>
-                          <Ionicons name="eye-outline" size={13} color="#bbb" />
-                          <Text style={styles.statText}>{item.reads}</Text>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.bookmarkBtn}
-                          onPress={() => toggleBookmark(item.id)}
-                        >
-                          <Ionicons
-                            name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-                            size={18}
-                            color={bookmarked ? '#c62828' : '#bbb'}
-                          />
-                        </TouchableOpacity>
                       </View>
                     </TouchableOpacity>
                   );
@@ -212,6 +219,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 3,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  cardImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
+  },
+  cardContent: {
+    flex: 1,
   },
   cardTop: {
     gap: 8,
