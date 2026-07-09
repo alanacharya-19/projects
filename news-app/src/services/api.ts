@@ -2,22 +2,26 @@ import Constants from 'expo-constants';
 import { ARTICLES, type Article } from '../data/articles';
 
 const API_KEY = Constants.expoConfig?.extra?.newsApiKey as string | undefined;
-const BASE_URL = 'https://gnews.io/api/v4';
+const BASE_URL = 'https://content.guardianapis.com';
 
-const CATEGORY_MAP: Record<string, string> = {
-  Technology: 'tech',
-  Politics: 'nation',
-  Sports: 'sports',
+const CATEGORY_SECTIONS: Record<string, string> = {
+  Technology: 'technology',
+  Politics: 'politics',
+  Sports: 'sport',
   Finance: 'business',
   Science: 'science',
   Health: 'health',
-  Entertainment: 'entertainment',
+  Entertainment: 'culture',
   World: 'world',
 };
 
-function getTopic(category?: string): string | undefined {
+function getSection(category?: string): string | undefined {
   if (!category || category === 'All') return undefined;
-  return CATEGORY_MAP[category];
+  return CATEGORY_SECTIONS[category];
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function relativeTime(dateStr: string): string {
@@ -31,26 +35,31 @@ function relativeTime(dateStr: string): string {
   return `${Math.floor(days / 7)}w ago`;
 }
 
-function idFromUrl(url: string): string {
+function idFromStr(str: string): string {
   let hash = 0;
-  for (let i = 0; i < url.length; i++) {
-    const char = url.charCodeAt(i);
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash;
   }
   return Math.abs(hash).toString(36);
 }
 
-function mapArticle(a: any, category?: string): Article {
+function mapGuardianArticle(item: any, category?: string): Article {
+  const bodyHtml = item.fields?.body || '';
+  const trailHtml = item.fields?.trailText || '';
+  const body = stripHtml(bodyHtml || trailHtml) || `${item.webTitle} — Read more on The Guardian.`;
+  const sectionName = item.sectionName || category || 'General';
+
   return {
-    id: idFromUrl(a.url),
-    title: a.title,
-    source: a.source?.name || 'Unknown',
-    category: category || 'General',
-    time: relativeTime(a.publishedAt),
+    id: idFromStr(item.id || item.webUrl),
+    title: item.webTitle,
+    source: 'The Guardian',
+    category: sectionName,
+    time: relativeTime(item.webPublicationDate),
     reads: `${Math.floor(Math.random() * 8 + 1)}k`,
-    image: a.image || undefined,
-    body: a.content || a.description || '',
+    image: item.fields?.thumbnail || undefined,
+    body,
   };
 }
 
@@ -59,26 +68,31 @@ function getMockArticles(category?: string): Article[] {
   return ARTICLES.filter((a) => a.category === category);
 }
 
+async function fetchGuardian(path: string): Promise<any> {
+  if (!API_KEY) throw new Error('No API key');
+  const separator = path.includes('?') ? '&' : '?';
+  const res = await fetch(`${BASE_URL}${path}${separator}api-key=${API_KEY}`);
+  if (!res.ok) throw new Error(`Guardian API error: ${res.status}`);
+  const json = await res.json();
+  if (json.response?.status !== 'ok') throw new Error('Guardian API error');
+  return json.response;
+}
+
 export async function fetchTopHeadlines(category?: string): Promise<Article[]> {
   if (!API_KEY) return getMockArticles(category);
 
-  const topic = getTopic(category);
+  const section = getSection(category);
   const params = new URLSearchParams({
-    token: API_KEY,
-    lang: 'en',
-    country: 'us',
-    max: '20',
+    'show-fields': 'thumbnail,body,trailText',
+    'page-size': '20',
+    'order-by': 'newest',
   });
-  if (topic) params.set('topic', topic);
-
-  const url = `${BASE_URL}/top-headlines?${params}`;
+  if (section) params.set('section', section);
 
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const json = await res.json();
-    if (!json.articles?.length) throw new Error('No articles');
-    return json.articles.map((a: any) => mapArticle(a, category));
+    const res = await fetchGuardian(`/search?${params}`);
+    if (!res.results?.length) throw new Error('No articles');
+    return res.results.map((a: any) => mapGuardianArticle(a, category));
   } catch (e) {
     console.warn('Failed to fetch news, using fallback data:', e);
     return getMockArticles(category);
@@ -89,18 +103,16 @@ export async function searchArticles(query: string): Promise<Article[]> {
   if (!API_KEY || !query.trim()) return getMockArticles();
 
   const params = new URLSearchParams({
-    token: API_KEY,
     q: query,
-    lang: 'en',
-    max: '20',
+    'show-fields': 'thumbnail,body,trailText',
+    'page-size': '20',
+    'order-by': 'relevance',
   });
 
   try {
-    const res = await fetch(`${BASE_URL}/search?${params}`);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const json = await res.json();
-    if (!json.articles?.length) return [];
-    return json.articles.map((a: any) => mapArticle(a, 'General'));
+    const res = await fetchGuardian(`/search?${params}`);
+    if (!res.results?.length) return [];
+    return res.results.map((a: any) => mapGuardianArticle(a));
   } catch (e) {
     console.warn('Search failed, using fallback:', e);
     return getMockArticles().filter(
