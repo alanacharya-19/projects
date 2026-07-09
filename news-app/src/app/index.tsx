@@ -5,28 +5,47 @@ import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
 import TrendingNews from '../components/TrendingNews';
 import { ArticleSkeleton } from '../components/Skeleton';
-import { ARTICLES, CATEGORIES } from '../data/articles';
+import { fetchTopHeadlines } from '../services/api';
+import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
 
 export default function Index() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
+  const loadArticles = useCallback(async (category?: string) => {
+    const data = await fetchTopHeadlines(category);
+    setArticles(data);
+  }, []);
+
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    loadArticles();
+  }, [loadArticles]);
 
-  const filtered = selectedCategory === 'All'
-    ? ARTICLES
-    : ARTICLES.filter((a) => a.category === selectedCategory);
+  useEffect(() => {
+    if (!loading && articles.length > 0) return;
+    if (articles.length > 0) setLoading(false);
+    else {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [articles, loading]);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
-  }, []);
+    await loadArticles(selectedCategory === 'All' ? undefined : selectedCategory);
+    setRefreshing(false);
+  }, [loadArticles, selectedCategory]);
+
+  const onCategoryChange = useCallback(async (cat: string) => {
+    setSelectedCategory(cat);
+    setLoading(true);
+    await loadArticles(cat === 'All' ? undefined : cat);
+    setLoading(false);
+  }, [loadArticles]);
 
   return (
     <View style={styles.container}>
@@ -44,9 +63,7 @@ export default function Index() {
           />
         }
       >
-        <TrendingNews />
-
-        {loading ? (
+        {loading && articles.length === 0 ? (
           <View style={styles.list}>
             {Array.from({ length: 4 }).map((_, i) => (
               <ArticleSkeleton key={i} />
@@ -54,6 +71,8 @@ export default function Index() {
           </View>
         ) : (
           <>
+            <TrendingNews articles={articles.slice(0, 6)} />
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -63,7 +82,7 @@ export default function Index() {
                 <TouchableOpacity
                   key={cat}
                   style={[styles.chip, selectedCategory === cat && styles.chipActive]}
-                  onPress={() => setSelectedCategory(cat)}
+                  onPress={() => onCategoryChange(cat)}
                 >
                   <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive]}>
                     {cat}
@@ -79,43 +98,47 @@ export default function Index() {
             </View>
 
             <View style={styles.list}>
-              {filtered.map((item, i) => {
-                const bookmarked = isBookmarked(item.id);
-                return (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[styles.card, i === filtered.length - 1 && { marginBottom: 0 }]}
-                    onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
-                  >
-                    <View style={styles.cardTop}>
-                      <View style={styles.metaRow}>
-                        <View style={styles.categoryPill}>
-                          <Text style={styles.categoryText}>{item.category}</Text>
+              {articles.length === 0 ? (
+                <Text style={styles.emptyText}>No articles found. Pull down to refresh.</Text>
+              ) : (
+                articles.map((item, i) => {
+                  const bookmarked = isBookmarked(item.id);
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.card, i === articles.length - 1 && { marginBottom: 0 }]}
+                      onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+                    >
+                      <View style={styles.cardTop}>
+                        <View style={styles.metaRow}>
+                          <View style={styles.categoryPill}>
+                            <Text style={styles.categoryText}>{item.category}</Text>
+                          </View>
+                          <Text style={styles.timeText}>{item.time}</Text>
                         </View>
-                        <Text style={styles.timeText}>{item.time}</Text>
+                        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.sourceText}>{item.source}</Text>
                       </View>
-                      <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                      <Text style={styles.sourceText}>{item.source}</Text>
-                    </View>
-                    <View style={styles.cardBottom}>
-                      <View style={styles.statRow}>
-                        <Ionicons name="eye-outline" size={13} color="#bbb" />
-                        <Text style={styles.statText}>{item.reads}</Text>
+                      <View style={styles.cardBottom}>
+                        <View style={styles.statRow}>
+                          <Ionicons name="eye-outline" size={13} color="#bbb" />
+                          <Text style={styles.statText}>{item.reads}</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.bookmarkBtn}
+                          onPress={() => toggleBookmark(item.id)}
+                        >
+                          <Ionicons
+                            name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                            size={18}
+                            color={bookmarked ? '#c62828' : '#bbb'}
+                          />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity
-                        style={styles.bookmarkBtn}
-                        onPress={() => toggleBookmark(item.id)}
-                      >
-                        <Ionicons
-                          name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-                          size={18}
-                          color={bookmarked ? '#c62828' : '#bbb'}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </View>
           </>
         )}
@@ -243,6 +266,12 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 12,
     color: '#bbb',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 14,
+    marginTop: 40,
   },
   bookmarkBtn: {
     width: 32,

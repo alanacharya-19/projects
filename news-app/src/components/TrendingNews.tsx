@@ -2,74 +2,54 @@ import { useRef, useEffect, useState } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import type { Article } from '../data/articles';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH;
 
-const TRENDING = [
-  {
-    id: '1',
-    title: 'Global Summit on Climate Change Reaches Historic Agreement',
-    source: 'BBC News',
-    category: 'Politics',
-    gradient: ['#c62828', '#e53935'],
-  },
-  {
-    id: '2',
-    title: 'Tech Giant Announces Revolutionary AI Assistant',
-    source: 'TechCrunch',
-    category: 'Technology',
-    gradient: ['#1565c0', '#1e88e5'],
-  },
-  {
-    id: '3',
-    title: 'Stock Markets Hit All-Time High Amid Economic Recovery',
-    source: 'Reuters',
-    category: 'Finance',
-    gradient: ['#2e7d32', '#43a047'],
-  },
-  {
-    id: '4',
-    title: 'Breakthrough in Quantum Computing Announced',
-    source: 'Nature',
-    category: 'Science',
-    gradient: ['#6a1b9a', '#8e24aa'],
-  },
-  {
-    id: '5',
-    title: 'Major Sports League Announces Expansion Teams',
-    source: 'ESPN',
-    category: 'Sports',
-    gradient: ['#e65100', '#ef6c00'],
-  },
-  {
-    id: '6',
-    title: "New Study Reveals Benefits of Plant-Based Diet",
-    source: 'Healthline',
-    category: 'Health',
-    gradient: ['#00695c', '#00897b'],
-  },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  Politics: '#c62828',
+  Technology: '#1565c0',
+  Finance: '#2e7d32',
+  Science: '#6a1b9a',
+  Sports: '#e65100',
+  Health: '#00695c',
+  Entertainment: '#e91e63',
+  World: '#00838f',
+  General: '#37474f',
+};
 
-export default function TrendingNews() {
+function getGradient(category: string): [string, string] {
+  const base = CATEGORY_COLORS[category] || '#c62828';
+  return [base, base + 'cc'];
+}
+
+interface TrendingNewsProps {
+  articles: Article[];
+}
+
+export default function TrendingNews({ articles }: TrendingNewsProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const indexRef = useRef(0);
 
   useEffect(() => {
+    if (articles.length === 0) return;
     const interval = setInterval(() => {
-      const next = (indexRef.current + 1) % TRENDING.length;
+      const next = (indexRef.current + 1) % articles.length;
       indexRef.current = next;
       setActiveIndex(next);
       scrollRef.current?.scrollTo({ x: next * CARD_WIDTH, animated: true });
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [articles.length]);
 
   const handleScroll = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
     if (idx !== activeIndex) setActiveIndex(idx);
   };
+
+  if (articles.length === 0) return null;
 
   return (
     <View style={styles.section}>
@@ -93,31 +73,34 @@ export default function TrendingNews() {
         decelerationRate="fast"
         onMomentumScrollEnd={handleScroll}
       >
-        {TRENDING.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.card}
-            activeOpacity={0.9}
-            onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
-          >
-            <View style={[styles.imageLayer, { backgroundColor: item.gradient[0] }]}>
-              <View style={styles.imageOverlay} />
-              <View style={styles.cardContent}>
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{item.category}</Text>
-                </View>
-                <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.sourceRow}>
-                  <Ionicons name="globe-outline" size={12} color="rgba(255,255,255,0.6)" />
-                  <Text style={styles.source}>{item.source}</Text>
+        {articles.map((item) => {
+          const [color1, color2] = getGradient(item.category);
+          return (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              activeOpacity={0.9}
+              onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+            >
+              <View style={[styles.imageLayer, { backgroundColor: color1 }]}>
+                <View style={styles.imageOverlay} />
+                <View style={styles.cardContent}>
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryText}>{item.category}</Text>
+                  </View>
+                  <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                  <View style={styles.sourceRow}>
+                    <Ionicons name="globe-outline" size={12} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.source}>{item.source}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
       <View style={styles.dots}>
-        {TRENDING.map((_, i) => (
+        {articles.map((_, i) => (
           <View key={i} style={[styles.dot, i === activeIndex && styles.activeDot]} />
         ))}
       </View>

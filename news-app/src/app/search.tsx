@@ -1,17 +1,10 @@
-import { useState } from 'react';
-import { Text, View, TextInput, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { Text, View, TextInput, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const MOCK_RESULTS = [
-  { id: '1', title: 'Global Summit on Climate Change Reaches Historic Agreement', source: 'BBC News', category: 'Politics', time: '2h ago' },
-  { id: '2', title: 'Tech Giant Announces Revolutionary AI Assistant', source: 'TechCrunch', category: 'Technology', time: '4h ago' },
-  { id: '3', title: 'Stock Markets Hit All-Time High Amid Economic Recovery', source: 'Reuters', category: 'Finance', time: '1h ago' },
-  { id: '4', title: 'Breakthrough in Quantum Computing Announced', source: 'Nature', category: 'Science', time: '6h ago' },
-  { id: '5', title: 'Major Sports League Announces Expansion Teams', source: 'ESPN', category: 'Sports', time: '3h ago' },
-  { id: '6', title: 'New Study Reveals Benefits of Plant-Based Diet', source: 'Healthline', category: 'Health', time: '5h ago' },
-];
+import { searchArticles } from '../services/api';
+import type { Article } from '../data/articles';
 
 const TOPICS = ['Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'World', 'Business'];
 
@@ -21,37 +14,31 @@ const RECENT = [
   { term: 'stock market', time: '1 week ago' },
 ];
 
-const SUGGESTIONS: Record<string, string[]> = {
-  t: ['Technology stocks', 'Tech startups 2026', 'Tesla news'],
-  te: ['Technology trends', 'Tech earnings report'],
-  tec: ['Technology'],
-  p: ['Politics today', 'President news', 'Policy changes'],
-  s: ['Sports scores', 'Science breakthroughs', 'Stock market'],
-  sp: ['Sports', 'Space exploration'],
-};
-
-function getSuggestions(query: string): string[] {
-  const lower = query.toLowerCase();
-  for (const [prefix, sug] of Object.entries(SUGGESTIONS)) {
-    if (lower.startsWith(prefix)) return sug;
-  }
-  return [];
-}
-
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Article[]>([]);
+  const [searching, setSearching] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const results = query.trim()
-    ? MOCK_RESULTS.filter(
-        (item) =>
-          item.title.toLowerCase().includes(query.toLowerCase()) ||
-          item.source.toLowerCase().includes(query.toLowerCase()) ||
-          item.category.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
 
-  const suggestions = query.trim() ? getSuggestions(query.trim()) : [];
+    clearTimeout(timer.current);
+    setSearching(true);
+
+    timer.current = setTimeout(async () => {
+      const data = await searchArticles(query);
+      setResults(data);
+      setSearching(false);
+    }, 400);
+
+    return () => clearTimeout(timer.current);
+  }, [query]);
 
   return (
     <View style={styles.container}>
@@ -119,15 +106,10 @@ export default function SearchScreen() {
               ))}
             </View>
           </>
-        ) : suggestions.length > 0 && results.length === 0 ? (
-          <View style={styles.suggestionsWrap}>
-            <Text style={styles.suggestionHint}>Suggestions</Text>
-            {suggestions.map((s) => (
-              <TouchableOpacity key={s} style={styles.suggestionRow} onPress={() => setQuery(s)}>
-                <Ionicons name="search-outline" size={18} color="#999" />
-                <Text style={styles.suggestionText}>{s}</Text>
-              </TouchableOpacity>
-            ))}
+        ) : searching ? (
+          <View style={styles.searchingWrap}>
+            <ActivityIndicator size="small" color="#c62828" />
+            <Text style={styles.searchingText}>Searching...</Text>
           </View>
         ) : results.length === 0 ? (
           <View style={styles.emptyState}>
@@ -144,7 +126,11 @@ export default function SearchScreen() {
           <View style={styles.resultsWrap}>
             <Text style={styles.resultCount}>{results.length} result{results.length > 1 ? 's' : ''}</Text>
             {results.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.card}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.card}
+                onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+              >
                 <View style={styles.thumb}>
                   <Ionicons name="newspaper-outline" size={24} color="#ddd" />
                 </View>
@@ -281,30 +267,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#ccc',
   },
-  suggestionsWrap: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
-  suggestionHint: {
-    fontSize: 12,
-    color: '#bbb',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  suggestionRow: {
-    flexDirection: 'row',
+  searchingWrap: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingTop: 60,
   },
-  suggestionText: {
+  searchingText: {
     fontSize: 14,
-    color: '#555',
-    fontWeight: '500',
+    color: '#999',
   },
   emptyState: {
     flex: 1,
