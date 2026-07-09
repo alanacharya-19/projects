@@ -6,7 +6,9 @@ export interface Article {
   time: string;
   reads: string;
   image?: string;
+  images?: string[];
   body: string;
+  sourceId?: string;
 }
 
 export const ARTICLES: Article[] = [

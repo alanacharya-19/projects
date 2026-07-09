@@ -1,17 +1,46 @@
-import { Text, View, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, Image, Dimensions, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getRelatedArticles } from '../../data/articles';
-import { getCachedArticle } from '../../services/api';
+import { getCachedArticle, fetchArticleDetail } from '../../services/api';
 import { useBookmarks } from '../../context/BookmarkContext';
+import type { Article } from '../../data/articles';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function ArticleDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { toggleBookmark, isBookmarked } = useBookmarks();
+  const galleryRef = useRef<ScrollView>(null);
+  const [article, setArticle] = useState<Article | undefined>(undefined);
+  const [activeImage, setActiveImage] = useState(0);
+  const imageIndexRef = useRef(0);
 
-  const article = getCachedArticle(id ?? '');
+  const cached = getCachedArticle(id ?? '');
+  useEffect(() => {
+    if (cached) {
+      setArticle(cached);
+      if (cached.sourceId) {
+        fetchArticleDetail(cached).then(setArticle);
+      }
+    }
+  }, [cached?.id]);
+
+  useEffect(() => {
+    const images = article?.images || [];
+    if (images.length < 2) return;
+    const interval = setInterval(() => {
+      const next = (imageIndexRef.current + 1) % images.length;
+      imageIndexRef.current = next;
+      setActiveImage(next);
+      galleryRef.current?.scrollTo({ x: next * SCREEN_WIDTH, animated: true });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [article?.images?.length]);
+
   if (!article) {
     return (
       <View style={styles.container}>
@@ -30,6 +59,7 @@ export default function ArticleDetailScreen() {
 
   const bookmarked = isBookmarked(article.id);
   const related = getRelatedArticles(article, 3);
+  const images = article.images || [];
 
   return (
     <View style={styles.container}>
@@ -72,8 +102,31 @@ export default function ArticleDetailScreen() {
           </View>
         </View>
 
-        {article.image ? (
-          <Image source={{ uri: article.image }} style={styles.image} resizeMode="cover" />
+        {images.length > 0 ? (
+          <View style={styles.galleryWrap}>
+            <ScrollView
+              ref={galleryRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                setActiveImage(idx);
+                imageIndexRef.current = idx;
+              }}
+            >
+              {images.map((url, i) => (
+                <Image key={i} source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
+              ))}
+            </ScrollView>
+            {images.length > 1 && (
+              <View style={styles.galleryDots}>
+                {images.map((_, i) => (
+                  <View key={i} style={[styles.galleryDot, i === activeImage && styles.galleryDotActive]} />
+                ))}
+              </View>
+            )}
+          </View>
         ) : (
           <View style={styles.imagePlaceholder}>
             <Ionicons name="image-outline" size={40} color="#ddd" />
@@ -198,12 +251,32 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: '#f0f0f0',
   },
-  image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 14,
+  galleryWrap: {
     marginBottom: 20,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  galleryImage: {
+    width: SCREEN_WIDTH - 40,
+    height: 220,
     backgroundColor: '#eee',
+  },
+  galleryDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+  },
+  galleryDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ddd',
+  },
+  galleryDotActive: {
+    width: 20,
+    backgroundColor: '#c62828',
+    borderRadius: 3,
   },
   imagePlaceholder: {
     height: 200,
@@ -225,14 +298,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   contentBlock: {
-    gap: 16,
+    gap: 20,
     marginBottom: 28,
   },
   paragraph: {
     fontSize: 16,
-    color: '#444',
-    lineHeight: 26,
-    letterSpacing: 0.2,
+    color: '#3a3a3a',
+    lineHeight: 27,
+    letterSpacing: 0.3,
   },
   relatedTitle: {
     fontSize: 18,

@@ -22,6 +22,23 @@ function getSection(category?: string): string | undefined {
   return CATEGORY_SECTIONS[category];
 }
 
+function splitLongParagraph(text: string): string[] {
+  if (text.length <= 400) return [text];
+  const sentences = text.match(/[^.!?\n]+[.!?]+/g) || [text];
+  const chunks: string[] = [];
+  let current = '';
+  for (const s of sentences) {
+    if ((current + s).length > 400 && current.length > 0) {
+      chunks.push(current.trim());
+      current = s;
+    } else {
+      current += ' ' + s;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.length > 1 ? chunks : [text];
+}
+
 function extractParagraphs(html: string): string[] {
   const parts: string[] = [];
   const pRegex = /<p[^>]*>(.*?)<\/p>/gi;
@@ -33,7 +50,9 @@ function extractParagraphs(html: string): string[] {
       .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    if (text) parts.push(text);
+    if (text) {
+      parts.push(...splitLongParagraph(text));
+    }
   }
   return parts;
 }
@@ -59,6 +78,17 @@ function idFromStr(str: string): string {
   return Math.abs(hash).toString(36);
 }
 
+function extractImagesFromElements(elements: any[]): string[] {
+  const urls: string[] = [];
+  for (const el of elements || []) {
+    if (el.type === 'image' && el.assets?.length) {
+      const sorted = [...el.assets].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
+      if (sorted[0]?.file) urls.push(sorted[0].file);
+    }
+  }
+  return urls;
+}
+
 function mapGuardianArticle(item: any, category?: string): Article {
   const bodyHtml = item.fields?.body || '';
   const trailHtml = item.fields?.trailText || '';
@@ -68,6 +98,8 @@ function mapGuardianArticle(item: any, category?: string): Article {
     : `${item.webTitle} — Read more on The Guardian.`;
   const sectionName = item.sectionName || category || 'General';
 
+  const thumbnail = item.fields?.thumbnail || undefined;
+
   const article: Article = {
     id: idFromStr(item.id || item.webUrl),
     title: item.webTitle,
@@ -75,12 +107,47 @@ function mapGuardianArticle(item: any, category?: string): Article {
     category: sectionName,
     time: relativeTime(item.webPublicationDate),
     reads: `${Math.floor(Math.random() * 8 + 1)}k`,
-    image: item.fields?.thumbnail || undefined,
+    image: thumbnail,
+    images: thumbnail ? [thumbnail] : [],
     body,
+    sourceId: item.id || undefined,
   };
 
   articleCache.set(article.id, article);
   return article;
+}
+
+export async function fetchArticleDetail(article: Article): Promise<Article> {
+  if (!API_KEY || !article.sourceId) return article;
+  try {
+    const res = await fetchGuardian(
+      `/${article.sourceId}?show-blocks=all&show-fields=thumbnail,body`
+    );
+    const content = res.content;
+    if (!content) return article;
+
+    const allImages: string[] = [];
+    if (content.blocks?.main?.elements) {
+      allImages.push(...extractImagesFromElements(content.blocks.main.elements));
+    }
+    if (content.blocks?.body) {
+      for (const block of content.blocks.body) {
+        if (block.elements) {
+          allImages.push(...extractImagesFromElements(block.elements));
+        }
+      }
+    }
+
+    const updated = {
+      ...article,
+      images: allImages.length > 0 ? allImages : article.images,
+    };
+
+    articleCache.set(article.id, updated);
+    return updated;
+  } catch {
+    return article;
+  }
 }
 
 export function getCachedArticle(id: string): Article | undefined {
