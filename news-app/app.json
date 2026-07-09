@@ -45,6 +45,9 @@
         }
       ]
     ],
+    "extra": {
+      "newsApiKey": ""
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
