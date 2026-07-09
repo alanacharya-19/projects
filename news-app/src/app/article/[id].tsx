@@ -2,7 +2,8 @@ import { Text, View, ScrollView, TouchableOpacity, Image, StyleSheet } from 'rea
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getArticleById, getRelatedArticles } from '../../data/articles';
+import { getRelatedArticles } from '../../data/articles';
+import { getCachedArticle } from '../../services/api';
 import { useBookmarks } from '../../context/BookmarkContext';
 
 export default function ArticleDetailScreen() {
@@ -10,7 +11,7 @@ export default function ArticleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
-  const article = getArticleById(id ?? '');
+  const article = getCachedArticle(id ?? '');
   if (!article) {
     return (
       <View style={styles.container}>

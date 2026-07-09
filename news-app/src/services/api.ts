@@ -1,8 +1,10 @@
 import Constants from 'expo-constants';
-import { ARTICLES, type Article } from '../data/articles';
+import { ARTICLES, getArticleById, type Article } from '../data/articles';
 
 const API_KEY = Constants.expoConfig?.extra?.newsApiKey as string | undefined;
 const BASE_URL = 'https://content.guardianapis.com';
+
+const articleCache = new Map<string, Article>();
 
 const CATEGORY_SECTIONS: Record<string, string> = {
   Technology: 'technology',
@@ -20,8 +22,20 @@ function getSection(category?: string): string | undefined {
   return CATEGORY_SECTIONS[category];
 }
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+function extractParagraphs(html: string): string[] {
+  const parts: string[] = [];
+  const pRegex = /<p[^>]*>(.*?)<\/p>/gi;
+  let match;
+  while ((match = pRegex.exec(html)) !== null) {
+    const text = match[1]
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text) parts.push(text);
+  }
+  return parts;
 }
 
 function relativeTime(dateStr: string): string {
@@ -48,10 +62,13 @@ function idFromStr(str: string): string {
 function mapGuardianArticle(item: any, category?: string): Article {
   const bodyHtml = item.fields?.body || '';
   const trailHtml = item.fields?.trailText || '';
-  const body = stripHtml(bodyHtml || trailHtml) || `${item.webTitle} — Read more on The Guardian.`;
+  const paragraphs = bodyHtml ? extractParagraphs(bodyHtml) : [];
+  const body = paragraphs.length > 0
+    ? paragraphs.join('\n\n')
+    : `${item.webTitle} — Read more on The Guardian.`;
   const sectionName = item.sectionName || category || 'General';
 
-  return {
+  const article: Article = {
     id: idFromStr(item.id || item.webUrl),
     title: item.webTitle,
     source: 'The Guardian',
@@ -61,6 +78,13 @@ function mapGuardianArticle(item: any, category?: string): Article {
     image: item.fields?.thumbnail || undefined,
     body,
   };
+
+  articleCache.set(article.id, article);
+  return article;
+}
+
+export function getCachedArticle(id: string): Article | undefined {
+  return articleCache.get(id) || getArticleById(id);
 }
 
 function getMockArticles(category?: string): Article[] {
