@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Text, View, TextInput, ScrollView, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,11 +9,16 @@ import type { Article } from '../data/articles';
 
 const TOPICS = ['Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'World', 'Business'];
 
-const RECENT = [
-  { term: 'climate change', time: '2 days ago' },
-  { term: 'AI technology', time: '5 days ago' },
-  { term: 'stock market', time: '1 week ago' },
-];
+function timeAgo(date: Date): string {
+  const secs = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
@@ -21,8 +26,29 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Article[]>([]);
   const [searching, setSearching] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<{ term: string; time: Date }[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const saveRecent = useCallback((term: string) => {
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((s) => s.term.toLowerCase() !== term.toLowerCase());
+      return [{ term, time: new Date() }, ...filtered].slice(0, 10);
+    });
+  }, []);
+
+  const removeRecent = useCallback((term: string) => {
+    setRecentSearches((prev) => prev.filter((s) => s.term !== term));
+  }, []);
+
+  const clearRecent = useCallback(() => {
+    setRecentSearches([]);
+  }, []);
+
+  const doSearch = useCallback((term: string) => {
+    setQuery(term);
+    saveRecent(term);
+  }, [saveRecent]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -38,10 +64,13 @@ export default function SearchScreen() {
       const data = await searchArticles(query);
       setResults(data);
       setSearching(false);
+      if (data.length > 0) {
+        saveRecent(query);
+      }
     }, 400);
 
     return () => clearTimeout(timer.current);
-  }, [query]);
+  }, [query, saveRecent]);
 
   return (
     <View style={styles.container}>
@@ -81,33 +110,35 @@ export default function SearchScreen() {
               <Text style={styles.sectionTitle}>Explore Topics</Text>
               <View style={styles.chipsRow}>
                 {TOPICS.map((topic) => (
-                  <TouchableOpacity key={topic} style={[styles.chip, { backgroundColor: colors.card }]} onPress={() => setQuery(topic)}>
+                  <TouchableOpacity key={topic} style={[styles.chip, { backgroundColor: colors.card }]} onPress={() => doSearch(topic)}>
                     <Text style={[styles.chipText, { color: colors.text }]}>{topic}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            <View style={styles.section}>
-              <View style={styles.recentHeader}>
-                <Text style={styles.sectionTitle}>Recent Searches</Text>
-                {RECENT.length > 0 && (
-                  <TouchableOpacity>
+            {recentSearches.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.recentHeader}>
+                  <Text style={styles.sectionTitle}>Recent Searches</Text>
+                  <TouchableOpacity onPress={clearRecent}>
                     <Text style={[styles.clearText, { color: colors.primary }]}>Clear</Text>
                   </TouchableOpacity>
-                )}
+                </View>
+                {recentSearches.map((item) => (
+                  <TouchableOpacity key={item.term} style={[styles.recentRow, { borderBottomColor: colors.border }]} onPress={() => setQuery(item.term)}>
+                    <View style={[styles.recentIcon, { backgroundColor: colors.iconBg }]}>
+                      <Ionicons name="time-outline" size={16} color={colors.textMuted} />
+                    </View>
+                    <Text style={styles.recentTerm}>{item.term}</Text>
+                    <Text style={styles.recentTime}>{timeAgo(item.time)}</Text>
+                    <TouchableOpacity onPress={() => removeRecent(item.term)} hitSlop={8}>
+                      <Ionicons name="close" size={16} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
               </View>
-              {RECENT.map((item) => (
-                <TouchableOpacity key={item.term} style={[styles.recentRow, { borderBottomColor: colors.border }]} onPress={() => setQuery(item.term)}>
-                  <View style={[styles.recentIcon, { backgroundColor: colors.iconBg }]}>
-                    <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-                  </View>
-                  <Text style={styles.recentTerm}>{item.term}</Text>
-                  <Text style={styles.recentTime}>{item.time}</Text>
-                  <Ionicons name="close" size={16} color={colors.border} />
-                </TouchableOpacity>
-              ))}
-            </View>
+            )}
           </>
         ) : searching ? (
           <View style={styles.searchingWrap}>
