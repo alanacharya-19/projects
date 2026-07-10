@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../context/ThemeContext';
 
 const NOTIFICATIONS = [
   { id: '1', title: 'Breaking: Major Climate Deal Signed', body: 'Global leaders reach historic agreement at the climate summit.', time: '5m ago', read: false, icon: 'globe' as const, articleId: '4' },
@@ -17,8 +18,10 @@ const NOTIFICATIONS = [
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [data, setData] = useState(NOTIFICATIONS);
   const [refreshing, setRefreshing] = useState(false);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const unreadCount = data.filter((n) => !n.read).length;
 
@@ -73,18 +76,18 @@ export default function NotificationsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#c62828"
-            colors={['#c62828']}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
         {data.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Ionicons name="notifications-off-outline" size={36} color="#ccc" />
+            <View style={[styles.emptyIconWrap, { backgroundColor: colors.iconBg }]}>
+              <Ionicons name="notifications-off-outline" size={36} color={colors.textMuted} />
             </View>
             <Text style={styles.emptyTitle}>All Caught Up</Text>
-            <Text style={styles.emptySub}>No new notifications at this time</Text>
+            <Text style={[styles.emptySub, { color: colors.textMuted }]}>No new notifications at this time</Text>
           </View>
         ) : (
           <>
@@ -94,19 +97,19 @@ export default function NotificationsScreen() {
             {data.filter((n) => !n.read).map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={styles.unreadCard}
+                style={[styles.unreadCard, { backgroundColor: colors.card, borderLeftColor: colors.primary }]}
                 onPress={() => handlePress(item)}
               >
                 <View style={styles.cardContent}>
-                  <View style={styles.iconWrap}>
-                    <Ionicons name={item.icon} size={20} color="#c62828" />
-                    <View style={styles.iconDot} />
+                  <View style={[styles.iconWrap, { backgroundColor: colors.categoryBg }]}>
+                    <Ionicons name={item.icon} size={20} color={colors.primary} />
+                    <View style={[styles.iconDot, { backgroundColor: colors.primary }]} />
                   </View>
                   <View style={styles.textBlock}>
                     <View style={styles.cardHeader}>
                       <Text style={styles.cardTitle}>{item.title}</Text>
                     </View>
-                    <Text style={styles.cardBody} numberOfLines={2}>{item.body}</Text>
+                    <Text style={[styles.cardBody, { color: colors.textSecondary }]} numberOfLines={2}>{item.body}</Text>
                     <Text style={styles.time}>{item.time}</Text>
                   </View>
                 </View>
@@ -119,19 +122,19 @@ export default function NotificationsScreen() {
                 {data.filter((n) => n.read).map((item) => (
                   <TouchableOpacity
                     key={item.id}
-                    style={styles.readCard}
+                    style={[styles.readCard, { backgroundColor: colors.card }]}
                     onPress={() => handlePress(item)}
                   >
                     <View style={styles.cardContent}>
-                      <View style={[styles.iconWrap, styles.readIconWrap]}>
-                        <Ionicons name={item.icon} size={20} color="#bbb" />
+                      <View style={[styles.iconWrap, { backgroundColor: colors.iconBg }]}>
+                        <Ionicons name={item.icon} size={20} color={colors.textMuted} />
                       </View>
                       <View style={styles.textBlock}>
                         <View style={styles.cardHeader}>
                           <Text style={[styles.cardTitle, styles.readTitle]}>{item.title}</Text>
                         </View>
-                        <Text style={[styles.cardBody, { color: '#bbb' }]} numberOfLines={2}>{item.body}</Text>
-                        <Text style={[styles.time, { color: '#ddd' }]}>{item.time}</Text>
+                        <Text style={[styles.cardBody, { color: colors.textMuted }]} numberOfLines={2}>{item.body}</Text>
+                        <Text style={[styles.time, { color: colors.textMuted }]}>{item.time}</Text>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -145,13 +148,13 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6f8',
+    backgroundColor: colors.background,
   },
   topBar: {
-    backgroundColor: '#c62828',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomLeftRadius: 24,
@@ -192,7 +195,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   countText: {
-    color: '#c62828',
+    color: colors.primary,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -217,7 +220,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 12,
@@ -233,7 +236,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -241,14 +243,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: colors.text,
   },
   emptySub: {
     fontSize: 14,
-    color: '#bbb',
   },
   unreadCard: {
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
@@ -258,10 +258,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     borderLeftWidth: 3,
-    borderLeftColor: '#c62828',
   },
   readCard: {
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
@@ -279,13 +277,9 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#fef0f0',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-  },
-  readIconWrap: {
-    backgroundColor: '#f5f5f5',
   },
   iconDot: {
     position: 'absolute',
@@ -294,9 +288,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#c62828',
     borderWidth: 1.5,
-    borderColor: 'white',
+    borderColor: colors.card,
   },
   textBlock: {
     flex: 1,
@@ -307,22 +300,21 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: colors.text,
     lineHeight: 20,
   },
   readTitle: {
     fontWeight: '500',
-    color: '#999',
+    color: colors.textMuted,
   },
   cardBody: {
     fontSize: 13,
-    color: '#666',
     lineHeight: 18,
     marginBottom: 8,
   },
   time: {
     fontSize: 11,
-    color: '#bbb',
+    color: colors.textMuted,
     fontWeight: '500',
   },
 });

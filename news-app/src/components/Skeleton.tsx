@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface SkeletonProps {
   width?: number | string;
@@ -9,6 +10,7 @@ interface SkeletonProps {
 }
 
 export function SkeletonBlock({ width = '100%', height = 16, borderRadius = 6, style }: SkeletonProps) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -24,14 +26,15 @@ export function SkeletonBlock({ width = '100%', height = 16, borderRadius = 6, s
 
   return (
     <Animated.View
-      style={[{ width, height, borderRadius, backgroundColor: '#e0e0e0', opacity }, style]}
+      style={[{ width, height, borderRadius, backgroundColor: colors.skeleton, opacity }, style]}
     />
   );
 }
 
 export function ArticleSkeleton() {
+  const { colors } = useTheme();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
       <View style={styles.top}>
         <View style={styles.metaRow}>
           <SkeletonBlock width={60} height={14} borderRadius={4} />
@@ -41,7 +44,7 @@ export function ArticleSkeleton() {
         <SkeletonBlock width="75%" height={18} borderRadius={4} style={{ marginTop: 6 }} />
         <SkeletonBlock width={80} height={14} borderRadius={4} style={{ marginTop: 10 }} />
       </View>
-      <View style={styles.bottom}>
+      <View style={[styles.bottom, { borderTopColor: colors.border }]}>
         <SkeletonBlock width={60} height={14} borderRadius={4} />
         <SkeletonBlock width={28} height={28} borderRadius={14} />
       </View>
@@ -59,7 +62,6 @@ export function TrendingSkeleton() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
@@ -83,7 +85,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
   },
   trendingCard: {
     paddingHorizontal: 20,

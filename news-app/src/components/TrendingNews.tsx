@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 import type { Article } from '../data/articles';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -29,6 +30,7 @@ interface TrendingNewsProps {
 }
 
 export default function TrendingNews({ articles }: TrendingNewsProps) {
+  const { colors } = useTheme();
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const indexRef = useRef(0);
@@ -80,14 +82,14 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
     <View style={styles.section}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <View style={styles.flameCircle}>
-            <Ionicons name="flame" size={14} color="#c62828" />
+          <View style={[styles.flameCircle, { backgroundColor: colors.categoryBg }]}>
+            <Ionicons name="flame" size={14} color={colors.primary} />
           </View>
-          <Text style={styles.heading}>Trending</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Trending</Text>
         </View>
         <TouchableOpacity style={styles.seeAllBtn}>
-          <Text style={styles.seeAll}>See All</Text>
-          <Ionicons name="chevron-forward" size={14} color="#c62828" />
+          <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
         </TouchableOpacity>
       </View>
       <ScrollView
@@ -109,7 +111,7 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
             >
               {item.image ? (
                 <ImageBackground source={{ uri: item.image }} style={styles.imageLayer} resizeMode="cover">
-                  <View style={styles.imageOverlay} />
+                  <View style={[styles.imageOverlay, { backgroundColor: colors.overlay }]} />
                   <View style={styles.cardContent}>
                     <View style={styles.categoryBadge}>
                       <Text style={styles.categoryText}>{item.category}</Text>
@@ -123,7 +125,7 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
                 </ImageBackground>
               ) : (
                 <View style={[styles.imageLayer, { backgroundColor: color1 }]}>
-                  <View style={styles.imageOverlay} />
+                  <View style={[styles.imageOverlay, { backgroundColor: colors.overlay }]} />
                   <View style={styles.cardContent}>
                     <View style={styles.categoryBadge}>
                       <Text style={styles.categoryText}>{item.category}</Text>
@@ -142,7 +144,7 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
       </ScrollView>
       <View style={styles.dots}>
         {articles.map((_, i) => (
-          <View key={i} style={[styles.dot, i === activeIndex && styles.activeDot]} />
+          <View key={i} style={[styles.dot, { backgroundColor: colors.border }, i === activeIndex && { width: 20, backgroundColor: colors.primary }]} />
         ))}
       </View>
     </View>
@@ -169,14 +171,12 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#fef0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   heading: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1a1a2e',
   },
   seeAllBtn: {
     flexDirection: 'row',
@@ -185,7 +185,6 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     fontSize: 13,
-    color: '#c62828',
     fontWeight: '600',
   },
   card: {
@@ -201,7 +200,6 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   cardContent: {
     padding: 20,
@@ -247,12 +245,6 @@ const styles = StyleSheet.create({
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: '#ddd',
-  },
-  activeDot: {
-    width: 20,
-    backgroundColor: '#c62828',
     borderRadius: 3,
   },
 });

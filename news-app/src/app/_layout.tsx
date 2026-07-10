@@ -1,19 +1,31 @@
 import { StatusBar } from "react-native";
 import { Stack } from "expo-router";
 import { BookmarkProvider } from "../context/BookmarkContext";
+import { ThemeProvider, useTheme } from "../context/ThemeContext";
 
-export default function RootLayout() {
+function RootLayoutInner() {
+  const { colors } = useTheme();
   return (
-    <BookmarkProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#c62828" />
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={colors.statusBar} />
       <Stack
         screenOptions={{
           headerShown: false,
           animation: "fade",
           animationDuration: 300,
-          contentStyle: { backgroundColor: "#f5f6f8" },
+          contentStyle: { backgroundColor: colors.background },
         }}
       />
-    </BookmarkProvider>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <BookmarkProvider>
+        <RootLayoutInner />
+      </BookmarkProvider>
+    </ThemeProvider>
   );
 }

@@ -1,44 +1,48 @@
+import { useMemo } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const MENU_SECTIONS = [
-  {
-    title: 'Preferences',
-    items: [
-      { icon: 'newspaper' as const, label: 'News Categories', sub: 'Technology, Politics, Sports' },
-      { icon: 'notifications' as const, label: 'Notifications', sub: 'Push, Email, Digest' },
-      { icon: 'language' as const, label: 'Language', sub: 'English' },
-      { icon: 'moon' as const, label: 'Dark Mode', sub: 'Off' },
-    ],
-  },
-  {
-    title: 'Library',
-    items: [
-      { icon: 'bookmark' as const, label: 'Saved Articles', sub: '12 articles' },
-      { icon: 'time' as const, label: 'Reading History', sub: 'Continue where you left off' },
-      { icon: 'download' as const, label: 'Offline Reading', sub: '3 articles saved' },
-    ],
-  },
-  {
-    title: 'Support',
-    items: [
-      { icon: 'help-circle' as const, label: 'Help & FAQ' },
-      { icon: 'chatbubble-ellipses' as const, label: 'Send Feedback' },
-      { icon: 'star' as const, label: 'Rate the App' },
-    ],
-  },
-];
-
-const TOP_READS = [
-  { category: 'Technology', count: '18' },
-  { category: 'Science', count: '12' },
-  { category: 'Finance', count: '9' },
-];
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { colors, theme, toggleTheme } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const MENU_SECTIONS = [
+    {
+      title: 'Preferences',
+      items: [
+        { icon: 'newspaper' as const, label: 'News Categories', sub: 'Technology, Politics, Sports' },
+        { icon: 'notifications' as const, label: 'Notifications', sub: 'Push, Email, Digest' },
+        { icon: 'language' as const, label: 'Language', sub: 'English' },
+        { icon: theme === 'dark' ? 'moon' : 'sunny' as const, label: 'Theme', sub: theme === 'dark' ? 'Dark' : 'Light', action: toggleTheme },
+      ],
+    },
+    {
+      title: 'Library',
+      items: [
+        { icon: 'bookmark' as const, label: 'Saved Articles', sub: '12 articles' },
+        { icon: 'time' as const, label: 'Reading History', sub: 'Continue where you left off' },
+        { icon: 'download' as const, label: 'Offline Reading', sub: '3 articles saved' },
+      ],
+    },
+    {
+      title: 'Support',
+      items: [
+        { icon: 'help-circle' as const, label: 'Help & FAQ' },
+        { icon: 'chatbubble-ellipses' as const, label: 'Send Feedback' },
+        { icon: 'star' as const, label: 'Rate the App' },
+      ],
+    },
+  ];
+
+  const TOP_READS = [
+    { category: 'Technology', count: '18' },
+    { category: 'Science', count: '12' },
+    { category: 'Finance', count: '9' },
+  ];
 
   return (
     <View style={styles.container}>
@@ -84,8 +88,8 @@ export default function ProfileScreen() {
             <Text style={styles.readsTitle}>Top Categories</Text>
             <View style={styles.readsRow}>
               {TOP_READS.map((item) => (
-                <View key={item.category} style={styles.readsCard}>
-                  <Text style={styles.readsCount}>{item.count}</Text>
+                <View key={item.category} style={[styles.readsCard, { backgroundColor: colors.card }]}>
+                  <Text style={[styles.readsCount, { color: colors.primary }]}>{item.count}</Text>
                   <Text style={styles.readsLabel}>{item.category}</Text>
                 </View>
               ))}
@@ -95,31 +99,40 @@ export default function ProfileScreen() {
           {MENU_SECTIONS.map((section) => (
             <View key={section.title} style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
-              <View style={styles.sectionCard}>
+              <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
                 {section.items.map((item, i) => (
                   <TouchableOpacity
                     key={item.label}
-                    style={[styles.menuItem, i < section.items.length - 1 && styles.menuBorder]}
+                    style={[styles.menuItem, i < section.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                    onPress={'action' in item ? item.action : undefined}
                   >
-                    <View style={styles.menuIcon}>
-                      <Ionicons name={item.icon} size={20} color="#c62828" />
+                    <View style={[styles.menuIcon, { backgroundColor: colors.categoryBg }]}>
+                      <Ionicons name={item.icon} size={20} color={colors.primary} />
                     </View>
                     <View style={styles.menuText}>
-                      <Text style={styles.menuLabel}>{item.label}</Text>
+                      <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
                       {'sub' in item && <Text style={styles.menuSub}>{item.sub}</Text>}
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    {'action' in item ? (
+                      <Ionicons
+                        name={theme === 'dark' ? 'toggle' : 'toggle-outline'}
+                        size={22}
+                        color={colors.primary}
+                      />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
           ))}
 
-          <TouchableOpacity style={styles.signOut}>
-            <View style={styles.signOutIcon}>
-              <Ionicons name="log-out-outline" size={20} color="#c62828" />
+          <TouchableOpacity style={[styles.signOut, { backgroundColor: colors.card }]}>
+            <View style={[styles.signOutIcon, { backgroundColor: colors.categoryBg }]}>
+              <Ionicons name="log-out-outline" size={20} color={colors.primary} />
             </View>
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={[styles.signOutText, { color: colors.primary }]}>Sign Out</Text>
           </TouchableOpacity>
 
           <Text style={styles.version}>Version 1.0.0</Text>
@@ -129,13 +142,13 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6f8',
+    backgroundColor: colors.background,
   },
   topSection: {
-    backgroundColor: '#c62828',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingBottom: 32,
     borderBottomLeftRadius: 28,
@@ -174,7 +187,7 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.text,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -230,7 +243,7 @@ const styles = StyleSheet.create({
   readsTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 12,
@@ -242,7 +255,6 @@ const styles = StyleSheet.create({
   },
   readsCard: {
     flex: 1,
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -256,11 +268,10 @@ const styles = StyleSheet.create({
   readsCount: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#c62828',
   },
   readsLabel: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textMuted,
     fontWeight: '500',
   },
   section: {
@@ -269,14 +280,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
     marginLeft: 4,
   },
   sectionCard: {
-    backgroundColor: 'white',
     borderRadius: 14,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -292,15 +302,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  menuBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f2f2f2',
-  },
   menuIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#fef0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -310,11 +315,10 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1a1a2e',
   },
   menuSub: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textMuted,
     marginTop: 2,
   },
   signOut: {
@@ -322,7 +326,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: 'white',
     borderRadius: 14,
     paddingVertical: 15,
     marginBottom: 20,
@@ -336,18 +339,16 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#fef0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   signOutText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#c62828',
   },
   version: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#ccc',
+    color: colors.textMuted,
   },
 });

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Text, View, TextInput, ScrollView, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchArticles } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 import type { Article } from '../data/articles';
 
 const TOPICS = ['Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'World', 'Business'];
@@ -16,10 +17,12 @@ const RECENT = [
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Article[]>([]);
   const [searching, setSearching] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -78,8 +81,8 @@ export default function SearchScreen() {
               <Text style={styles.sectionTitle}>Explore Topics</Text>
               <View style={styles.chipsRow}>
                 {TOPICS.map((topic) => (
-                  <TouchableOpacity key={topic} style={styles.chip} onPress={() => setQuery(topic)}>
-                    <Text style={styles.chipText}>{topic}</Text>
+                  <TouchableOpacity key={topic} style={[styles.chip, { backgroundColor: colors.card }]} onPress={() => setQuery(topic)}>
+                    <Text style={[styles.chipText, { color: colors.text }]}>{topic}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -90,31 +93,31 @@ export default function SearchScreen() {
                 <Text style={styles.sectionTitle}>Recent Searches</Text>
                 {RECENT.length > 0 && (
                   <TouchableOpacity>
-                    <Text style={styles.clearText}>Clear</Text>
+                    <Text style={[styles.clearText, { color: colors.primary }]}>Clear</Text>
                   </TouchableOpacity>
                 )}
               </View>
               {RECENT.map((item) => (
-                <TouchableOpacity key={item.term} style={styles.recentRow} onPress={() => setQuery(item.term)}>
-                  <View style={styles.recentIcon}>
-                    <Ionicons name="time-outline" size={16} color="#999" />
+                <TouchableOpacity key={item.term} style={[styles.recentRow, { borderBottomColor: colors.border }]} onPress={() => setQuery(item.term)}>
+                  <View style={[styles.recentIcon, { backgroundColor: colors.iconBg }]}>
+                    <Ionicons name="time-outline" size={16} color={colors.textMuted} />
                   </View>
                   <Text style={styles.recentTerm}>{item.term}</Text>
                   <Text style={styles.recentTime}>{item.time}</Text>
-                  <Ionicons name="close" size={16} color="#ddd" />
+                  <Ionicons name="close" size={16} color={colors.border} />
                 </TouchableOpacity>
               ))}
             </View>
           </>
         ) : searching ? (
           <View style={styles.searchingWrap}>
-            <ActivityIndicator size="small" color="#c62828" />
+            <ActivityIndicator size="small" color={colors.primary} />
             <Text style={styles.searchingText}>Searching...</Text>
           </View>
         ) : results.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Ionicons name="search-outline" size={36} color="#ccc" />
+            <View style={[styles.emptyIconWrap, { backgroundColor: colors.iconBg }]}>
+              <Ionicons name="search-outline" size={36} color={colors.textMuted} />
             </View>
             <Text style={styles.emptyTitle}>No Results</Text>
             <Text style={styles.emptySub}>
@@ -128,19 +131,19 @@ export default function SearchScreen() {
             {results.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={styles.card}
+                style={[styles.card, { backgroundColor: colors.card }]}
                 onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
               >
                 {item.image ? (
                   <Image source={{ uri: item.image }} style={styles.thumbImage} />
                 ) : (
-                  <View style={styles.thumb}>
-                    <Ionicons name="newspaper-outline" size={24} color="#ddd" />
+                  <View style={[styles.thumb, { backgroundColor: colors.iconBg }]}>
+                    <Ionicons name="newspaper-outline" size={24} color={colors.textMuted} />
                   </View>
                 )}
                 <View style={styles.cardRight}>
                   <View style={styles.meta}>
-                    <Text style={styles.category}>{item.category}</Text>
+                    <Text style={[styles.category, { color: colors.primary }]}>{item.category}</Text>
                     <Text style={styles.time}>{item.time}</Text>
                   </View>
                   <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
@@ -155,13 +158,13 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6f8',
+    backgroundColor: colors.background,
   },
   topBar: {
-    backgroundColor: '#c62828',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomLeftRadius: 24,
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: colors.text,
     marginBottom: 14,
     letterSpacing: 0.2,
   },
@@ -220,7 +223,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: 'white',
     paddingVertical: 9,
     paddingHorizontal: 18,
     borderRadius: 20,
@@ -233,7 +235,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#333',
   },
   recentHeader: {
     flexDirection: 'row',
@@ -242,7 +243,6 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontSize: 13,
-    color: '#c62828',
     fontWeight: '600',
   },
   recentRow: {
@@ -251,25 +251,23 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   recentIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   recentTerm: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: colors.text,
     fontWeight: '500',
   },
   recentTime: {
     fontSize: 12,
-    color: '#ccc',
+    color: colors.textMuted,
   },
   searchingWrap: {
     flex: 1,
@@ -280,7 +278,7 @@ const styles = StyleSheet.create({
   },
   searchingText: {
     fontSize: 14,
-    color: '#999',
+    color: colors.textMuted,
   },
   emptyState: {
     flex: 1,
@@ -293,7 +291,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -301,16 +298,16 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: colors.text,
   },
   emptySub: {
     fontSize: 15,
-    color: '#333',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   emptyHint: {
     fontSize: 13,
-    color: '#bbb',
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -320,14 +317,13 @@ const styles = StyleSheet.create({
   },
   resultCount: {
     fontSize: 13,
-    color: '#999',
+    color: colors.textMuted,
     fontWeight: '600',
     marginBottom: 14,
     marginLeft: 4,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
@@ -342,7 +338,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 10,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -350,7 +345,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 10,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.border,
   },
   cardRight: {
     flex: 1,
@@ -365,24 +360,23 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#c62828',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   time: {
     fontSize: 11,
-    color: '#ccc',
+    color: colors.textMuted,
   },
   title: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: colors.text,
     lineHeight: 19,
     marginBottom: 4,
   },
   source: {
     fontSize: 12,
-    color: '#bbb',
+    color: colors.textMuted,
     fontWeight: '500',
   },
 });

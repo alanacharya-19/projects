@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getRelatedArticles } from '../../data/articles';
 import { getCachedArticle, fetchArticleDetail } from '../../services/api';
 import { useBookmarks } from '../../context/BookmarkContext';
+import { useTheme } from '../../context/ThemeContext';
 import type { Article } from '../../data/articles';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -19,6 +20,7 @@ function estimateReadTime(text: string): number {
 
 export default function ArticleDetailScreen() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const galleryRef = useRef<ScrollView>(null);
@@ -55,6 +57,7 @@ export default function ArticleDetailScreen() {
   const paragraphs = useMemo(() => (article?.body ?? '').split('\n\n').filter(Boolean), [article?.body]);
   const readTime = useMemo(() => estimateReadTime(article?.body ?? ''), [article?.body]);
   const bookmarked = isBookmarked(article?.id ?? '');
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   if (!article) {
     return (
@@ -65,7 +68,7 @@ export default function ArticleDetailScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.errorState}>
-          <Ionicons name="alert-circle-outline" size={48} color="#ccc" />
+          <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
           <Text style={styles.errorTitle}>Article Not Found</Text>
         </View>
       </View>
@@ -119,11 +122,11 @@ export default function ArticleDetailScreen() {
         scrollEventThrottle={16}
       >
         <View style={styles.categoryRow}>
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryText}>{article.category}</Text>
+          <View style={[styles.categoryPill, { backgroundColor: colors.categoryBg }]}>
+            <Text style={[styles.categoryText, { color: colors.primary }]}>{article.category}</Text>
           </View>
-          <View style={styles.readTimePill}>
-            <Ionicons name="time-outline" size={12} color="#999" />
+          <View style={[styles.readTimePill, { backgroundColor: colors.iconBg }]}>
+            <Ionicons name="time-outline" size={12} color={colors.textMuted} />
             <Text style={styles.readTimeText}>{readTime} min read</Text>
           </View>
         </View>
@@ -160,7 +163,7 @@ export default function ArticleDetailScreen() {
             {images.length > 1 && (
               <View style={styles.galleryDots}>
                 {images.map((_, i) => (
-                  <View key={i} style={[styles.galleryDot, i === activeImage && styles.galleryDotActive]} />
+                  <View key={i} style={[styles.galleryDot, { backgroundColor: colors.border }, i === activeImage && { width: 20, backgroundColor: colors.primary }]} />
                 ))}
               </View>
             )}
@@ -172,7 +175,7 @@ export default function ArticleDetailScreen() {
             <Text key={i} style={i === 0 ? styles.leadParagraph : styles.paragraph}>{p}</Text>
           ))}
           {!expanded && rest.length > 0 && (
-            <TouchableOpacity style={styles.expandBtn} onPress={() => setExpanded(true)}>
+            <TouchableOpacity style={[styles.expandBtn, { backgroundColor: colors.primary }]} onPress={() => setExpanded(true)}>
               <Text style={styles.expandBtnText}>Read full article</Text>
               <Ionicons name="chevron-down" size={16} color="white" />
             </TouchableOpacity>
@@ -182,11 +185,11 @@ export default function ArticleDetailScreen() {
           ))}
           {article.sourceId && (
             <TouchableOpacity
-              style={styles.sourceLink}
+              style={[styles.sourceLink, { borderColor: colors.border }]}
               onPress={() => Linking.openURL(`https://www.theguardian.com/${article.sourceId}`)}
             >
-              <Ionicons name="open-outline" size={16} color="#c62828" />
-              <Text style={styles.sourceLinkText}>Read on The Guardian</Text>
+              <Ionicons name="open-outline" size={16} color={colors.primary} />
+              <Text style={[styles.sourceLinkText, { color: colors.primary }]}>Read on The Guardian</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -194,19 +197,19 @@ export default function ArticleDetailScreen() {
         {related.length > 0 && (
           <>
             <View style={styles.divider}>
-              <View style={styles.dividerLine} />
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
               <Text style={styles.dividerText}>Related</Text>
-              <View style={styles.dividerLine} />
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             </View>
             {related.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={styles.relatedCard}
+                style={[styles.relatedCard, { backgroundColor: colors.card }]}
                 onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
               >
                 <View style={styles.relatedTop}>
-                  <View style={styles.relatedCategoryPill}>
-                    <Text style={styles.relatedCategoryText}>{item.category}</Text>
+                  <View style={[styles.relatedCategoryPill, { backgroundColor: colors.categoryBg }]}>
+                    <Text style={[styles.relatedCategoryText, { color: colors.primary }]}>{item.category}</Text>
                   </View>
                   <Text style={styles.relatedTime}>{item.time}</Text>
                 </View>
@@ -229,7 +232,7 @@ export default function ArticleDetailScreen() {
       >
         <TouchableOpacity
           onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-          style={styles.scrollTopInner}
+          style={[styles.scrollTopInner, { backgroundColor: colors.primary }]}
         >
           <Ionicons name="chevron-up" size={22} color="white" />
         </TouchableOpacity>
@@ -238,13 +241,13 @@ export default function ArticleDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6f8',
+    backgroundColor: colors.background,
   },
   topBar: {
-    backgroundColor: '#c62828',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomLeftRadius: 24,
@@ -286,7 +289,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   categoryPill: {
-    backgroundColor: '#fef0f0',
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -294,7 +296,6 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#c62828',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -305,17 +306,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 6,
-    backgroundColor: '#f0f0f0',
   },
   readTimeText: {
     fontSize: 11,
-    color: '#999',
+    color: colors.textMuted,
     fontWeight: '500',
   },
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: colors.text,
     lineHeight: 29,
     letterSpacing: 0.15,
     marginBottom: 16,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#c62828',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -342,11 +342,11 @@ const styles = StyleSheet.create({
   sourceName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: colors.text,
   },
   sourceTime: {
     fontSize: 12,
-    color: '#bbb',
+    color: colors.textMuted,
     marginTop: 1,
   },
   galleryWrap: {
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   galleryImage: {
     width: SCREEN_WIDTH - 40,
     height: 220,
-    backgroundColor: '#eee',
+    backgroundColor: colors.border,
   },
   galleryDots: {
     flexDirection: 'row',
@@ -369,12 +369,6 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#ddd',
-  },
-  galleryDotActive: {
-    width: 20,
-    backgroundColor: '#c62828',
-    borderRadius: 3,
   },
   contentBlock: {
     gap: 18,
@@ -382,14 +376,14 @@ const styles = StyleSheet.create({
   },
   leadParagraph: {
     fontSize: 16,
-    color: '#1a1a2e',
+    color: colors.text,
     lineHeight: 26,
     letterSpacing: 0.2,
     fontWeight: '500',
   },
   paragraph: {
     fontSize: 15,
-    color: '#555',
+    color: colors.textSecondary,
     lineHeight: 25,
     letterSpacing: 0.2,
   },
@@ -398,7 +392,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#c62828',
     paddingVertical: 14,
     borderRadius: 12,
     marginTop: 4,
@@ -416,13 +409,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
     marginTop: 4,
   },
   sourceLinkText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#c62828',
   },
   divider: {
     flexDirection: 'row',
@@ -433,17 +424,15 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e0e0e0',
   },
   dividerText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#999',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   relatedCard: {
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
@@ -460,7 +449,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   relatedCategoryPill: {
-    backgroundColor: '#fef0f0',
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: 4,
@@ -468,24 +456,23 @@ const styles = StyleSheet.create({
   relatedCategoryText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#c62828',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   relatedTime: {
     fontSize: 11,
-    color: '#ccc',
+    color: colors.textMuted,
   },
   relatedTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: colors.text,
     lineHeight: 20,
     marginBottom: 4,
   },
   relatedSource: {
     fontSize: 12,
-    color: '#bbb',
+    color: colors.textMuted,
     fontWeight: '500',
   },
   errorState: {
@@ -497,7 +484,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#999',
+    color: colors.textMuted,
   },
   footer: {
     height: 20,
@@ -517,7 +504,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#c62828',
     justifyContent: 'center',
     alignItems: 'center',
   },

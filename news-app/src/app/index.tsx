@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, Image, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -8,8 +8,10 @@ import { ArticleSkeleton } from '../components/Skeleton';
 import { fetchTopHeadlines } from '../services/api';
 import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Index() {
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
@@ -47,6 +49,8 @@ export default function Index() {
     setLoading(false);
   }, [loadArticles]);
 
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <HomeHeader unreadCount={3} />
@@ -58,8 +62,8 @@ export default function Index() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#c62828"
-            colors={['#c62828']}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
@@ -81,10 +85,10 @@ export default function Index() {
               {CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat}
-                  style={[styles.chip, selectedCategory === cat && styles.chipActive]}
+                  style={[styles.chip, selectedCategory === cat && { backgroundColor: colors.primary }]}
                   onPress={() => onCategoryChange(cat)}
                 >
-                  <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive]}>
+                  <Text style={[styles.chipText, selectedCategory === cat && { color: 'white' }]}>
                     {cat}
                   </Text>
                 </TouchableOpacity>
@@ -116,27 +120,27 @@ export default function Index() {
                         <View style={styles.cardContent}>
                           <View style={styles.cardTop}>
                             <View style={styles.metaRow}>
-                              <View style={styles.categoryPill}>
-                                <Text style={styles.categoryText}>{item.category}</Text>
+                              <View style={[styles.categoryPill, { backgroundColor: colors.categoryBg }]}>
+                                <Text style={[styles.categoryText, { color: colors.primary }]}>{item.category}</Text>
                               </View>
                               <Text style={styles.timeText}>{item.time}</Text>
                             </View>
                             <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
                             <Text style={styles.sourceText}>{item.source}</Text>
                           </View>
-                          <View style={styles.cardBottom}>
+                          <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
                             <View style={styles.statRow}>
-                              <Ionicons name="eye-outline" size={13} color="#bbb" />
+                              <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
                               <Text style={styles.statText}>{item.reads}</Text>
                             </View>
                             <TouchableOpacity
-                              style={styles.bookmarkBtn}
+                              style={[styles.bookmarkBtn, { backgroundColor: colors.iconBg }]}
                               onPress={() => toggleBookmark(item.id)}
                             >
                               <Ionicons
                                 name={bookmarked ? 'bookmark' : 'bookmark-outline'}
                                 size={18}
-                                color={bookmarked ? '#c62828' : '#bbb'}
+                                color={bookmarked ? colors.primary : colors.textMuted}
                               />
                             </TouchableOpacity>
                           </View>
@@ -154,10 +158,10 @@ export default function Index() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6f8',
+    backgroundColor: colors.background,
   },
   chipsContainer: {
     paddingHorizontal: 20,
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: 'white',
+    backgroundColor: colors.card,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
@@ -176,16 +180,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  chipActive: {
-    backgroundColor: '#c62828',
-  },
   chipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#555',
-  },
-  chipTextActive: {
-    color: 'white',
+    color: colors.textSecondary,
   },
   divider: {
     flexDirection: 'row',
@@ -197,12 +195,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: colors.border,
   },
   dividerText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#999',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -211,7 +209,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 16,
     shadowColor: '#000',
@@ -228,7 +226,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 10,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.border,
   },
   cardContent: {
     flex: 1,
@@ -242,7 +240,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   categoryPill: {
-    backgroundColor: '#fef0f0',
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 4,
@@ -250,24 +247,23 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#c62828',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   timeText: {
     fontSize: 11,
-    color: '#bbb',
+    color: colors.textMuted,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: colors.text,
     lineHeight: 22,
     letterSpacing: 0.1,
   },
   sourceText: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textMuted,
   },
   cardBottom: {
     flexDirection: 'row',
@@ -276,7 +272,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
   },
   statRow: {
     flexDirection: 'row',
@@ -285,11 +280,11 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: '#bbb',
+    color: colors.textMuted,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#999',
+    color: colors.textMuted,
     fontSize: 14,
     marginTop: 40,
   },
@@ -297,7 +292,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
   },

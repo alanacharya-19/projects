@@ -2,6 +2,7 @@ import { Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 export const HEADER_HEIGHT = 120;
 
@@ -11,16 +12,17 @@ interface HomeHeaderProps {
 
 export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   const greeting = getGreeting();
   const today = getFormattedDate();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.primary }]}>
       <View style={styles.topRow}>
         <View style={styles.left}>
           <View style={styles.logoCircle}>
-            <Ionicons name="newspaper" size={18} color="#c62828" />
+            <Ionicons name="newspaper" size={18} color={colors.primary} />
           </View>
           <Text style={styles.appName}>NewsApp</Text>
         </View>
@@ -31,8 +33,8 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
           <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/notifications')}>
             <Ionicons name="notifications-outline" size={22} color="white" />
             {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
+              <View style={[styles.badge, { borderColor: colors.primary }]}>
+                <Text style={[styles.badgeText, { color: colors.primary }]}>{unreadCount}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -70,7 +72,6 @@ function getFormattedDate(): string {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#c62828',
     paddingHorizontal: 20,
     paddingBottom: 16,
     shadowColor: '#000',
@@ -130,10 +131,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: '#c62828',
   },
   badgeText: {
-    color: '#c62828',
     fontSize: 9,
     fontWeight: '800',
   },
