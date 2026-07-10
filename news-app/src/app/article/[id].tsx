@@ -52,6 +52,10 @@ export default function ArticleDetailScreen() {
     return () => clearInterval(interval);
   }, [article?.images?.length]);
 
+  const paragraphs = useMemo(() => (article?.body ?? '').split('\n\n').filter(Boolean), [article?.body]);
+  const readTime = useMemo(() => estimateReadTime(article?.body ?? ''), [article?.body]);
+  const bookmarked = isBookmarked(article?.id ?? '');
+
   if (!article) {
     return (
       <View style={styles.container}>
@@ -68,11 +72,8 @@ export default function ArticleDetailScreen() {
     );
   }
 
-  const bookmarked = isBookmarked(article.id);
   const related = getRelatedArticles(article, 3);
   const images = article.images || [];
-  const paragraphs = useMemo(() => article.body.split('\n\n').filter(Boolean), [article.body]);
-  const readTime = useMemo(() => estimateReadTime(article.body), [article.body]);
   const preview = paragraphs.slice(0, PREVIEW_PARAGRAPHS);
   const rest = paragraphs.slice(PREVIEW_PARAGRAPHS);
 
