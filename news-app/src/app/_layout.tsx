@@ -4,7 +4,7 @@ import { BookmarkProvider } from "../context/BookmarkContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 
 function RootLayoutInner() {
-  const { colors } = useTheme();
+  const { colors, theme } = useTheme();
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={colors.statusBar} />

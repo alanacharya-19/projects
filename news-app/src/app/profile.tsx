@@ -17,7 +17,7 @@ export default function ProfileScreen() {
         { icon: 'newspaper' as const, label: 'News Categories', sub: 'Technology, Politics, Sports' },
         { icon: 'notifications' as const, label: 'Notifications', sub: 'Push, Email, Digest' },
         { icon: 'language' as const, label: 'Language', sub: 'English' },
-        { icon: theme === 'dark' ? 'moon' : 'sunny' as const, label: 'Theme', sub: theme === 'dark' ? 'Dark' : 'Light', action: toggleTheme },
+        { icon: (theme === 'dark' ? 'moon' : 'sunny') as 'moon' | 'sunny', label: 'Theme', sub: theme === 'dark' ? 'Dark' : 'Light', action: toggleTheme },
       ],
     },
     {
