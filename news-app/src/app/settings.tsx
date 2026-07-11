@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, Image, Animated, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,11 +7,28 @@ import { useTheme } from '../context/ThemeContext';
 import { useBookmarks } from '../context/BookmarkContext';
 import { getCachedArticle } from '../services/api';
 
+function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => void }) {
+  const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(anim, { toValue: value ? 1 : 0, duration: 200, useNativeDriver: false }).start();
+  }, [value, anim]);
+  const trackColor = anim.interpolate({ inputRange: [0, 1], outputRange: ['#e0e0e0', '#34c759'] });
+  const thumbLeft = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 22] });
+  return (
+    <TouchableOpacity activeOpacity={0.8} onPress={onToggle}>
+      <Animated.View style={{ width: 48, height: 28, borderRadius: 14, backgroundColor: trackColor, justifyContent: 'center', paddingHorizontal: 2 }}>
+        <Animated.View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 3, transform: [{ translateX: thumbLeft }] }} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, theme, toggleTheme } = useTheme();
   const { bookmarks } = useBookmarks();
   const [showSaved, setShowSaved] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const savedArticles = [...bookmarks].map((id) => getCachedArticle(id)).filter(Boolean);
@@ -48,7 +65,9 @@ export default function SettingsScreen() {
         {
           icon: 'notifications' as const,
           label: 'Notifications',
-          action: () => router.push('/notifications'),
+          sub: notificationsEnabled ? 'On' : 'Off',
+          action: () => setNotificationsEnabled((v) => !v),
+          toggle: true,
         },
       ],
     },
@@ -91,10 +110,9 @@ export default function SettingsScreen() {
                       {'sub' in item && <Text style={styles.menuSub}>{item.sub}</Text>}
                     </View>
                     {'toggle' in item ? (
-                      <Ionicons
-                        name={theme === 'dark' ? 'toggle' : 'toggle-outline'}
-                        size={24}
-                        color={colors.primary}
+                      <ToggleSwitch
+                        value={item.label === 'Notifications' ? notificationsEnabled : theme === 'dark'}
+                        onToggle={item.action}
                       />
                     ) : (
                       <Ionicons name={'expandable' in item && showSaved ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
