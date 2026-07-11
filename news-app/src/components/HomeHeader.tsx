@@ -38,8 +38,8 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatar} onPress={() => router.push('/settings')}>
-            <Ionicons name="person" size={20} color="white" />
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings')}>
+            <Ionicons name="settings-outline" size={22} color="white" />
           </TouchableOpacity>
         </View>
       </View>
@@ -74,6 +74,8 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingBottom: 16,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -135,16 +137,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 9,
     fontWeight: '800',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
   },
   expandedSection: {
     paddingTop: 14,

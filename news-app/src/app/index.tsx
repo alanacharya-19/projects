@@ -101,12 +101,6 @@ export default function Index() {
               ))}
             </ScrollView>
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Latest News</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
             <View style={styles.list}>
               {articles.length === 0 ? (
                 <Text style={styles.emptyText}>No articles found. Pull down to refresh.</Text>
@@ -126,9 +120,6 @@ export default function Index() {
                         <View style={styles.cardContent}>
                           <View style={styles.cardTop}>
                             <View style={styles.metaRow}>
-                              <View style={[styles.categoryPill, { backgroundColor: colors.categoryBg }]}>
-                                <Text style={[styles.categoryText, { color: colors.primary }]}>{item.category}</Text>
-                              </View>
                               <Text style={styles.timeText}>{item.time}</Text>
                             </View>
                             <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
@@ -171,7 +162,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
   },
   chipsContainer: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingVertical: 12,
     gap: 8,
   },
   chip: {
@@ -195,7 +186,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginVertical: 20,
+    marginVertical: 4,
     gap: 12,
   },
   dividerLine: {

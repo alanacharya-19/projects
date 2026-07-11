@@ -153,12 +153,13 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 4,
+    marginBottom: 0,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 8,
     marginBottom: 14,
     paddingHorizontal: 16,
   },
