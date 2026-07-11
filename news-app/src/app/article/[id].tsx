@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getRelatedArticles } from '../../data/articles';
 import { getCachedArticle, fetchArticleDetail } from '../../services/api';
+import { incrementView } from '../../services/views';
 import { useBookmarks } from '../../context/BookmarkContext';
 import { useTheme } from '../../context/ThemeContext';
 import type { Article } from '../../data/articles';
@@ -36,6 +37,7 @@ export default function ArticleDetailScreen() {
   useEffect(() => {
     if (cached) {
       setArticle(cached);
+      incrementView(cached.id);
       if (cached.sourceId) {
         fetchArticleDetail(cached).then(setArticle);
       }

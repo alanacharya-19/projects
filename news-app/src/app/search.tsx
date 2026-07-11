@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchArticles } from '../services/api';
+import { incrementView } from '../services/views';
 import { useTheme } from '../context/ThemeContext';
 import type { Article } from '../data/articles';
 
@@ -164,7 +165,10 @@ export default function SearchScreen() {
                 key={item.id}
                 style={[styles.card, { backgroundColor: colors.card }]}
                 activeOpacity={0.92}
-                onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+                onPress={() => {
+                  incrementView(item.id);
+                  router.push({ pathname: '/article/[id]', params: { id: item.id } });
+                }}
               >
                 {item.image ? (
                   <Image source={{ uri: item.image }} style={styles.thumbImage} />

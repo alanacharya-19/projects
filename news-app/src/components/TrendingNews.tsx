@@ -3,6 +3,7 @@ import { Text, View, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, 
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { incrementView } from '../services/views';
 import type { Article } from '../data/articles';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -103,7 +104,10 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
               key={`${item.id}-${i}`}
               style={styles.card}
               activeOpacity={0.9}
-              onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+              onPress={() => {
+                incrementView(item.id);
+                router.push({ pathname: '/article/[id]', params: { id: item.id } });
+              }}
             >
               {item.image ? (
                 <ImageBackground source={{ uri: item.image }} style={styles.imageLayer} resizeMode="cover">

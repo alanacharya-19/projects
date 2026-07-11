@@ -5,7 +5,8 @@ import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
 import TrendingNews from '../components/TrendingNews';
 import { ArticleSkeleton, TrendingSkeleton, SkeletonBlock } from '../components/Skeleton';
-import { fetchTopHeadlines, fetchTrendingArticles } from '../services/api';
+import { fetchTopHeadlines } from '../services/api';
+import { incrementView, getViewCount, onViewChange } from '../services/views';
 import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,8 +17,8 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [viewTick, setViewTick] = useState(0);
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
   const { addNotifications, unreadCount } = useNotifications();
@@ -30,15 +31,9 @@ export default function Index() {
     }
   }, [addNotifications]);
 
-  const loadTrending = useCallback(async () => {
-    const data = await fetchTrendingArticles();
-    setTrendingArticles(data);
-  }, []);
-
   useEffect(() => {
     loadArticles();
-    loadTrending();
-  }, [loadArticles, loadTrending]);
+  }, [loadArticles]);
 
   useEffect(() => {
     if (!loading && articles.length > 0) return;
@@ -49,14 +44,33 @@ export default function Index() {
     }
   }, [articles, loading]);
 
+  useEffect(() => {
+    return onViewChange(() => setViewTick(t => t + 1));
+  }, []);
+
+  const trendingArticles = useMemo(() => {
+    return [...articles].sort((a, b) => {
+      const viewsA = getViewCount(a.id);
+      const viewsB = getViewCount(b.id);
+      if (viewsA !== viewsB) return viewsB - viewsA;
+      const readsA = parseInt(a.reads.replace('k', '000'));
+      const readsB = parseInt(b.reads.replace('k', '000'));
+      return readsB - readsA;
+    }).slice(0, 6);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articles, viewTick]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([
-      loadArticles(selectedCategory === 'All' ? undefined : selectedCategory),
-      loadTrending(),
-    ]);
+    await loadArticles(selectedCategory === 'All' ? undefined : selectedCategory);
     setRefreshing(false);
-  }, [loadArticles, loadTrending, selectedCategory]);
+  }, [loadArticles, selectedCategory]);
+
+  const onCardPress = useCallback((id: string) => {
+    incrementView(id);
+    setViewTick(t => t + 1);
+    router.push({ pathname: '/article/[id]', params: { id } });
+  }, []);
 
   const onCategoryChange = useCallback(async (cat: string) => {
     setSelectedCategory(cat);
@@ -132,7 +146,7 @@ export default function Index() {
                       key={item.id}
                       style={[styles.card, i === articles.length - 1 && { marginBottom: 0 }]}
                       activeOpacity={0.92}
-                      onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
+                      onPress={() => onCardPress(item.id)}
                     >
                       {item.image && (
                         <View style={styles.cardImageWrap}>
