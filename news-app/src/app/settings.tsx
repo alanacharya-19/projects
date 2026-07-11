@@ -1,0 +1,276 @@
+import { useMemo, useState } from 'react';
+import { Text, View, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../context/ThemeContext';
+import { useBookmarks } from '../context/BookmarkContext';
+import { getCachedArticle } from '../services/api';
+
+export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
+  const { colors, theme, toggleTheme } = useTheme();
+  const { bookmarks } = useBookmarks();
+  const [showSaved, setShowSaved] = useState(false);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const savedArticles = [...bookmarks].map((id) => getCachedArticle(id)).filter(Boolean);
+
+  const SECTIONS = [
+    {
+      title: 'Appearance',
+      items: [
+        {
+          icon: theme === 'dark' ? 'moon' : 'sunny' as 'moon' | 'sunny',
+          label: 'Dark Mode',
+          sub: theme === 'dark' ? 'On' : 'Off',
+          action: toggleTheme,
+          toggle: true,
+        },
+      ],
+    },
+    {
+      title: 'Content',
+      items: [
+        {
+          icon: 'bookmark' as const,
+          label: 'Saved Articles',
+          sub: `${bookmarks.size} article${bookmarks.size !== 1 ? 's' : ''}`,
+          action: () => setShowSaved((s) => !s),
+          expandable: true,
+        },
+        {
+          icon: 'newspaper' as const,
+          label: 'Preferred Categories',
+          sub: 'Technology, Politics, Sports',
+          action: () => router.push('/'),
+        },
+        {
+          icon: 'notifications' as const,
+          label: 'Notifications',
+          action: () => router.push('/notifications'),
+        },
+      ],
+    },
+    {
+      title: 'About',
+      items: [
+        { icon: 'information-circle' as const, label: 'Version', sub: '1.0.0' },
+      ],
+    },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
+        <View style={styles.topRow}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color="white" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Settings</Text>
+          <View style={{ width: 36 }} />
+        </View>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
+        {SECTIONS.map((section) => (
+          <View key={section.title} style={styles.section}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+              {section.items.map((item, i) => (
+                <View key={item.label}>
+                  <TouchableOpacity
+                    style={[styles.menuItem, i < section.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                    onPress={'action' in item ? item.action : undefined}
+                  >
+                    <View style={[styles.menuIcon, { backgroundColor: colors.categoryBg }]}>
+                      <Ionicons name={item.icon} size={20} color={colors.primary} />
+                    </View>
+                    <View style={styles.menuText}>
+                      <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
+                      {'sub' in item && <Text style={styles.menuSub}>{item.sub}</Text>}
+                    </View>
+                    {'toggle' in item ? (
+                      <Ionicons
+                        name={theme === 'dark' ? 'toggle' : 'toggle-outline'}
+                        size={24}
+                        color={colors.primary}
+                      />
+                    ) : (
+                      <Ionicons name={'expandable' in item && showSaved ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
+                    )}
+                  </TouchableOpacity>
+                  {'expandable' in item && showSaved && (
+                    <View style={[styles.savedSection, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                      {savedArticles.length === 0 ? (
+                        <View style={styles.savedEmpty}>
+                          <Ionicons name="bookmark-outline" size={28} color={colors.textMuted} />
+                          <Text style={styles.savedEmptyText}>No saved articles yet</Text>
+                        </View>
+                      ) : (
+                        savedArticles.map((article) => (
+                          <TouchableOpacity
+                            key={article!.id}
+                            style={[styles.savedItem, { borderBottomColor: colors.border }]}
+                            onPress={() => router.push({ pathname: '/article/[id]', params: { id: article!.id } })}
+                          >
+                            {article!.image && (
+                              <Image source={{ uri: article!.image }} style={styles.savedThumb} />
+                            )}
+                            <View style={styles.savedInfo}>
+                              <Text style={[styles.savedTitle, { color: colors.text }]} numberOfLines={2}>{article!.title}</Text>
+                              <Text style={styles.savedMeta}>{article!.source} · {article!.time}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
+
+        <View style={styles.footer}>
+          <Ionicons name="newspaper" size={20} color={colors.textMuted} />
+          <Text style={styles.footerText}>NewsApp 1.0.0</Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  topBar: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: 'white',
+    letterSpacing: 0.2,
+  },
+  body: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  sectionCard: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuText: {
+    flex: 1,
+  },
+  menuLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  menuSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  savedSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  savedEmpty: {
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 20,
+  },
+  savedEmptyText: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  savedItem: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  savedThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: colors.border,
+  },
+  savedInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  savedTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 19,
+  },
+  savedMeta: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 20,
+  },
+  footerText: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+});
