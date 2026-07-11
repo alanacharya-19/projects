@@ -9,6 +9,7 @@ import { fetchTopHeadlines } from '../services/api';
 import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
 import { useTheme } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationContext';
 
 export default function Index() {
   const { colors } = useTheme();
@@ -18,10 +19,15 @@ export default function Index() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
+  const { addNotifications, unreadCount } = useNotifications();
+
   const loadArticles = useCallback(async (category?: string) => {
     const data = await fetchTopHeadlines(category);
     setArticles(data);
-  }, []);
+    if (!category || category === 'All') {
+      addNotifications(data);
+    }
+  }, [addNotifications]);
 
   useEffect(() => {
     loadArticles();
@@ -53,7 +59,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <HomeHeader unreadCount={3} />
+      <HomeHeader unreadCount={unreadCount} />
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}

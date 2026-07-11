@@ -1,10 +1,11 @@
 import { StatusBar } from "react-native";
 import { Stack } from "expo-router";
 import { BookmarkProvider } from "../context/BookmarkContext";
+import { NotificationProvider } from "../context/NotificationContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 
 function RootLayoutInner() {
-  const { colors, theme } = useTheme();
+  const { colors } = useTheme();
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={colors.statusBar} />
@@ -24,7 +25,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <BookmarkProvider>
-        <RootLayoutInner />
+        <NotificationProvider>
+          <RootLayoutInner />
+        </NotificationProvider>
       </BookmarkProvider>
     </ThemeProvider>
   );

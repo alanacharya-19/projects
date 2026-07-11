@@ -4,45 +4,27 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-
-const NOTIFICATIONS = [
-  { id: '1', title: 'Breaking: Major Climate Deal Signed', body: 'Global leaders reach historic agreement at the climate summit.', time: '5m ago', read: false, icon: 'globe' as const, articleId: '4' },
-  { id: '2', title: 'Tech Stock Surge', body: 'Tech stocks hit new records as AI sector continues to grow.', time: '1h ago', read: false, icon: 'trending-up' as const, articleId: '1' },
-  { id: '3', title: 'New Study Released', body: 'Research shows promising results in quantum computing applications.', time: '3h ago', read: false, icon: 'flask' as const, articleId: '6' },
-  { id: '4', title: 'Sports Update', body: 'Local team advances to championship finals after overtime win.', time: '6h ago', read: true, icon: 'football' as const, articleId: '5' },
-  { id: '5', title: 'Weather Alert', body: 'Heavy rainfall expected in your area this weekend.', time: '8h ago', read: true, icon: 'rainy' as const, articleId: undefined },
-  { id: '6', title: 'Market Report', body: 'Markets close higher amid positive economic data.', time: '12h ago', read: true, icon: 'bar-chart' as const, articleId: '7' },
-  { id: '7', title: 'Election Updates', body: 'New polling data shows shifting voter preferences.', time: '1d ago', read: true, icon: 'megaphone' as const, articleId: '11' },
-  { id: '8', title: 'Health Advisory', body: 'New health guidelines released by national authorities.', time: '2d ago', read: true, icon: 'medkit' as const, articleId: '3' },
-];
+import { useNotifications } from '../context/NotificationContext';
+import { fetchTopHeadlines } from '../services/api';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const [data, setData] = useState(NOTIFICATIONS);
-  const [refreshing, setRefreshing] = useState(false);
+  const { notifications, unreadCount, markAllRead, toggleRead, addNotifications } = useNotifications();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const unreadCount = data.filter((n) => !n.read).length;
+  const [refreshing, setRefreshing] = useState(false);
 
-  const markAllRead = () => {
-    setData((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const toggleRead = (id: string) => {
-    setData((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)));
-  };
-
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
-  }, []);
+    const data = await fetchTopHeadlines();
+    addNotifications(data);
+    setRefreshing(false);
+  }, [addNotifications]);
 
-  const handlePress = (item: typeof NOTIFICATIONS[number]) => {
+  const handlePress = (item: typeof notifications[number]) => {
     toggleRead(item.id);
-    if (item.articleId) {
-      router.push({ pathname: '/article/[id]', params: { id: item.articleId } });
-    }
+    router.push({ pathname: '/article/[id]', params: { id: item.articleId } });
   };
 
   return (
@@ -81,20 +63,20 @@ export default function NotificationsScreen() {
           />
         }
       >
-        {data.length === 0 ? (
+        {notifications.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIconWrap, { backgroundColor: colors.iconBg }]}>
               <Ionicons name="notifications-off-outline" size={36} color={colors.textMuted} />
             </View>
             <Text style={styles.emptyTitle}>All Caught Up</Text>
-            <Text style={[styles.emptySub, { color: colors.textMuted }]}>No new notifications at this time</Text>
+            <Text style={[styles.emptySub, { color: colors.textMuted }]}>Pull down to check for new articles</Text>
           </View>
         ) : (
           <>
             {unreadCount > 0 && (
               <Text style={styles.sectionLabel}>New</Text>
             )}
-            {data.filter((n) => !n.read).map((item) => (
+            {notifications.filter((n) => !n.read).map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={[styles.unreadCard, { backgroundColor: colors.card, borderLeftColor: colors.primary }]}
@@ -103,23 +85,23 @@ export default function NotificationsScreen() {
                 <View style={styles.cardContent}>
                   <View style={[styles.iconWrap, { backgroundColor: colors.categoryBg }]}>
                     <Ionicons name={item.icon} size={20} color={colors.primary} />
-                    <View style={[styles.iconDot, { backgroundColor: colors.primary }]} />
+                    <View style={[styles.iconDot, { backgroundColor: colors.primary, borderColor: colors.card }]} />
                   </View>
                   <View style={styles.textBlock}>
                     <View style={styles.cardHeader}>
-                      <Text style={styles.cardTitle}>{item.title}</Text>
+                      <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
                     </View>
                     <Text style={[styles.cardBody, { color: colors.textSecondary }]} numberOfLines={2}>{item.body}</Text>
-                    <Text style={styles.time}>{item.time}</Text>
+                    <Text style={[styles.time, { color: colors.textMuted }]}>{item.time}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
             ))}
 
-            {data.some((n) => n.read) && (
+            {notifications.some((n) => n.read) && (
               <>
                 <Text style={[styles.sectionLabel, { marginTop: 24 }]}>Earlier</Text>
-                {data.filter((n) => n.read).map((item) => (
+                {notifications.filter((n) => n.read).map((item) => (
                   <TouchableOpacity
                     key={item.id}
                     style={[styles.readCard, { backgroundColor: colors.card }]}
@@ -131,7 +113,7 @@ export default function NotificationsScreen() {
                       </View>
                       <View style={styles.textBlock}>
                         <View style={styles.cardHeader}>
-                          <Text style={[styles.cardTitle, styles.readTitle]}>{item.title}</Text>
+                          <Text style={[styles.cardTitle, { color: colors.textMuted, fontWeight: '500' }]}>{item.title}</Text>
                         </View>
                         <Text style={[styles.cardBody, { color: colors.textMuted }]} numberOfLines={2}>{item.body}</Text>
                         <Text style={[styles.time, { color: colors.textMuted }]}>{item.time}</Text>
@@ -289,7 +271,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     height: 8,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: colors.card,
   },
   textBlock: {
     flex: 1,
@@ -300,12 +281,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
   cardTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.text,
     lineHeight: 20,
-  },
-  readTitle: {
-    fontWeight: '500',
-    color: colors.textMuted,
   },
   cardBody: {
     fontSize: 13,
@@ -314,7 +290,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
   },
   time: {
     fontSize: 11,
-    color: colors.textMuted,
     fontWeight: '500',
   },
 });
