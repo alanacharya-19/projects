@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
+import { View, Animated, Dimensions, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface SkeletonProps {
   width?: number | string;
@@ -34,28 +36,43 @@ export function SkeletonBlock({ width = '100%', height = 16, borderRadius = 6, s
 export function ArticleSkeleton() {
   const { colors } = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-      <View style={styles.top}>
-        <View style={styles.metaRow}>
-          <SkeletonBlock width={60} height={14} borderRadius={4} />
-          <SkeletonBlock width={40} height={14} borderRadius={4} />
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <View style={styles.cardRow}>
+        <SkeletonBlock width={100} height={100} borderRadius={10} />
+        <View style={styles.cardContent}>
+          <View style={styles.metaRow}>
+            <SkeletonBlock width={60} height={14} borderRadius={4} />
+            <SkeletonBlock width={40} height={14} borderRadius={4} />
+          </View>
+          <SkeletonBlock width="100%" height={16} borderRadius={4} style={{ marginTop: 10 }} />
+          <SkeletonBlock width="70%" height={16} borderRadius={4} style={{ marginTop: 6 }} />
+          <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
+            <SkeletonBlock width={60} height={14} borderRadius={4} />
+            <SkeletonBlock width={28} height={28} borderRadius={14} />
+          </View>
         </View>
-        <SkeletonBlock width="100%" height={18} borderRadius={4} style={{ marginTop: 10 }} />
-        <SkeletonBlock width="75%" height={18} borderRadius={4} style={{ marginTop: 6 }} />
-        <SkeletonBlock width={80} height={14} borderRadius={4} style={{ marginTop: 10 }} />
-      </View>
-      <View style={[styles.bottom, { borderTopColor: colors.border }]}>
-        <SkeletonBlock width={60} height={14} borderRadius={4} />
-        <SkeletonBlock width={28} height={28} borderRadius={14} />
       </View>
     </View>
   );
 }
 
 export function TrendingSkeleton() {
+  const { colors } = useTheme();
   return (
-    <View style={styles.trendingCard}>
-      <SkeletonBlock width="100%" height={200} borderRadius={16} />
+    <View style={styles.trendingWrap}>
+      <View style={styles.trendingHeader}>
+        <SkeletonBlock width={24} height={24} borderRadius={12} />
+        <SkeletonBlock width={90} height={18} borderRadius={4} style={{ marginLeft: 8 }} />
+      </View>
+      <View style={styles.trendingCard}>
+        <View style={[styles.trendingOverlay, { backgroundColor: colors.skeleton }]}>
+          <View style={styles.trendingContent}>
+            <SkeletonBlock width={70} height={20} borderRadius={6} />
+            <SkeletonBlock width="80%" height={20} borderRadius={4} style={{ marginTop: 10 }} />
+            <SkeletonBlock width="50%" height={14} borderRadius={4} style={{ marginTop: 6 }} />
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -71,14 +88,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  top: {
-    gap: 2,
+  cardRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  cardContent: {
+    flex: 1,
   },
   metaRow: {
     flexDirection: 'row',
     gap: 10,
   },
-  bottom: {
+  cardBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -86,8 +107,27 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
   },
+  trendingWrap: {
+    marginBottom: 8,
+  },
+  trendingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    marginTop: 8,
+  },
   trendingCard: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    marginHorizontal: 16,
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  trendingOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  trendingContent: {
+    padding: 20,
   },
 });

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
 import TrendingNews from '../components/TrendingNews';
-import { ArticleSkeleton } from '../components/Skeleton';
+import { ArticleSkeleton, TrendingSkeleton, SkeletonBlock } from '../components/Skeleton';
 import { fetchTopHeadlines } from '../services/api';
 import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
@@ -74,11 +74,21 @@ export default function Index() {
         }
       >
         {loading && articles.length === 0 ? (
-          <View style={styles.list}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <ArticleSkeleton key={i} />
-            ))}
-          </View>
+          <>
+            <TrendingSkeleton />
+            <View style={styles.chipsContainer}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={[styles.chip, { backgroundColor: colors.card }]}>
+                  <SkeletonBlock width={50} height={14} borderRadius={7} />
+                </View>
+              ))}
+            </View>
+            <View style={styles.list}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <ArticleSkeleton key={i} />
+              ))}
+            </View>
+          </>
         ) : (
           <>
             <TrendingNews articles={articles.slice(0, 6)} />

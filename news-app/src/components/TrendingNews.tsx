@@ -87,10 +87,6 @@ export default function TrendingNews({ articles }: TrendingNewsProps) {
           </View>
           <Text style={[styles.heading, { color: colors.text }]}>Trending</Text>
         </View>
-        <TouchableOpacity style={styles.seeAllBtn}>
-          <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
-          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
-        </TouchableOpacity>
       </View>
       <ScrollView
         ref={scrollRef}
@@ -178,15 +174,6 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 18,
     fontWeight: '700',
-  },
-  seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  seeAll: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   card: {
     width: CARD_WIDTH,
