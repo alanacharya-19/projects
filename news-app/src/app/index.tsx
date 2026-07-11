@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
 import TrendingNews from '../components/TrendingNews';
 import { ArticleSkeleton, TrendingSkeleton, SkeletonBlock } from '../components/Skeleton';
-import { fetchTopHeadlines } from '../services/api';
+import { fetchTopHeadlines, fetchTrendingArticles } from '../services/api';
 import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,6 +16,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { toggleBookmark, isBookmarked } = useBookmarks();
 
@@ -29,9 +30,15 @@ export default function Index() {
     }
   }, [addNotifications]);
 
+  const loadTrending = useCallback(async () => {
+    const data = await fetchTrendingArticles();
+    setTrendingArticles(data);
+  }, []);
+
   useEffect(() => {
     loadArticles();
-  }, [loadArticles]);
+    loadTrending();
+  }, [loadArticles, loadTrending]);
 
   useEffect(() => {
     if (!loading && articles.length > 0) return;
@@ -44,9 +51,12 @@ export default function Index() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadArticles(selectedCategory === 'All' ? undefined : selectedCategory);
+    await Promise.all([
+      loadArticles(selectedCategory === 'All' ? undefined : selectedCategory),
+      loadTrending(),
+    ]);
     setRefreshing(false);
-  }, [loadArticles, selectedCategory]);
+  }, [loadArticles, loadTrending, selectedCategory]);
 
   const onCategoryChange = useCallback(async (cat: string) => {
     setSelectedCategory(cat);
@@ -91,7 +101,7 @@ export default function Index() {
           </>
         ) : (
           <>
-            <TrendingNews articles={articles.slice(0, 6)} />
+            <TrendingNews articles={trendingArticles} />
 
             <ScrollView
               horizontal

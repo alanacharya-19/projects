@@ -171,6 +171,10 @@ function getMockArticles(category?: string): Article[] {
   return ARTICLES.filter((a) => a.category === category);
 }
 
+function getMockTrendingArticles(): Article[] {
+  return ARTICLES.slice(0, 6);
+}
+
 async function fetchGuardian(path: string): Promise<any> {
   if (!API_KEY) throw new Error('No API key');
   const separator = path.includes('?') ? '&' : '?';
@@ -199,6 +203,28 @@ export async function fetchTopHeadlines(category?: string): Promise<Article[]> {
   } catch (e) {
     console.warn('Failed to fetch news, using fallback data:', e);
     return getMockArticles(category);
+  }
+}
+
+export async function fetchTrendingArticles(): Promise<Article[]> {
+  if (!API_KEY) return getMockTrendingArticles();
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    'show-fields': 'thumbnail,body,trailText,byline,standfirst,wordcount,shortUrl',
+    'page-size': '6',
+    'order-by': 'newest',
+    'from-date': sevenDaysAgo,
+    'section': 'technology|politics|sport|business|science|health|culture|world',
+  });
+
+  try {
+    const res = await fetchGuardian(`/search?${params}`);
+    if (!res.results?.length) throw new Error('No trending articles');
+    return res.results.map((a: any) => mapGuardianArticle(a));
+  } catch (e) {
+    console.warn('Failed to fetch trending, using fallback:', e);
+    return getMockTrendingArticles();
   }
 }
 
