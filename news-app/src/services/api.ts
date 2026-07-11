@@ -111,6 +111,12 @@ function mapGuardianArticle(item: any, category?: string): Article {
     images: thumbnail ? [thumbnail] : [],
     body,
     sourceId: item.id || undefined,
+    byline: item.fields?.byline || undefined,
+    standfirst: item.fields?.standfirst
+      ? item.fields.standfirst.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim()
+      : undefined,
+    wordcount: item.fields?.wordcount ? Number(item.fields.wordcount) : undefined,
+    shortUrl: item.fields?.shortUrl || undefined,
   };
 
   articleCache.set(article.id, article);
@@ -121,7 +127,7 @@ export async function fetchArticleDetail(article: Article): Promise<Article> {
   if (!API_KEY || !article.sourceId) return article;
   try {
     const res = await fetchGuardian(
-      `/${article.sourceId}?show-blocks=all&show-fields=thumbnail,body`
+      `/${article.sourceId}?show-blocks=all&show-fields=thumbnail,body,byline,standfirst,wordcount,shortUrl`
     );
     const content = res.content;
     if (!content) return article;
@@ -141,6 +147,12 @@ export async function fetchArticleDetail(article: Article): Promise<Article> {
     const updated = {
       ...article,
       images: allImages.length > 0 ? allImages : article.images,
+      byline: content.fields?.byline || article.byline,
+      standfirst: content.fields?.standfirst
+        ? content.fields.standfirst.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim()
+        : article.standfirst,
+      wordcount: content.fields?.wordcount ? Number(content.fields.wordcount) : article.wordcount,
+      shortUrl: content.fields?.shortUrl || article.shortUrl,
     };
 
     articleCache.set(article.id, updated);
@@ -174,7 +186,7 @@ export async function fetchTopHeadlines(category?: string): Promise<Article[]> {
 
   const section = getSection(category);
   const params = new URLSearchParams({
-    'show-fields': 'thumbnail,body,trailText',
+    'show-fields': 'thumbnail,body,trailText,byline,standfirst,wordcount,shortUrl',
     'page-size': '20',
     'order-by': 'newest',
   });
@@ -195,7 +207,7 @@ export async function searchArticles(query: string): Promise<Article[]> {
 
   const params = new URLSearchParams({
     q: query,
-    'show-fields': 'thumbnail,body,trailText',
+    'show-fields': 'thumbnail,body,trailText,byline,standfirst,wordcount,shortUrl',
     'page-size': '20',
     'order-by': 'relevance',
   });

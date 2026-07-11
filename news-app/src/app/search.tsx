@@ -163,6 +163,7 @@ export default function SearchScreen() {
               <TouchableOpacity
                 key={item.id}
                 style={[styles.card, { backgroundColor: colors.card }]}
+                activeOpacity={0.92}
                 onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
               >
                 {item.image ? (
@@ -178,6 +179,12 @@ export default function SearchScreen() {
                     <Text style={styles.time}>{item.time}</Text>
                   </View>
                   <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+                  {item.byline && (
+                    <View style={styles.searchByline}>
+                      <Ionicons name="person-outline" size={11} color={colors.textMuted} />
+                      <Text style={styles.searchBylineText} numberOfLines={1}>{item.byline}</Text>
+                    </View>
+                  )}
                   <Text style={styles.source}>{item.source}</Text>
                 </View>
               </TouchableOpacity>
@@ -404,6 +411,17 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     color: colors.text,
     lineHeight: 19,
     marginBottom: 4,
+  },
+  searchByline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  searchBylineText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontStyle: 'italic',
   },
   source: {
     fontSize: 12,

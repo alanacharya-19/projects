@@ -9,6 +9,10 @@ export interface Article {
   images?: string[];
   body: string;
   sourceId?: string;
+  byline?: string;
+  standfirst?: string;
+  wordcount?: number;
+  shortUrl?: string;
 }
 
 export const ARTICLES: Article[] = [

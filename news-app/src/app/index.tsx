@@ -121,35 +121,51 @@ export default function Index() {
                     <TouchableOpacity
                       key={item.id}
                       style={[styles.card, i === articles.length - 1 && { marginBottom: 0 }]}
+                      activeOpacity={0.92}
                       onPress={() => router.push({ pathname: '/article/[id]', params: { id: item.id } })}
                     >
-                      <View style={styles.cardRow}>
-                        {item.image && (
+                      {item.image && (
+                        <View style={styles.cardImageWrap}>
                           <Image source={{ uri: item.image }} style={styles.cardImage} />
-                        )}
-                        <View style={styles.cardContent}>
-                          <View style={styles.cardTop}>
-                            <View style={styles.metaRow}>
-                              <Text style={styles.timeText}>{item.time}</Text>
-                            </View>
-                            <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-                            <Text style={styles.sourceText}>{item.source}</Text>
+                          <View style={styles.cardCategoryBadge}>
+                            <Text style={styles.cardCategoryText}>{item.category}</Text>
                           </View>
-                          <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
-                            <View style={styles.statRow}>
-                              <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
-                              <Text style={styles.statText}>{item.reads}</Text>
+                          <TouchableOpacity
+                            style={styles.bookmarkOverlay}
+                            onPress={() => toggleBookmark(item.id)}
+                          >
+                            <Ionicons
+                              name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                              size={20}
+                              color={bookmarked ? colors.primary : '#fff'}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                      <View style={styles.cardBody}>
+                        {!item.image && (
+                          <View style={styles.cardCatRow}>
+                            <View style={styles.cardCategoryBadgeInline}>
+                              <Text style={styles.cardCategoryText}>{item.category}</Text>
                             </View>
-                            <TouchableOpacity
-                              style={[styles.bookmarkBtn, { backgroundColor: colors.iconBg }]}
-                              onPress={() => toggleBookmark(item.id)}
-                            >
-                              <Ionicons
-                                name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-                                size={18}
-                                color={bookmarked ? colors.primary : colors.textMuted}
-                              />
-                            </TouchableOpacity>
+                          </View>
+                        )}
+                        <Text style={styles.cardTitle} numberOfLines={3}>{item.title}</Text>
+                        {item.byline && (
+                          <View style={styles.bylineRow}>
+                            <Ionicons name="person-outline" size={12} color={colors.textMuted} />
+                            <Text style={styles.bylineText} numberOfLines={1}>{item.byline}</Text>
+                          </View>
+                        )}
+                        <View style={styles.cardMeta}>
+                          <View style={styles.metaLeft}>
+                            <Text style={styles.metaText}>{item.source}</Text>
+                            <View style={styles.metaDot} />
+                            <Text style={styles.metaText}>{item.time}</Text>
+                          </View>
+                          <View style={styles.metaRight}>
+                            <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
+                            <Text style={styles.metaText}>{item.reads}</Text>
                           </View>
                         </View>
                       </View>
@@ -213,79 +229,107 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
   },
   list: {
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 16,
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  cardRow: {
-    flexDirection: 'row',
-    gap: 14,
+  cardImageWrap: {
+    position: 'relative',
+    width: '100%',
+    height: 200,
   },
   cardImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
+    width: '100%',
+    height: '100%',
     backgroundColor: colors.border,
   },
-  cardContent: {
-    flex: 1,
+  cardCategoryBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
-  cardTop: {
-    gap: 8,
+  cardCategoryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  metaRow: {
-    flexDirection: 'row',
+  bookmarkOverlay: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  cardBody: {
+    padding: 16,
     gap: 10,
   },
-  categoryPill: {
+  cardCatRow: {
+    flexDirection: 'row',
+  },
+  cardCategoryBadgeInline: {
+    backgroundColor: colors.primary,
     paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  categoryText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  timeText: {
-    fontSize: 11,
-    color: colors.textMuted,
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.text,
-    lineHeight: 22,
+    lineHeight: 24,
     letterSpacing: 0.1,
   },
-  sourceText: {
+  bylineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  bylineText: {
     fontSize: 12,
     color: colors.textMuted,
+    fontStyle: 'italic',
   },
-  cardBottom: {
+  cardMeta: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
+    justifyContent: 'space-between',
   },
-  statRow: {
+  metaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: colors.textMuted,
+  },
+  metaRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  statText: {
+  metaText: {
     fontSize: 12,
     color: colors.textMuted,
   },
@@ -294,12 +338,5 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     color: colors.textMuted,
     fontSize: 14,
     marginTop: 40,
-  },
-  bookmarkBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

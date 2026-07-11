@@ -55,7 +55,10 @@ export default function ArticleDetailScreen() {
   }, [article?.images?.length]);
 
   const paragraphs = useMemo(() => (article?.body ?? '').split('\n\n').filter(Boolean), [article?.body]);
-  const readTime = useMemo(() => estimateReadTime(article?.body ?? ''), [article?.body]);
+  const readTime = useMemo(() => {
+    if (article?.wordcount) return `${Math.max(1, Math.round(article.wordcount / 200))} min read`;
+    return `${estimateReadTime(article?.body ?? '')} min read`;
+  }, [article?.wordcount, article?.body]);
   const bookmarked = isBookmarked(article?.id ?? '');
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -132,15 +135,24 @@ export default function ArticleDetailScreen() {
         </View>
 
         <Text style={styles.title}>{article.title}</Text>
+        {article.standfirst && (
+          <Text style={styles.standfirst}>{article.standfirst}</Text>
+        )}
 
         <View style={styles.sourceRow}>
           <View style={styles.sourceAvatar}>
             <Text style={styles.sourceAvatarText}>G</Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.sourceName}>{article.source}</Text>
             <Text style={styles.sourceTime}>{article.time}</Text>
           </View>
+          {article.byline ? (
+            <View style={styles.bylineBadge}>
+              <Ionicons name="create-outline" size={12} color={colors.primary} />
+              <Text style={styles.bylineBadgeText} numberOfLines={1}>{article.byline}</Text>
+            </View>
+          ) : null}
         </View>
 
         {images.length > 0 ? (
@@ -318,7 +330,15 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     color: colors.text,
     lineHeight: 29,
     letterSpacing: 0.15,
+    marginBottom: 8,
+  },
+  standfirst: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    letterSpacing: 0.15,
     marginBottom: 16,
+    fontStyle: 'italic',
   },
   sourceRow: {
     flexDirection: 'row',
@@ -348,6 +368,21 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     fontSize: 12,
     color: colors.textMuted,
     marginTop: 1,
+  },
+  bylineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.iconBg,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    maxWidth: 140,
+  },
+  bylineBadgeText: {
+    fontSize: 11,
+    color: colors.primary,
+    fontWeight: '600',
   },
   galleryWrap: {
     marginBottom: 20,

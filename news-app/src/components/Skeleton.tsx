@@ -37,19 +37,20 @@ export function ArticleSkeleton() {
   const { colors } = useTheme();
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
-      <View style={styles.cardRow}>
-        <SkeletonBlock width={100} height={100} borderRadius={10} />
-        <View style={styles.cardContent}>
-          <View style={styles.metaRow}>
-            <SkeletonBlock width={60} height={14} borderRadius={4} />
-            <SkeletonBlock width={40} height={14} borderRadius={4} />
-          </View>
-          <SkeletonBlock width="100%" height={16} borderRadius={4} style={{ marginTop: 10 }} />
-          <SkeletonBlock width="70%" height={16} borderRadius={4} style={{ marginTop: 6 }} />
-          <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
-            <SkeletonBlock width={60} height={14} borderRadius={4} />
-            <SkeletonBlock width={28} height={28} borderRadius={14} />
-          </View>
+      <SkeletonBlock width="100%" height={180} borderRadius={0} />
+      <View style={styles.cardBody}>
+        <View style={styles.catRow}>
+          <SkeletonBlock width={60} height={18} borderRadius={9} />
+        </View>
+        <SkeletonBlock width="100%" height={18} borderRadius={4} />
+        <SkeletonBlock width="85%" height={18} borderRadius={4} />
+        <SkeletonBlock width="40%" height={18} borderRadius={4} />
+        <View style={styles.metaRow}>
+          <SkeletonBlock width={80} height={12} borderRadius={4} />
+          <SkeletonBlock width={12} height={12} borderRadius={6} />
+          <SkeletonBlock width={50} height={12} borderRadius={4} />
+          <View style={{ flex: 1 }} />
+          <SkeletonBlock width={50} height={12} borderRadius={4} />
         </View>
       </View>
     </View>
@@ -79,33 +80,26 @@ export function TrendingSkeleton() {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  cardRow: {
+  cardBody: {
+    padding: 16,
+    gap: 10,
+  },
+  catRow: {
     flexDirection: 'row',
-    gap: 14,
-  },
-  cardContent: {
-    flex: 1,
   },
   metaRow: {
     flexDirection: 'row',
-    gap: 10,
-  },
-  cardBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
+    gap: 6,
   },
   trendingWrap: {
     marginBottom: 8,
