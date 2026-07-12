@@ -167,14 +167,23 @@ export function getCachedArticle(id: string): Article | undefined {
 }
 
 function getMockArticles(category?: string): Article[] {
-  if (!category || category === 'All') return ARTICLES;
-  return ARTICLES.filter((a) => a.category === category);
+  let source = (!category || category === 'All') ? [...ARTICLES] : ARTICLES.filter((a) => a.category === category);
+  const now = Date.now();
+  source.sort((a, b) => {
+    const hashA = (a.id.charCodeAt(0) || 0) * (now % 7919);
+    const hashB = (b.id.charCodeAt(0) || 0) * (now % 7919);
+    return hashB - hashA;
+  });
+  return source;
 }
 
 async function fetchGuardian(path: string): Promise<any> {
   if (!API_KEY) throw new Error('No API key');
   const separator = path.includes('?') ? '&' : '?';
-  const res = await fetch(`${BASE_URL}${path}${separator}api-key=${API_KEY}`);
+  const cacheBuster = `_cb=${Date.now()}`;
+  const res = await fetch(`${BASE_URL}${path}${separator}api-key=${API_KEY}&${cacheBuster}`, {
+    cache: 'no-cache',
+  });
   if (!res.ok) throw new Error(`Guardian API error: ${res.status}`);
   const json = await res.json();
   if (json.response?.status !== 'ok') throw new Error('Guardian API error');
