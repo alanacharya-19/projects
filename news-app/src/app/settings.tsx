@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Image, Animated, StyleSheet } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Image, Animated, TextInput, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,9 +29,11 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, theme, toggleTheme } = useTheme();
   const { bookmarks } = useBookmarks();
-  const { preferredCategories, setPreferredCategories, triggerRefresh } = usePreferred();
+  const { preferredCategories, setPreferredCategories, triggerRefresh, userName, setUserName } = usePreferred();
   const [showSaved, setShowSaved] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [nameDraft, setNameDraft] = useState(userName);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [localPreferred, setLocalPreferred] = useState<string[]>([...preferredCategories]);
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -52,6 +54,13 @@ export default function SettingsScreen() {
     {
       title: 'Appearance',
       items: [
+        {
+          icon: 'person' as const,
+          label: 'Your Name',
+          sub: userName || 'Not set',
+          action: () => setShowNameInput((s) => !s),
+          expandable: true,
+        },
         {
           icon: theme === 'dark' ? 'moon' : 'sunny' as 'moon' | 'sunny',
           label: 'Dark Mode',
@@ -133,7 +142,8 @@ export default function SettingsScreen() {
                     ) : (
                       <Ionicons name={'expandable' in item && (
                         (item.label === 'Saved Articles' && showSaved) ||
-                        (item.label === 'Preferred Categories' && showCategories)
+                        (item.label === 'Preferred Categories' && showCategories) ||
+                        (item.label === 'Your Name' && showNameInput)
                       ) ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </TouchableOpacity>
@@ -190,6 +200,28 @@ export default function SettingsScreen() {
                       >
                         <Ionicons name="checkmark-circle" size={18} color="white" />
                         <Text style={styles.saveBtnText}>Save Preferences</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  {'expandable' in item && showNameInput && item.label === 'Your Name' && (
+                    <View style={[styles.savedSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 12 }]}>
+                      <TextInput
+                        style={[styles.nameInput, { color: colors.text, backgroundColor: colors.iconBg, borderColor: colors.border }]}
+                        placeholder="Enter your name"
+                        placeholderTextColor={colors.textMuted}
+                        value={nameDraft}
+                        onChangeText={setNameDraft}
+                        onSubmitEditing={() => setUserName(nameDraft)}
+                        returnKeyType="done"
+                      />
+                      <TouchableOpacity
+                        style={[styles.nameSaveBtn, { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          setUserName(nameDraft);
+                          setShowNameInput(false);
+                        }}
+                      >
+                        <Text style={styles.nameSaveText}>Set Name</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -360,6 +392,24 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
   },
   saveBtnText: {
     fontSize: 15,
+    fontWeight: '600',
+    color: 'white',
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  nameSaveBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  nameSaveText: {
+    fontSize: 14,
     fontWeight: '600',
     color: 'white',
   },

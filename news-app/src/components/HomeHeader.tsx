@@ -8,13 +8,14 @@ export const HEADER_HEIGHT = 120;
 
 interface HomeHeaderProps {
   unreadCount?: number;
+  userName?: string;
 }
 
-export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
+export default function HomeHeader({ unreadCount = 0, userName = '' }: HomeHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
-  const greeting = getGreeting();
+  const greeting = userName ? `${getGreeting()}, ${userName}` : getGreeting();
   const today = getFormattedDate();
 
   return (
@@ -57,9 +58,9 @@ export default function HomeHeader({ unreadCount = 0 }: HomeHeaderProps) {
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning, Alan';
-  if (hour < 18) return 'Good Afternoon, Alan';
-  return 'Good Evening, Alan';
+  if (hour < 12) return 'Good Morning';
+  if (hour < 18) return 'Good Afternoon';
+  return 'Good Evening';
 }
 
 function getFormattedDate(): string {

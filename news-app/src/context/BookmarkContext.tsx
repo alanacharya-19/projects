@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 interface BookmarkContextType {
   bookmarks: Set<string>;
@@ -6,10 +6,30 @@ interface BookmarkContextType {
   isBookmarked: (id: string) => boolean;
 }
 
+const STORAGE_KEY = 'newsapp_bookmarks';
+
+function loadBookmarks(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return new Set(JSON.parse(raw));
+  } catch {}
+  return new Set();
+}
+
+function saveBookmarks(ids: Set<string>) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {}
+}
+
 const BookmarkContext = createContext<BookmarkContextType | null>(null);
 
 export function BookmarkProvider({ children }: { children: React.ReactNode }) {
-  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set(['3', '7']));
+  const [bookmarks, setBookmarks] = useState<Set<string>>(loadBookmarks);
+
+  useEffect(() => {
+    saveBookmarks(bookmarks);
+  }, [bookmarks]);
 
   const toggleBookmark = useCallback((id: string) => {
     setBookmarks((prev) => {

@@ -60,11 +60,12 @@ module.exports = {
         'expo-splash-screen',
         {
           image: './assets/icons/news.png',
-          imageWidth: 200,
+          imageWidth: 150,
           resizeMode: 'contain',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#c62828',
           dark: {
-            backgroundColor: '#000000',
+            image: './assets/icons/news.png',
+            backgroundColor: '#b71c1c',
           },
         },
       ],

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, Image, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -22,7 +22,7 @@ export default function Index() {
   const [viewTick, setViewTick] = useState(0);
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { addNotifications, unreadCount } = useNotifications();
-  const { preferredCategories, refreshKey } = usePreferred();
+  const { preferredCategories, refreshKey, userName } = usePreferred();
 
   const preferredParam = preferredCategories.length > 0 ? preferredCategories.join(',') : undefined;
 
@@ -51,6 +51,20 @@ export default function Index() {
   useEffect(() => {
     return onViewChange(() => setViewTick(t => t + 1));
   }, []);
+
+  useEffect(() => {
+    const pollRef = { current: null as ReturnType<typeof setInterval> | null };
+    const initialDelay = setTimeout(() => {
+      pollRef.current = setInterval(async () => {
+        const fresh = await fetchTopHeadlines();
+        addNotifications(fresh);
+      }, 60000);
+    }, 10000);
+    return () => {
+      clearTimeout(initialDelay);
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [addNotifications]);
 
   const trendingArticles = useMemo(() => {
     return [...articles].sort((a, b) => {
@@ -87,7 +101,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <HomeHeader unreadCount={unreadCount} />
+      <HomeHeader unreadCount={unreadCount} userName={userName} />
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
