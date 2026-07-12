@@ -15,6 +15,7 @@ const CATEGORY_SECTIONS: Record<string, string> = {
   Health: 'health',
   Entertainment: 'culture',
   World: 'world',
+  Movies: 'film',
 };
 
 function getSection(category?: string): string | undefined {
@@ -166,8 +167,12 @@ export function getCachedArticle(id: string): Article | undefined {
   return articleCache.get(id) || getArticleById(id);
 }
 
-function getMockArticles(category?: string): Article[] {
+function getMockArticles(category?: string, sections?: string): Article[] {
   let source = (!category || category === 'All') ? [...ARTICLES] : ARTICLES.filter((a) => a.category === category);
+  if (!category && sections) {
+    const preferred = sections.split(',');
+    source = source.filter((a) => preferred.includes(a.category));
+  }
   const now = Date.now();
   source.sort((a, b) => {
     const hashA = (a.id.charCodeAt(0) || 0) * (now % 7919);
@@ -190,10 +195,13 @@ async function fetchGuardian(path: string): Promise<any> {
   return json.response;
 }
 
-export async function fetchTopHeadlines(category?: string): Promise<Article[]> {
-  if (!API_KEY) return getMockArticles(category);
+export async function fetchTopHeadlines(category?: string, sections?: string): Promise<Article[]> {
+  if (!API_KEY) return getMockArticles(category, sections);
 
-  const section = getSection(category);
+  let section = getSection(category);
+  if (!section && sections) {
+    section = sections.split(',').map((s) => CATEGORY_SECTIONS[s.trim()] || s.trim().toLowerCase()).filter(Boolean).join('|');
+  }
   const params = new URLSearchParams({
     'show-fields': 'thumbnail,body,trailText,byline,standfirst,wordcount,shortUrl',
     'page-size': '20',
@@ -207,7 +215,7 @@ export async function fetchTopHeadlines(category?: string): Promise<Article[]> {
     return res.results.map((a: any) => mapGuardianArticle(a, category));
   } catch (e) {
     console.warn('Failed to fetch news, using fallback data:', e);
-    return getMockArticles(category);
+    return getMockArticles(category, sections);
   }
 }
 

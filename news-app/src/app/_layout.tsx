@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { BookmarkProvider } from "../context/BookmarkContext";
 import { NotificationProvider } from "../context/NotificationContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
+import { PreferredProvider } from "../context/PreferredContext";
 
 function RootLayoutInner() {
   const { colors } = useTheme();
@@ -24,11 +25,13 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <BookmarkProvider>
-        <NotificationProvider>
-          <RootLayoutInner />
-        </NotificationProvider>
-      </BookmarkProvider>
+      <PreferredProvider>
+        <BookmarkProvider>
+          <NotificationProvider>
+            <RootLayoutInner />
+          </NotificationProvider>
+        </BookmarkProvider>
+      </PreferredProvider>
     </ThemeProvider>
   );
 }

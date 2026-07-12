@@ -126,7 +126,7 @@ export const ARTICLES: Article[] = [
   },
 ];
 
-export const CATEGORIES = ['All', 'Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'Entertainment'];
+export const CATEGORIES = ['All', 'Technology', 'Politics', 'Sports', 'Finance', 'Science', 'Health', 'Entertainment', 'Movies'];
 
 export function getArticleById(id: string): Article | undefined {
   return ARTICLES.find((a) => a.id === id);

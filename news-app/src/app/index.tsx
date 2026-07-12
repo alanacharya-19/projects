@@ -11,6 +11,7 @@ import { CATEGORIES, type Article } from '../data/articles';
 import { useBookmarks } from '../context/BookmarkContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNotifications } from '../context/NotificationContext';
+import { usePreferred } from '../context/PreferredContext';
 
 export default function Index() {
   const { colors } = useTheme();
@@ -20,20 +21,23 @@ export default function Index() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewTick, setViewTick] = useState(0);
   const { toggleBookmark, isBookmarked } = useBookmarks();
-
   const { addNotifications, unreadCount } = useNotifications();
+  const { preferredCategories, refreshKey } = usePreferred();
+
+  const preferredParam = preferredCategories.length > 0 ? preferredCategories.join(',') : undefined;
 
   const loadArticles = useCallback(async (category?: string) => {
-    const data = await fetchTopHeadlines(category);
+    const data = await fetchTopHeadlines(category, preferredParam && !category ? preferredParam : undefined);
     setArticles(data);
     if (!category || category === 'All') {
       addNotifications(data);
     }
-  }, [addNotifications]);
+  }, [addNotifications, preferredParam]);
 
   useEffect(() => {
+    setLoading(true);
     loadArticles();
-  }, [loadArticles]);
+  }, [loadArticles, refreshKey]);
 
   useEffect(() => {
     if (!loading && articles.length > 0) return;

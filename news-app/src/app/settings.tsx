@@ -5,7 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useBookmarks } from '../context/BookmarkContext';
+import { usePreferred } from '../context/PreferredContext';
 import { getCachedArticle } from '../services/api';
+import { CATEGORIES } from '../data/articles';
 
 function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => void }) {
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -27,11 +29,24 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, theme, toggleTheme } = useTheme();
   const { bookmarks } = useBookmarks();
+  const { preferredCategories, setPreferredCategories, triggerRefresh } = usePreferred();
   const [showSaved, setShowSaved] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [localPreferred, setLocalPreferred] = useState<string[]>([...preferredCategories]);
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const savedArticles = [...bookmarks].map((id) => getCachedArticle(id)).filter(Boolean);
+
+  const toggleCategory = (cat: string) => {
+    setLocalPreferred((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const categorySubText = localPreferred.length === 0
+    ? 'Showing all categories'
+    : localPreferred.slice(0, 3).join(', ') + (localPreferred.length > 3 ? ` +${localPreferred.length - 3}` : '');
 
   const SECTIONS = [
     {
@@ -59,8 +74,9 @@ export default function SettingsScreen() {
         {
           icon: 'newspaper' as const,
           label: 'Preferred Categories',
-          sub: 'Technology, Politics, Sports',
-          action: () => router.push('/'),
+          sub: categorySubText,
+          action: () => setShowCategories((s) => !s),
+          expandable: true,
         },
         {
           icon: 'notifications' as const,
@@ -115,10 +131,13 @@ export default function SettingsScreen() {
                         onToggle={item.action}
                       />
                     ) : (
-                      <Ionicons name={'expandable' in item && showSaved ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
+                      <Ionicons name={'expandable' in item && (
+                        (item.label === 'Saved Articles' && showSaved) ||
+                        (item.label === 'Preferred Categories' && showCategories)
+                      ) ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </TouchableOpacity>
-                  {'expandable' in item && showSaved && (
+                  {'expandable' in item && showSaved && item.label === 'Saved Articles' && (
                     <View style={[styles.savedSection, { borderTopWidth: 1, borderTopColor: colors.border }]}>
                       {savedArticles.length === 0 ? (
                         <View style={styles.savedEmpty}>
@@ -142,6 +161,36 @@ export default function SettingsScreen() {
                           </TouchableOpacity>
                         ))
                       )}
+                    </View>
+                  )}
+                  {'expandable' in item && showCategories && item.label === 'Preferred Categories' && (
+                    <View style={[styles.savedSection, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+                      {CATEGORIES.filter((c) => c !== 'All').map((cat, i, arr) => {
+                        const selected = localPreferred.includes(cat);
+                        return (
+                          <TouchableOpacity
+                            key={cat}
+                            style={[styles.catItem, i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                            onPress={() => toggleCategory(cat)}
+                          >
+                            <View style={[styles.catCheck, selected && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                              {selected && <Ionicons name="checkmark" size={14} color="white" />}
+                            </View>
+                            <Text style={[styles.catLabel, { color: colors.text }]}>{cat}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                      <TouchableOpacity
+                        style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          setPreferredCategories(localPreferred);
+                          triggerRefresh();
+                          router.back();
+                        }}
+                      >
+                        <Ionicons name="checkmark-circle" size={18} color="white" />
+                        <Text style={styles.saveBtnText}>Save Preferences</Text>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -279,6 +328,40 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     fontSize: 11,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  catItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  catCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.textMuted,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  catLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'white',
   },
   footer: {
     flexDirection: 'row',
