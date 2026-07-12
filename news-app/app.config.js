@@ -28,6 +28,7 @@ module.exports = {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
+      bundleIdentifier: 'com.alanacharya1.newsapp',
       supportsTablet: true,
       infoPlist: {
         UILaunchStoryboardName: 'SplashScreen',
@@ -69,6 +70,9 @@ module.exports = {
       ],
     ],
     extra: {
+      eas: {
+        projectId: '3982c3c8-19ea-4339-84ab-cb16f6f3ea02',
+      },
       newsApiKey,
     },
     experiments: {
