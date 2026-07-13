@@ -57,6 +57,34 @@ export function ArticleSkeleton() {
   );
 }
 
+export function ArticleDetailSkeleton() {
+  const { colors } = useTheme();
+  return (
+    <View>
+      <SkeletonBlock width="100%" height={250} borderRadius={0} />
+      <View style={styles.detailBody}>
+        <SkeletonBlock width={80} height={20} borderRadius={6} />
+        <SkeletonBlock width="100%" height={26} borderRadius={6} style={{ marginTop: 14 }} />
+        <SkeletonBlock width="92%" height={26} borderRadius={6} />
+        <SkeletonBlock width="65%" height={16} borderRadius={6} style={{ marginTop: 10 }} />
+        <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+          <SkeletonBlock width={60} height={14} borderRadius={6} />
+          <SkeletonBlock width={80} height={14} borderRadius={6} />
+        </View>
+        <View style={{ height: 24 }} />
+        <SkeletonBlock width="100%" height={14} borderRadius={4} />
+        <SkeletonBlock width="100%" height={14} borderRadius={4} />
+        <SkeletonBlock width="88%" height={14} borderRadius={4} />
+        <SkeletonBlock width="100%" height={14} borderRadius={4} style={{ marginTop: 2 }} />
+        <SkeletonBlock width="75%" height={14} borderRadius={4} />
+        <SkeletonBlock width="100%" height={14} borderRadius={4} style={{ marginTop: 2 }} />
+        <SkeletonBlock width="92%" height={14} borderRadius={4} />
+        <SkeletonBlock width="60%" height={14} borderRadius={4} />
+      </View>
+    </View>
+  );
+}
+
 export function TrendingSkeleton() {
   const { colors } = useTheme();
   return (
@@ -123,5 +151,9 @@ const styles = StyleSheet.create({
   },
   trendingContent: {
     padding: 20,
+  },
+  detailBody: {
+    padding: 20,
+    gap: 10,
   },
 });

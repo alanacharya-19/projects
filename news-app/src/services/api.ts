@@ -195,8 +195,8 @@ async function fetchGuardian(path: string): Promise<any> {
   return json.response;
 }
 
-export async function fetchTopHeadlines(category?: string, sections?: string): Promise<Article[]> {
-  if (!API_KEY) return getMockArticles(category, sections);
+export async function fetchTopHeadlines(category?: string, sections?: string, page: number = 1): Promise<{ articles: Article[]; totalPages: number }> {
+  if (!API_KEY) return { articles: getMockArticles(category, sections), totalPages: 1 };
 
   let section = getSection(category);
   if (!section && sections) {
@@ -205,6 +205,7 @@ export async function fetchTopHeadlines(category?: string, sections?: string): P
   const params = new URLSearchParams({
     'show-fields': 'thumbnail,body,trailText,byline,standfirst,wordcount,shortUrl',
     'page-size': '20',
+    'page': String(page),
     'order-by': 'newest',
   });
   if (section) params.set('section', section);
@@ -212,10 +213,10 @@ export async function fetchTopHeadlines(category?: string, sections?: string): P
   try {
     const res = await fetchGuardian(`/search?${params}`);
     if (!res.results?.length) throw new Error('No articles');
-    return res.results.map((a: any) => mapGuardianArticle(a, category));
+    return { articles: res.results.map((a: any) => mapGuardianArticle(a, category)), totalPages: res.pages || 1 };
   } catch (e) {
     console.warn('Failed to fetch news, using fallback data:', e);
-    return getMockArticles(category, sections);
+    return { articles: getMockArticles(category, sections), totalPages: 1 };
   }
 }
 

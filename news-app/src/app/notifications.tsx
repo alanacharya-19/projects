@@ -17,8 +17,8 @@ export default function NotificationsScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    const data = await fetchTopHeadlines();
-    addNotifications(data);
+    const { articles } = await fetchTopHeadlines();
+    addNotifications(articles);
     setRefreshing(false);
   }, [addNotifications]);
 

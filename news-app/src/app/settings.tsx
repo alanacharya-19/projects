@@ -28,7 +28,7 @@ function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => voi
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, theme, toggleTheme } = useTheme();
-  const { bookmarks } = useBookmarks();
+  const { bookmarks, bookmarkData } = useBookmarks();
   const { preferredCategories, setPreferredCategories, triggerRefresh, userName, setUserName } = usePreferred();
   const [showSaved, setShowSaved] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
@@ -38,7 +38,13 @@ export default function SettingsScreen() {
   const [localPreferred, setLocalPreferred] = useState<string[]>([...preferredCategories]);
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const savedArticles = [...bookmarks].map((id) => getCachedArticle(id)).filter(Boolean);
+  const savedArticles = [...bookmarks]
+    .map((id) => {
+      const summary = bookmarkData[id];
+      if (!summary) return getCachedArticle(id);
+      return { id, ...summary } as any;
+    })
+    .filter(Boolean);
 
   const toggleCategory = (cat: string) => {
     setLocalPreferred((prev) =>

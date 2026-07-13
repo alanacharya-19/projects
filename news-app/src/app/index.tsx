@@ -16,9 +16,12 @@ import { usePreferred } from '../context/PreferredContext';
 export default function Index() {
   const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [viewTick, setViewTick] = useState(0);
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { addNotifications, unreadCount } = useNotifications();
@@ -26,16 +29,35 @@ export default function Index() {
 
   const preferredParam = preferredCategories.length > 0 ? preferredCategories.join(',') : undefined;
 
-  const loadArticles = useCallback(async (category?: string) => {
-    const data = await fetchTopHeadlines(category, preferredParam && !category ? preferredParam : undefined);
-    setArticles(data);
-    if (!category || category === 'All') {
+  const loadArticles = useCallback(async (category?: string, pageNum: number = 1, append: boolean = false) => {
+    const { articles: data, totalPages: total } = await fetchTopHeadlines(
+      category,
+      preferredParam && !category ? preferredParam : undefined,
+      pageNum
+    );
+    if (append) {
+      setArticles((prev) => [...prev, ...data]);
+    } else {
+      setArticles(data);
+    }
+    setTotalPages(total);
+    setPage(pageNum);
+    if ((!category || category === 'All') && pageNum === 1) {
       addNotifications(data);
     }
   }, [addNotifications, preferredParam]);
 
+  const loadMore = useCallback(async () => {
+    if (loadingMore || page >= totalPages) return;
+    setLoadingMore(true);
+    await loadArticles(selectedCategory === 'All' ? undefined : selectedCategory, page + 1, true);
+    setLoadingMore(false);
+  }, [loadingMore, page, totalPages, loadArticles, selectedCategory]);
+
   useEffect(() => {
     setLoading(true);
+    setPage(1);
+    setArticles([]);
     loadArticles();
   }, [loadArticles, refreshKey]);
 
@@ -53,16 +75,33 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const pollRef = { current: null as ReturnType<typeof setInterval> | null };
+    let pollRef: ReturnType<typeof setInterval> | null = null;
     const initialDelay = setTimeout(() => {
-      pollRef.current = setInterval(async () => {
-        const fresh = await fetchTopHeadlines();
-        addNotifications(fresh);
-      }, 60000);
+      const startPolling = () => {
+        pollRef = setInterval(async () => {
+          try {
+            const { articles: fresh } = await fetchTopHeadlines();
+            addNotifications(fresh);
+          } catch (e) {
+            console.warn('Notification poll failed:', e);
+          }
+        }, 60000);
+      };
+      startPolling();
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden' && pollRef) {
+            clearInterval(pollRef);
+            pollRef = null;
+          } else if (document.visibilityState === 'visible' && !pollRef) {
+            startPolling();
+          }
+        });
+      }
     }, 10000);
     return () => {
       clearTimeout(initialDelay);
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (pollRef) clearInterval(pollRef);
     };
   }, [addNotifications]);
 
@@ -80,20 +119,22 @@ export default function Index() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadArticles(selectedCategory === 'All' ? undefined : selectedCategory);
+    setPage(1);
+    await loadArticles(selectedCategory === 'All' ? undefined : selectedCategory, 1, false);
     setRefreshing(false);
   }, [loadArticles, selectedCategory]);
 
-  const onCardPress = useCallback((id: string) => {
-    incrementView(id);
+  const onCardPress = useCallback((item: Article) => {
+    incrementView(item.id);
     setViewTick(t => t + 1);
-    router.push({ pathname: '/article/[id]', params: { id } });
+    router.push({ pathname: '/article/[id]', params: { id: item.id } });
   }, []);
 
   const onCategoryChange = useCallback(async (cat: string) => {
     setSelectedCategory(cat);
+    setPage(1);
     setLoading(true);
-    await loadArticles(cat === 'All' ? undefined : cat);
+    await loadArticles(cat === 'All' ? undefined : cat, 1, false);
     setLoading(false);
   }, [loadArticles]);
 
@@ -164,7 +205,7 @@ export default function Index() {
                       key={item.id}
                       style={[styles.card, i === articles.length - 1 && { marginBottom: 0 }]}
                       activeOpacity={0.92}
-                      onPress={() => onCardPress(item.id)}
+                      onPress={() => onCardPress(item)}
                     >
                       {item.image && (
                         <View style={styles.cardImageWrap}>
@@ -174,7 +215,7 @@ export default function Index() {
                           </View>
                           <TouchableOpacity
                             style={styles.bookmarkOverlay}
-                            onPress={() => toggleBookmark(item.id)}
+                            onPress={() => toggleBookmark(item.id, { title: item.title, source: item.source, category: item.category, time: item.time, image: item.image, reads: item.reads, byline: item.byline })}
                           >
                             <Ionicons
                               name={bookmarked ? 'bookmark' : 'bookmark-outline'}
@@ -214,6 +255,18 @@ export default function Index() {
                     </TouchableOpacity>
                   );
                 })
+              )}
+              {page < totalPages && (
+                <TouchableOpacity
+                  style={[styles.loadMoreBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={loadMore}
+                  disabled={loadingMore}
+                >
+                  <Ionicons name="chevron-down-circle-outline" size={20} color={colors.primary} />
+                  <Text style={[styles.loadMoreText, { color: colors.primary }]}>
+                    {loadingMore ? 'Loading...' : 'Load More Articles'}
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
           </>
@@ -380,5 +433,21 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     color: colors.textMuted,
     fontSize: 14,
     marginTop: 40,
+  },
+  loadMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

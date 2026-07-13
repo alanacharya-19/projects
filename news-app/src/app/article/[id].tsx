@@ -8,6 +8,7 @@ import { getCachedArticle, fetchArticleDetail } from '../../services/api';
 import { incrementView } from '../../services/views';
 import { useBookmarks } from '../../context/BookmarkContext';
 import { useTheme } from '../../context/ThemeContext';
+import { ArticleDetailSkeleton } from '../../components/Skeleton';
 import type { Article } from '../../data/articles';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -72,10 +73,9 @@ export default function ArticleDetailScreen() {
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
         </View>
-        <View style={styles.errorState}>
-          <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
-          <Text style={styles.errorTitle}>Article Not Found</Text>
-        </View>
+        <ScrollView style={{ flex: 1 }}>
+          <ArticleDetailSkeleton />
+        </ScrollView>
       </View>
     );
   }
@@ -93,17 +93,18 @@ export default function ArticleDetailScreen() {
             <Ionicons name="arrow-back" size={22} color="white" />
           </TouchableOpacity>
           <View style={styles.topActions}>
-            <TouchableOpacity onPress={() => toggleBookmark(article.id)} style={styles.iconBtn}>
+            <TouchableOpacity onPress={() => toggleBookmark(article.id, { title: article.title, source: article.source, category: article.category, time: article.time, image: article.image, reads: article.reads, byline: article.byline })} style={styles.iconBtn}>
               <Ionicons name={bookmarked ? 'bookmark' : 'bookmark-outline'} size={20} color="white" />
             </TouchableOpacity>
-            {article.sourceId && (
-              <TouchableOpacity
-                style={styles.iconBtn}
-                onPress={() => Linking.openURL(`https://www.theguardian.com/${article.sourceId}`)}
-              >
-                <Ionicons name="share-outline" size={20} color="white" />
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => {
+                const url = article.shortUrl || (article.sourceId ? `https://www.theguardian.com/${article.sourceId}` : undefined);
+                if (url) Linking.openURL(url);
+              }}
+            >
+              <Ionicons name="share-outline" size={20} color="white" />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
