@@ -19,8 +19,8 @@ if (fs.existsSync(envPath)) {
 
 module.exports = {
   expo: {
-    name: 'news-app',
-    slug: 'news-app',
+    name: 'The Daily',
+    slug: 'the-daily',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icons/news.png',

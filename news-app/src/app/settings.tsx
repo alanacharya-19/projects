@@ -239,7 +239,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <Ionicons name="newspaper" size={20} color={colors.textMuted} />
-          <Text style={styles.footerText}>NewsApp 1.0.0</Text>
+          <Text style={styles.footerText}>The Daily 1.0.0</Text>
         </View>
       </ScrollView>
     </View>
