@@ -37,10 +37,8 @@ module.exports = {
     android: {
       package: 'com.alanacharya1.newsapp',
       adaptiveIcon: {
-        backgroundColor: '#E6F4FE',
+        backgroundColor: '#c62828',
         foregroundImage: './assets/icons/news.png',
-        backgroundImage: './assets/icons/news.png',
-        monochromeImage: './assets/icons/news.png',
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
