@@ -24,7 +24,6 @@ export default function Index() {
   const [totalPages, setTotalPages] = useState(1);
   const [viewTick, setViewTick] = useState(0);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const bannerAnim = useRef(new Animated.Value(0)).current;
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const { notifications, addNotifications, unreadCount } = useNotifications();
   const { preferredCategories, refreshKey, userName } = usePreferred();

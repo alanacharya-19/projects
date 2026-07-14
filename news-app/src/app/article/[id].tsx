@@ -24,6 +24,7 @@ function estimateReadTime(text: string): number {
 export default function ArticleDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { fontScale } = useFontSize();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { toggleBookmark, isBookmarked } = useBookmarks();
   const galleryRef = useRef<ScrollView>(null);
@@ -64,7 +65,7 @@ export default function ArticleDetailScreen() {
     return `${estimateReadTime(article?.body ?? '')} min read`;
   }, [article?.wordcount, article?.body]);
   const bookmarked = isBookmarked(article?.id ?? '');
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors, fontScale), [colors, fontScale]);
 
   if (!article) {
     return (
@@ -257,7 +258,7 @@ export default function ArticleDetailScreen() {
   );
 }
 
-const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], fs: number = 1) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -329,17 +330,17 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     fontWeight: '500',
   },
   title: {
-    fontSize: 22,
+    fontSize: Math.round(22 * fs),
     fontWeight: '700',
     color: colors.text,
-    lineHeight: 29,
+    lineHeight: Math.round(29 * fs),
     letterSpacing: 0.15,
     marginBottom: 8,
   },
   standfirst: {
-    fontSize: 15,
+    fontSize: Math.round(15 * fs),
     color: colors.textSecondary,
-    lineHeight: 22,
+    lineHeight: Math.round(22 * fs),
     letterSpacing: 0.15,
     marginBottom: 16,
     fontStyle: 'italic',
@@ -414,16 +415,16 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     marginBottom: 24,
   },
   leadParagraph: {
-    fontSize: 16,
+    fontSize: Math.round(16 * fs),
     color: colors.text,
-    lineHeight: 26,
+    lineHeight: Math.round(26 * fs),
     letterSpacing: 0.2,
     fontWeight: '500',
   },
   paragraph: {
-    fontSize: 15,
+    fontSize: Math.round(15 * fs),
     color: colors.textSecondary,
-    lineHeight: 25,
+    lineHeight: Math.round(25 * fs),
     letterSpacing: 0.2,
   },
   expandBtn: {
@@ -436,7 +437,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     marginTop: 4,
   },
   expandBtnText: {
-    fontSize: 15,
+    fontSize: Math.round(15 * fs),
     fontWeight: '600',
     color: 'white',
   },
@@ -451,7 +452,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     marginTop: 4,
   },
   sourceLinkText: {
-    fontSize: 14,
+    fontSize: Math.round(14 * fs),
     fontWeight: '600',
   },
   divider: {
@@ -503,7 +504,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     color: colors.textMuted,
   },
   relatedTitle: {
-    fontSize: 15,
+    fontSize: Math.round(15 * fs),
     fontWeight: '600',
     color: colors.text,
     lineHeight: 20,
