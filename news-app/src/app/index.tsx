@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Text, View, ScrollView, TouchableOpacity, Image, RefreshControl, StyleSheet } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Image, RefreshControl, Linking, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import HomeHeader from '../components/HomeHeader';
@@ -23,8 +23,10 @@ export default function Index() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewTick, setViewTick] = useState(0);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const bannerAnim = useRef(new Animated.Value(0)).current;
   const { toggleBookmark, isBookmarked } = useBookmarks();
-  const { addNotifications, unreadCount } = useNotifications();
+  const { notifications, addNotifications, unreadCount } = useNotifications();
   const { preferredCategories, refreshKey, userName } = usePreferred();
 
   const preferredParam = preferredCategories.length > 0 ? preferredCategories.join(',') : undefined;
@@ -73,6 +75,12 @@ export default function Index() {
   useEffect(() => {
     return onViewChange(() => setViewTick(t => t + 1));
   }, []);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      setBannerDismissed(false);
+    }
+  }, [notifications.length]);
 
   useEffect(() => {
     let pollRef: ReturnType<typeof setInterval> | null = null;
@@ -143,6 +151,29 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <HomeHeader unreadCount={unreadCount} userName={userName} />
+      {notifications.length > 0 && !bannerDismissed && (
+        <TouchableOpacity
+          style={[styles.breakingBanner, { backgroundColor: colors.primary }]}
+          activeOpacity={0.9}
+          onPress={() => {
+            router.push({ pathname: '/article/[id]', params: { id: notifications[0].articleId } });
+          }}
+        >
+          <View style={styles.breakingContent}>
+            <View style={styles.breakingDot} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.breakingLabel}>BREAKING NEWS</Text>
+              <Text style={styles.breakingTitle} numberOfLines={1}>{notifications[0].title}</Text>
+            </View>
+            <TouchableOpacity
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => setBannerDismissed(true)}
+            >
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      )}
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
@@ -213,16 +244,27 @@ export default function Index() {
                           <View style={styles.cardCategoryBadge}>
                             <Text style={styles.cardCategoryText}>{item.category}</Text>
                           </View>
-                          <TouchableOpacity
-                            style={styles.bookmarkOverlay}
-                            onPress={() => toggleBookmark(item.id, { title: item.title, source: item.source, category: item.category, time: item.time, image: item.image, reads: item.reads, byline: item.byline })}
-                          >
-                            <Ionicons
-                              name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-                              size={20}
-                              color={bookmarked ? colors.primary : '#fff'}
-                            />
-                          </TouchableOpacity>
+                          <View style={styles.cardActionRow}>
+                            <TouchableOpacity
+                              style={styles.cardActionBtn}
+                              onPress={() => {
+                                const url = item.shortUrl || undefined;
+                                if (url) Linking.openURL(url);
+                              }}
+                            >
+                              <Ionicons name="share-outline" size={16} color="#fff" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.cardActionBtn}
+                              onPress={() => toggleBookmark(item.id, { title: item.title, source: item.source, category: item.category, time: item.time, image: item.image, reads: item.reads, byline: item.byline })}
+                            >
+                              <Ionicons
+                                name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                                size={18}
+                                color={bookmarked ? colors.primary : '#fff'}
+                              />
+                            </TouchableOpacity>
+                          </View>
                         </View>
                       )}
                       <View style={styles.cardBody}>
@@ -247,6 +289,15 @@ export default function Index() {
                             <Text style={styles.metaText}>{item.time}</Text>
                           </View>
                           <View style={styles.metaRight}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                const url = item.shortUrl || undefined;
+                                if (url) Linking.openURL(url);
+                              }}
+                              style={{ marginRight: 8 }}
+                            >
+                              <Ionicons name="share-outline" size={14} color={colors.textMuted} />
+                            </TouchableOpacity>
                             <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
                             <Text style={styles.metaText}>{item.reads}</Text>
                           </View>
@@ -362,10 +413,14 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  bookmarkOverlay: {
+  cardActionRow: {
     position: 'absolute',
     top: 12,
     right: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  cardActionBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
@@ -449,5 +504,32 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
   loadMoreText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  breakingBanner: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  breakingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  breakingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ffeb3b',
+  },
+  breakingLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 1.5,
+  },
+  breakingTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 1,
   },
 });

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useFontSize } from '../context/FontSizeContext';
 import { useBookmarks } from '../context/BookmarkContext';
 import { usePreferred } from '../context/PreferredContext';
 import { getCachedArticle } from '../services/api';
@@ -28,11 +29,13 @@ function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => voi
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, theme, toggleTheme } = useTheme();
+  const { fontScale, setFontScale } = useFontSize();
   const { bookmarks, bookmarkData } = useBookmarks();
   const { preferredCategories, setPreferredCategories, triggerRefresh, userName, setUserName } = usePreferred();
   const [showSaved, setShowSaved] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
+  const [showFontSize, setShowFontSize] = useState(false);
   const [nameDraft, setNameDraft] = useState(userName);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [localPreferred, setLocalPreferred] = useState<string[]>([...preferredCategories]);
@@ -65,6 +68,13 @@ export default function SettingsScreen() {
           label: 'Your Name',
           sub: userName || 'Not set',
           action: () => setShowNameInput((s) => !s),
+          expandable: true,
+        },
+        {
+          icon: 'text' as const,
+          label: 'Font Size',
+          sub: fontScale === 1 ? 'Normal' : fontScale < 1 ? 'Small' : 'Large',
+          action: () => setShowFontSize((s) => !s),
           expandable: true,
         },
         {
@@ -149,7 +159,8 @@ export default function SettingsScreen() {
                       <Ionicons name={'expandable' in item && (
                         (item.label === 'Saved Articles' && showSaved) ||
                         (item.label === 'Preferred Categories' && showCategories) ||
-                        (item.label === 'Your Name' && showNameInput)
+                        (item.label === 'Your Name' && showNameInput) ||
+                        (item.label === 'Font Size' && showFontSize)
                       ) ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </TouchableOpacity>
@@ -229,6 +240,32 @@ export default function SettingsScreen() {
                       >
                         <Text style={styles.nameSaveText}>Set Name</Text>
                       </TouchableOpacity>
+                    </View>
+                  )}
+                  {'expandable' in item && showFontSize && item.label === 'Font Size' && (
+                    <View style={[styles.savedSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 16, gap: 12 }]}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={[styles.catLabel, { color: colors.text }]}>A</Text>
+                        <Text style={[styles.menuSub, { fontSize: 12 }]}>{Math.round(fontScale * 100)}%</Text>
+                        <Text style={[styles.catLabel, { color: colors.text, fontSize: 16 }]}>A</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <TouchableOpacity
+                          style={[styles.fontSizeBtn, { backgroundColor: colors.iconBg }]}
+                          onPress={() => setFontScale(fontScale - 0.1)}
+                        >
+                          <Ionicons name="remove" size={18} color={colors.text} />
+                        </TouchableOpacity>
+                        <View style={[styles.fontSizeTrack, { backgroundColor: colors.border }]}>
+                          <View style={[styles.fontSizeFill, { backgroundColor: colors.primary, width: `${((fontScale - 0.8) / 0.6) * 100}%` as any }]} />
+                        </View>
+                        <TouchableOpacity
+                          style={[styles.fontSizeBtn, { backgroundColor: colors.iconBg }]}
+                          onPress={() => setFontScale(fontScale + 0.1)}
+                        >
+                          <Ionicons name="add" size={18} color={colors.text} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   )}
                 </View>
@@ -418,6 +455,23 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) => StyleSheet
     fontSize: 14,
     fontWeight: '600',
     color: 'white',
+  },
+  fontSizeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fontSizeTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  fontSizeFill: {
+    height: '100%',
+    borderRadius: 3,
   },
   footer: {
     flexDirection: 'row',

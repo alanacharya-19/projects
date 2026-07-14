@@ -8,6 +8,7 @@ import { getCachedArticle, fetchArticleDetail } from '../../services/api';
 import { incrementView } from '../../services/views';
 import { useBookmarks } from '../../context/BookmarkContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useFontSize } from '../../context/FontSizeContext';
 import { ArticleDetailSkeleton } from '../../components/Skeleton';
 import type { Article } from '../../data/articles';
 
