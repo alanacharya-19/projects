@@ -471,3 +471,77 @@ export type UnitSystem = 'metric' | 'imperial';
 export type TimeRange = 'hourly' | 'daily' | 'weekly' | 'monthly';
 
 export type MapStyle = 'standard' | 'satellite' | 'terrain' | 'hybrid';
+
+// ============================================================
+// Theme Types
+// ============================================================
+
+export type ThemeMode = 'light' | 'dark' | 'auto';
+
+export interface ThemeColors {
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  secondary: string;
+  secondaryLight: string;
+  secondaryDark: string;
+  background: string;
+  surface: string;
+  surfaceVariant: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  border: string;
+  divider: string;
+  error: string;
+  errorLight: string;
+  errorDark: string;
+  warning: string;
+  warningLight: string;
+  warningDark: string;
+  success: string;
+  successLight: string;
+  successDark: string;
+  info: string;
+  infoLight: string;
+  infoDark: string;
+  white: string;
+  black: string;
+  transparent: string;
+  overlay: string;
+}
+
+// ============================================================
+// Location Types
+// ============================================================
+
+export interface UserLocation extends Coordinates {
+  city?: string;
+  region?: string;
+  country?: string;
+  timestamp?: number;
+}
+
+// ============================================================
+// Settings Types
+// ============================================================
+
+export interface AppSettings {
+  temperatureUnit: 'celsius' | 'fahrenheit';
+  distanceUnit: 'km' | 'miles';
+  alertDistance: number;
+  severityFilter: AlertSeverity[];
+  notificationPrefs: NotificationPrefs;
+  theme: ThemeMode;
+}
+
+export interface NotificationPrefs {
+  weatherAlerts: boolean;
+  earthquakes: boolean;
+  floods: boolean;
+  wildfires: boolean;
+  storms: boolean;
+  emergencyBroadcasts: boolean;
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
+}

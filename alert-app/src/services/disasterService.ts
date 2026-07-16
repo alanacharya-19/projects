@@ -1,11 +1,33 @@
-import type { DisasterAlert, Coordinates } from '@/types';
+import { API_CONFIG } from '@/constants/api';
+import type { Disaster, Alert, DisasterType, AlertSeverity, Coordinates } from '@/types';
+import { DisasterType as DT, AlertSeverity as AS } from '@/types';
 
 function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    throw new Error(`Disaster API error: HTTP ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`Disaster API error: HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
+
+function getDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().split('T')[0];
+}
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6_371_000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ============================================================
+// Earthquakes - USGS
+// ============================================================
 
 interface USGSFeature {
   id: string;
@@ -16,8 +38,9 @@ interface USGSFeature {
     updated: number | null;
     url: string | null;
     title: string;
-    type: string;
     alert: string | null;
+    felt: number | null;
+    tsunami: number;
   };
   geometry: { coordinates: [number, number, number] };
 }
@@ -26,53 +49,55 @@ interface USGSResponse {
   features: USGSFeature[];
 }
 
-function usgsAlertSeverity(mag: number | null): DisasterAlert['severity'] {
-  if (mag == null) return 'low';
-  if (mag >= 7) return 'extreme';
-  if (mag >= 5.5) return 'high';
-  if (mag >= 4) return 'moderate';
-  return 'low';
+function usgsSeverity(mag: number | null): AlertSeverity {
+  if (mag == null) return AS.MINOR;
+  if (mag >= 7) return AS.EXTREME;
+  if (mag >= 5.5) return AS.SEVERE;
+  if (mag >= 4) return AS.MODERATE;
+  return AS.MINOR;
 }
 
 export async function fetchEarthquakes(bbox?: {
-  minLat: number;
-  minLon: number;
-  maxLat: number;
-  maxLon: number;
-}): Promise<DisasterAlert[]> {
-  let url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson';
+  minLat: number; minLon: number; maxLat: number; maxLon: number;
+}): Promise<Alert[]> {
+  const { USGS_EARTHQUAKE } = API_CONFIG;
+  let url = `${USGS_EARTHQUAKE.FEATURES_URL}/2.5_week.geojson`;
 
   if (bbox) {
-    const { minLon, minLat, maxLon, maxLat } = bbox;
-    url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${getDaysAgo(7)}&minmagnitude=2.5&minlatitude=${minLat}&maxlatitude=${maxLat}&minlongitude=${minLon}&maxlongitude=${maxLon}&orderby=time`;
+    url = `${USGS_EARTHQUAKE.BASE_URL}/query?format=geojson&starttime=${getDaysAgo(7)}&minmagnitude=2.5&minlatitude=${bbox.minLat}&maxlatitude=${bbox.maxLat}&minlongitude=${bbox.minLon}&maxlongitude=${bbox.maxLon}&orderby=time`;
   }
 
   const data = await handleResponse<USGSResponse>(await fetch(url));
 
   return data.features.map((f) => {
     const [lon, lat] = f.geometry.coordinates;
+    const sev = usgsSeverity(f.properties.mag);
+
     return {
       id: `eq-${f.id}`,
-      type: 'earthquake' as const,
       title: f.properties.title,
-      description: `${f.properties.place}. Magnitude ${f.properties.mag ?? 'unknown'}.`,
-      severity: usgsAlertSeverity(f.properties.mag),
-      status: 'unread' as const,
-      location: { latitude: lat, longitude: lon },
+      message: `${f.properties.place}. M${f.properties.mag ?? '?'}. ${f.properties.tsunami ? 'Tsunami warning possible.' : ''}`,
+      severity: sev,
+      type: DT.EARTHQUAKE as DisasterType,
+      coordinates: { latitude: lat, longitude: lon },
+      radius: 0,
+      startTime: f.properties.time,
       source: 'USGS',
-      createdAt: new Date(f.properties.time).toISOString(),
-      updatedAt: f.properties.updated ? new Date(f.properties.updated).toISOString() : new Date().toISOString(),
-      url: f.properties.url ?? undefined,
-      metadata: { magnitude: f.properties.mag, place: f.properties.place, alert: f.properties.alert },
-    };
+      isActive: true,
+      isRead: false,
+      isDismissed: false,
+      metadata: null,
+    } as Alert;
   });
 }
 
+// ============================================================
+// Floods - GloFAS / NASA
+// ============================================================
+
 interface GloFASFeature {
-  type: string;
   properties: {
     name: string;
-    event_type: string;
     alert_level: string;
     issued: string;
     country: string;
@@ -85,127 +110,114 @@ interface GloFASResponse {
   features: GloFASFeature[];
 }
 
-function glofasSeverity(level: string): DisasterAlert['severity'] {
+function glofasSeverity(level: string): AlertSeverity {
   switch (level?.toLowerCase()) {
-    case 'extreme':
-    case 'exceptional':
-      return 'extreme';
-    case 'severe':
-    case 'high':
-      return 'high';
-    case 'moderate':
-    case 'medium':
-      return 'moderate';
-    default:
-      return 'low';
+    case 'extreme': case 'exceptional': return AS.EXTREME;
+    case 'severe': case 'high': return AS.SEVERE;
+    case 'moderate': case 'medium': return AS.MODERATE;
+    default: return AS.MINOR;
   }
 }
 
-export async function fetchFloodData(region?: Coordinates): Promise<DisasterAlert[]> {
+export async function fetchFloodData(region?: Coordinates): Promise<Alert[]> {
   let url = 'https://global-flood-apis.glofas.ecmwf.int/api/v4/public/alerts?format=json';
-
-  if (region) {
-    url += `&lat=${region.latitude}&lon=${region.longitude}`;
-  }
+  if (region) url += `&lat=${region.latitude}&lon=${region.longitude}`;
 
   const data = await handleResponse<GloFASResponse>(await fetch(url));
 
   return data.features.map((f, idx) => ({
     id: `flood-${idx}-${Date.parse(f.properties.issued)}`,
-    type: 'flood' as const,
     title: f.properties.name ?? 'Flood Alert',
-    description: `Flood alert for ${f.properties.name}. Level: ${f.properties.alert_level}.`,
+    message: `Flood alert: ${f.properties.name}. Level: ${f.properties.alert_level}.`,
     severity: glofasSeverity(f.properties.alert_level),
-    status: 'unread' as const,
-    location: {
-      latitude: f.geometry.coordinates[1],
-      longitude: f.geometry.coordinates[0],
-    },
+    type: DT.FLOOD as DisasterType,
+    coordinates: { latitude: f.geometry.coordinates[1], longitude: f.geometry.coordinates[0] },
+    radius: 0,
+    startTime: f.properties.issued ? new Date(f.properties.issued).getTime() : Date.now(),
     source: 'GloFAS',
-    createdAt: f.properties.issued ? new Date(f.properties.issued).toISOString() : new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    url: f.properties.link,
-    metadata: { alertLevel: f.properties.alert_level, country: f.properties.country },
-  }));
+    isActive: true,
+    isRead: false,
+    isDismissed: false,
+    metadata: null,
+  } as Alert));
 }
 
-interface FIRMSFeature {
+// ============================================================
+// Wildfires - NASA FIRMS
+// ============================================================
+
+interface FIRMSRow {
   latitude: number;
   longitude: number;
   bright_ti4: number;
   frp: number;
-  daynight: string;
   acq_date: string;
-  scan: number;
-  track: number;
   satellite: string;
-  instrument: string;
   confidence: string;
-  version: string;
 }
 
-function fireSeverity(brightTi4: number, frp: number): DisasterAlert['severity'] {
-  if (brightTi4 > 500 || frp > 100) return 'extreme';
-  if (brightTi4 > 400 || frp > 50) return 'high';
-  if (brightTi4 > 330 || frp > 10) return 'moderate';
-  return 'low';
+function fireSeverity(brightTi4: number, frp: number): AlertSeverity {
+  if (brightTi4 > 500 || frp > 100) return AS.EXTREME;
+  if (brightTi4 > 400 || frp > 50) return AS.SEVERE;
+  if (brightTi4 > 330 || frp > 10) return AS.MODERATE;
+  return AS.MINOR;
 }
 
-export async function fetchWildfires(bbox?: {
-  minLat: number;
-  minLon: number;
-  maxLat: number;
-  maxLon: number;
-}): Promise<DisasterAlert[]> {
-  let url = 'https://firms.modaps.eosdis.nasa.gov/api/area/csv/OPEN';
-  const source = 'VIIRS_SNPP_NRT';
-
-  if (bbox) {
-    const { minLon, minLat, maxLon, maxLat } = bbox;
-    url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/OPEN/${source}/${minLon},${minLat},${maxLon},${maxLat}/1/2000`;
-  } else {
-    url = `${url}/${source}/global/1/2000`;
-  }
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`FIRMS API error: HTTP ${res.status}`);
-  const text = await res.text();
-
+function parseFIRMSCsv(text: string): FIRMSRow[] {
   const lines = text.trim().split('\n');
   if (lines.length <= 1) return [];
+  const rows: FIRMSRow[] = [];
 
-  const alerts: DisasterAlert[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',');
     if (cols.length < 12) continue;
-
     const latitude = parseFloat(cols[0]);
     const longitude = parseFloat(cols[1]);
     const brightTi4 = parseFloat(cols[8]);
     const frp = parseFloat(cols[11]);
-    const acqDate = cols[5];
-    const satellite = cols[13];
-    const confidence = cols[15];
-
     if (isNaN(latitude) || isNaN(longitude)) continue;
+    rows.push({ latitude, longitude, bright_ti4: brightTi4, frp, acq_date: cols[5], satellite: cols[13], confidence: cols[15] });
+  }
+  return rows;
+}
 
-    alerts.push({
-      id: `fire-${i}-${acqDate}`,
-      type: 'wildfire',
-      title: `Wildfire Detected (${satellite})`,
-      description: `Fire hotspot detected. Brightness: ${brightTi4.toFixed(0)}K. FRP: ${frp.toFixed(0)} MW. Confidence: ${confidence}.`,
-      severity: fireSeverity(brightTi4, frp),
-      status: 'unread',
-      location: { latitude, longitude },
-      source: 'NASA FIRMS',
-      createdAt: acqDate ? new Date(acqDate).toISOString() : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      metadata: { brightness: brightTi4, frp, satellite, confidence },
-    });
+export async function fetchWildfires(bbox?: {
+  minLat: number; minLon: number; maxLat: number; maxLon: number;
+}): Promise<Alert[]> {
+  const { NASA_FIRMS } = API_CONFIG;
+  const source = 'VIIRS_SNPP_NRT';
+  let url: string;
+
+  if (bbox) {
+    url = `${NASA_FIRMS.BASE_URL}/csv/${NASA_FIRMS.MAP_KEY}/${source}/${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}/1/2000`;
+  } else {
+    url = `${NASA_FIRMS.BASE_URL}/csv/${NASA_FIRMS.MAP_KEY}/${source}/global/1/2000`;
   }
 
-  return alerts;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`FIRMS API error: HTTP ${res.status}`);
+  const rows = parseFIRMSCsv(await res.text());
+
+  return rows.map((r, idx) => ({
+    id: `fire-${idx}-${r.acq_date}`,
+    title: `Wildfire Detected (${r.satellite})`,
+    message: `Fire hotspot. Brightness: ${r.bright_ti4.toFixed(0)}K. FRP: ${r.frp.toFixed(0)} MW. Confidence: ${r.confidence}.`,
+    severity: fireSeverity(r.bright_ti4, r.frp),
+    type: DT.WILDFIRE as DisasterType,
+    coordinates: { latitude: r.latitude, longitude: r.longitude },
+    radius: 0,
+    startTime: r.acq_date ? new Date(r.acq_date).getTime() : Date.now(),
+    source: 'NASA FIRMS',
+    isActive: true,
+    isRead: false,
+    isDismissed: false,
+    metadata: null,
+  } as Alert));
 }
+
+// ============================================================
+// Storms - NWS (US) / OpenWeather (global)
+// ============================================================
 
 interface NOAAFeature {
   id: string;
@@ -213,8 +225,6 @@ interface NOAAFeature {
   headline: string;
   description: string;
   severity: string;
-  urgency: string;
-  certainty: string;
   effective: string;
   expires: string;
   geometry: { coordinates: [number, number] } | null;
@@ -224,20 +234,28 @@ interface NOAAResponse {
   features: NOAAFeature[];
 }
 
-function noaaSeverity(sev: string): DisasterAlert['severity'] {
+function noaaSeverity(sev: string): AlertSeverity {
   switch (sev?.toLowerCase()) {
-    case 'extreme':
-      return 'extreme';
-    case 'severe':
-      return 'high';
-    case 'moderate':
-      return 'moderate';
-    default:
-      return 'low';
+    case 'extreme': return AS.EXTREME;
+    case 'severe': return AS.SEVERE;
+    case 'moderate': return AS.MODERATE;
+    default: return AS.MINOR;
   }
 }
 
-export async function fetchStormData(region?: Coordinates): Promise<DisasterAlert[]> {
+function mapNwsDisasterType(event: string): DisasterType {
+  const e = event.toLowerCase();
+  if (e.includes('tornado')) return DT.CYCLONE;
+  if (e.includes('hurricane') || e.includes('typhoon') || e.includes('cyclone') || e.includes('tropical')) return DT.CYCLONE;
+  if (e.includes('tsunami')) return DT.TSUNAMI;
+  if (e.includes('flood')) return DT.FLOOD;
+  if (e.includes('fire') || e.includes('red flag')) return DT.WILDFIRE;
+  if (e.includes('landslide')) return DT.LANDSLIDE;
+  if (e.includes('heat')) return DT.HEATWAVE;
+  return DT.CYCLONE;
+}
+
+export async function fetchStormData(region?: Coordinates): Promise<Alert[]> {
   const url = region
     ? `https://api.weather.gov/alerts/active?point=${region.latitude},${region.longitude}`
     : 'https://api.weather.gov/alerts/active?status=actual&event=Severe%20Thunderstorm%20Warning,Tornado%20Warning,Hurricane%20Warning,Tropical%20Storm%20Warning';
@@ -254,30 +272,18 @@ export async function fetchStormData(region?: Coordinates): Promise<DisasterAler
 
     return {
       id: `storm-${f.id}`,
-      type: 'storm' as DisasterAlert['type'],
       title: f.headline ?? f.event,
-      description: f.description ?? f.headline,
+      message: f.description ?? f.headline,
       severity: noaaSeverity(f.severity),
-      status: 'unread' as DisasterAlert['status'],
-      location: coords
-        ? { latitude: coords[1], longitude: coords[0] }
-        : { latitude: 0, longitude: 0 },
+      type: mapNwsDisasterType(f.event),
+      coordinates: coords ? { latitude: coords[1], longitude: coords[0] } : { latitude: 0, longitude: 0 },
+      radius: 0,
+      startTime: f.effective ? new Date(f.effective).getTime() : Date.now(),
       source: 'NWS',
-      createdAt: f.effective ?? new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      url: `https://alerts.weather.gov/${f.id}`,
-      metadata: {
-        event: f.event,
-        urgency: f.urgency,
-        certainty: f.certainty,
-        expires: f.expires,
-      },
-    };
+      isActive: true,
+      isRead: false,
+      isDismissed: false,
+      metadata: null,
+    } as Alert;
   });
-}
-
-function getDaysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().split('T')[0];
 }

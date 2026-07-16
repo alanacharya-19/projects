@@ -1,33 +1,27 @@
 import React, { createContext, useContext, useReducer, useCallback, useMemo, type ReactNode } from 'react';
-import type { DisasterAlert, AlertSeverity, DisasterType } from '@/types';
-
-interface AlertFilter {
-  types: DisasterType[];
-  severities: AlertSeverity[];
-  maxDistance?: number;
-}
+import type { Alert, AlertFilter, AlertSeverity, DisasterType } from '@/types';
 
 interface AlertState {
-  alerts: DisasterAlert[];
+  alerts: Alert[];
   filters: AlertFilter;
   unreadCount: number;
 }
 
 type AlertAction =
-  | { type: 'SET_ALERTS'; payload: DisasterAlert[] }
-  | { type: 'ADD_ALERT'; payload: DisasterAlert }
+  | { type: 'SET_ALERTS'; payload: Alert[] }
+  | { type: 'ADD_ALERT'; payload: Alert }
   | { type: 'DISMISS_ALERT'; payload: string }
   | { type: 'MARK_AS_READ'; payload: string }
   | { type: 'MARK_ALL_READ' }
   | { type: 'SET_FILTER'; payload: Partial<AlertFilter> };
 
 const defaultFilter: AlertFilter = {
-  types: ['earthquake', 'flood', 'wildfire', 'storm'],
-  severities: ['moderate', 'high', 'extreme'],
+  types: [DisasterType.EARTHQUAKE, DisasterType.FLOOD, DisasterType.WILDFIRE, DisasterType.CYCLONE],
+  severities: [AlertSeverity.MODERATE, AlertSeverity.SEVERE, AlertSeverity.EXTREME, AlertSeverity.EMERGENCY],
 };
 
-function computeUnread(alerts: DisasterAlert[]): number {
-  return alerts.filter((a) => a.status === 'unread' && a.status !== 'dismissed').length;
+function computeUnread(alerts: Alert[]): number {
+  return alerts.filter((a) => !a.isRead && !a.isDismissed).length;
 }
 
 function alertReducer(state: AlertState, action: AlertAction): AlertState {
@@ -44,19 +38,19 @@ function alertReducer(state: AlertState, action: AlertAction): AlertState {
     }
     case 'DISMISS_ALERT': {
       const alerts = state.alerts.map((a) =>
-        a.id === action.payload ? { ...a, status: 'dismissed' as const } : a
+        a.id === action.payload ? { ...a, isDismissed: true } : a
       );
       return { ...state, alerts, unreadCount: computeUnread(alerts) };
     }
     case 'MARK_AS_READ': {
       const alerts = state.alerts.map((a) =>
-        a.id === action.payload && a.status === 'unread' ? { ...a, status: 'read' as const } : a
+        a.id === action.payload && !a.isRead ? { ...a, isRead: true } : a
       );
       return { ...state, alerts, unreadCount: computeUnread(alerts) };
     }
     case 'MARK_ALL_READ': {
       const alerts = state.alerts.map((a) =>
-        a.status === 'unread' ? { ...a, status: 'read' as const } : a
+        !a.isRead ? { ...a, isRead: true } : a
       );
       return { ...state, alerts, unreadCount: 0 };
     }
@@ -68,16 +62,16 @@ function alertReducer(state: AlertState, action: AlertAction): AlertState {
 }
 
 interface AlertContextValue {
-  alerts: DisasterAlert[];
-  filteredAlerts: DisasterAlert[];
+  alerts: Alert[];
+  filteredAlerts: Alert[];
   filters: AlertFilter;
   unreadCount: number;
-  addAlert: (alert: DisasterAlert) => void;
+  addAlert: (alert: Alert) => void;
   dismissAlert: (id: string) => void;
   markAsRead: (id: string) => void;
   markAllRead: () => void;
   setFilter: (filter: Partial<AlertFilter>) => void;
-  setAlerts: (alerts: DisasterAlert[]) => void;
+  setAlerts: (alerts: Alert[]) => void;
 }
 
 const AlertContext = createContext<AlertContextValue | null>(null);
@@ -91,15 +85,15 @@ export function AlertProvider({ children }: { children: ReactNode }) {
 
   const filteredAlerts = useMemo(() => {
     return state.alerts.filter((alert) => {
-      if (alert.status === 'dismissed') return false;
-      if (!state.filters.types.includes(alert.type)) return false;
-      if (!state.filters.severities.includes(alert.severity)) return false;
-      if (state.filters.maxDistance && alert.distance && alert.distance > state.filters.maxDistance) return false;
+      if (alert.isDismissed) return false;
+      if (state.filters.types && !state.filters.types.includes(alert.type as DisasterType)) return false;
+      if (state.filters.severities && !state.filters.severities.includes(alert.severity)) return false;
+      if (state.filters.isActive !== undefined && alert.isActive !== state.filters.isActive) return false;
       return true;
     });
   }, [state.alerts, state.filters]);
 
-  const addAlert = useCallback((alert: DisasterAlert) => {
+  const addAlert = useCallback((alert: Alert) => {
     dispatch({ type: 'ADD_ALERT', payload: alert });
   }, []);
 
@@ -119,7 +113,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_FILTER', payload: filter });
   }, []);
 
-  const setAlerts = useCallback((alerts: DisasterAlert[]) => {
+  const setAlerts = useCallback((alerts: Alert[]) => {
     dispatch({ type: 'SET_ALERTS', payload: alerts });
   }, []);
 

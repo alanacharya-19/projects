@@ -3,7 +3,7 @@ import type {
   Coordinates,
   WeatherData,
   DailyForecast,
-  DisasterAlert,
+  Alert,
   UserLocation,
   AppSettings,
   NotificationPrefs,
@@ -14,7 +14,7 @@ interface AppState {
   location: UserLocation | null;
   weather: WeatherData | null;
   dailyForecast: DailyForecast[];
-  alerts: DisasterAlert[];
+  alerts: Alert[];
   settings: AppSettings;
   isLoadingWeather: boolean;
   isLoadingAlerts: boolean;
@@ -28,8 +28,8 @@ type AppAction =
   | { type: 'SET_DAILY_FORECAST'; payload: DailyForecast[] }
   | { type: 'SET_WEATHER_LOADING'; payload: boolean }
   | { type: 'SET_WEATHER_ERROR'; payload: string | null }
-  | { type: 'SET_ALERTS'; payload: DisasterAlert[] }
-  | { type: 'ADD_ALERTS'; payload: DisasterAlert[] }
+  | { type: 'SET_ALERTS'; payload: Alert[] }
+  | { type: 'ADD_ALERTS'; payload: Alert[] }
   | { type: 'DISMISS_ALERT'; payload: string }
   | { type: 'SET_ALERTS_LOADING'; payload: boolean }
   | { type: 'SET_ALERT_ERROR'; payload: string | null }
@@ -40,7 +40,7 @@ const defaultSettings: AppSettings = {
   temperatureUnit: 'celsius',
   distanceUnit: 'km',
   alertDistance: 50000,
-  severityFilter: ['moderate', 'high', 'extreme'] as AlertSeverity[],
+  severityFilter: [AlertSeverity.MODERATE, AlertSeverity.SEVERE, AlertSeverity.EXTREME],
   notificationPrefs: {
     weatherAlerts: true,
     earthquakes: true,
@@ -86,7 +86,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'DISMISS_ALERT':
       return {
         ...state,
-        alerts: state.alerts.map((a) => (a.id === action.payload ? { ...a, status: 'dismissed' as const } : a)),
+        alerts: state.alerts.map((a) =>
+          a.id === action.payload ? { ...a, isDismissed: true } : a
+        ),
       };
     case 'SET_ALERTS_LOADING':
       return { ...state, isLoadingAlerts: action.payload };
@@ -114,8 +116,8 @@ interface AppContextValue {
   dismissAlert: (alertId: string) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   updateNotificationPrefs: (prefs: Partial<NotificationPrefs>) => void;
-  setAlerts: (alerts: DisasterAlert[]) => void;
-  addAlerts: (alerts: DisasterAlert[]) => void;
+  setAlerts: (alerts: Alert[]) => void;
+  addAlerts: (alerts: Alert[]) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -161,11 +163,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_NOTIFICATION_PREFS', payload: prefs });
   }, []);
 
-  const setAlerts = useCallback((alerts: DisasterAlert[]) => {
+  const setAlerts = useCallback((alerts: Alert[]) => {
     dispatch({ type: 'SET_ALERTS', payload: alerts });
   }, []);
 
-  const addAlerts = useCallback((alerts: DisasterAlert[]) => {
+  const addAlerts = useCallback((alerts: Alert[]) => {
     dispatch({ type: 'ADD_ALERTS', payload: alerts });
   }, []);
 

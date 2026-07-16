@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 interface GradientBackgroundProps {
   children: React.ReactNode;
-  colors: string[];
+  colors: readonly [string, string, ...string[]];
   style?: StyleProp<ViewStyle>;
 }
 

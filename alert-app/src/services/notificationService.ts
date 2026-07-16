@@ -5,6 +5,8 @@ import type { DisasterType } from '@/types';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -64,9 +66,9 @@ export async function scheduleLocalNotification(params: {
       title: params.title,
       body: params.body,
       data: { ...params.data, type: params.type },
-      categoryId,
+      categoryIdentifier: categoryId,
       sound: params.type === 'emergency' ? 'emergency.wav' : true,
-      ...(Platform.OS === 'android' && { channelId }),
+      ...(Platform.OS === 'android' && { priority: 'max' }),
     },
     trigger: params.trigger ?? null,
   });
@@ -88,8 +90,8 @@ export function handleNotificationResponse(
 
 export async function setupNotificationCategories(): Promise<void> {
   await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.weather, [
-    { identifier: 'view', buttonTitle: 'View Details', isDestructive: false },
-    { identifier: 'dismiss', buttonTitle: 'Dismiss', isDestructive: true },
+    { identifier: 'view', buttonTitle: 'View Details' },
+    { identifier: 'dismiss', buttonTitle: 'Dismiss' },
   ]);
 
   await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.earthquake, [
@@ -113,7 +115,7 @@ export async function setupNotificationCategories(): Promise<void> {
   ]);
 
   await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.emergency, [
-    { identifier: 'view', buttonTitle: 'View Details', isDestructive: false },
+    { identifier: 'view', buttonTitle: 'View Details' },
     { identifier: 'call', buttonTitle: 'Call Emergency' },
   ]);
 }

@@ -33,10 +33,10 @@ interface AlertCardProps {
 }
 
 const SEVERITY_MAP: Record<AlertSeverity, { color: string }> = {
-  extreme: { color: "#DC2626", key: "severityExtreme" },
-  severe: { color: "#EA580C", key: "severitySevere" },
-  moderate: { color: "#CA8A04", key: "severityModerate" },
-  minor: { color: "#2563EB", key: "severityMinor" },
+  extreme: { color: "#DC2626" },
+  severe: { color: "#EA580C" },
+  moderate: { color: "#CA8A04" },
+  minor: { color: "#2563EB" },
 };
 
 const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
@@ -87,7 +87,6 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
           <DisasterIcon
             type={alert.type}
             size={26}
-            colors={colors}
           />
         </View>
 
