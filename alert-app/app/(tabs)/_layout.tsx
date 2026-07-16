@@ -78,7 +78,7 @@ export default function TabLayout() {
           title: 'Alerts',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? 'bell' : 'bell-outline'}
+              name={focused ? 'notifications' : 'notifications-outline'}
               size={size}
               color={color}
             />

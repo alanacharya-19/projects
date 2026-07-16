@@ -11,14 +11,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useTheme } from '@/src/context/ThemeContext';
-import { useAlertContext } from '@/src/context/AlertContext';
-import DisasterIcon from '@/src/components/DisasterIcon';
-import LoadingSpinner from '@/src/components/LoadingSpinner';
-import GradientBackground from '@/src/components/GradientBackground';
-import { Spacing, BorderRadius, FontSizes, Shadows, SeverityColors } from '@/src/constants/theme';
-import { formatDate, formatDistance, capitalizeWords } from '@/src/utils/helpers';
-import type { Alert, AlertSeverity } from '@/src/types';
+import { useTheme } from '@/context/ThemeContext';
+import { useAlertContext } from '@/context/AlertContext';
+import DisasterIcon from '@/components/DisasterIcon';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import GradientBackground from '@/components/GradientBackground';
+import { Spacing, BorderRadius, FontSizes, Shadows, SeverityColors } from '@/constants/theme';
+import { formatDate, formatDistance, capitalizeWords } from '@/utils/helpers';
+import type { Alert, AlertSeverity } from '@/types';
 
 const SEVERITY_LABELS: Record<string, string> = {
   minor: 'Minor',

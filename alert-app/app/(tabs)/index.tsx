@@ -71,7 +71,7 @@ function formatSunTime(timestamp: number): string {
 }
 
 export default function HomeScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const { state } = useAppContext();
   const { filteredAlerts } = useAlertContext();
   const { isLoading, refresh, hourlyForecast, dailyForecast, airQuality, uvIndex } = useWeather();
@@ -186,8 +186,6 @@ export default function HomeScreen() {
     (item: typeof hourlyForecast[number], index: number) => `${item.time}-${index}`,
     []
   );
-
-  const resolvedMode = 'light' as 'light' | 'dark';
 
   if (isLoading && !weather) {
     return (

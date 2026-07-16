@@ -398,7 +398,7 @@ export default function FloodMonitorScreen() {
                     <View style={[styles.evacStatusStrip, { backgroundColor: statusColor }]} />
                     <View style={styles.evacContent}>
                       <View style={styles.evacHeader}>
-                        <Ionicons name="git-route-outline" size={18} color={colors.text} />
+                        <Ionicons name="git-merge-outline" size={18} color={colors.text} />
                         <Text style={[styles.evacName, { color: colors.text }]}>{route.name}</Text>
                       </View>
                       <View style={styles.evacMetaRow}>

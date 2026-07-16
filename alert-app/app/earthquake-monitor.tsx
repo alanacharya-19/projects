@@ -85,7 +85,7 @@ export default function EarthquakeMonitorScreen() {
       );
 
       const entries: EarthquakeEntry[] = alerts.map((a) => {
-        const meta = a.metadata as any;
+        const meta: any = (a as any).metadata ?? {};
         const dist = location
           ? calculateDistance(
               location.latitude,
@@ -96,9 +96,9 @@ export default function EarthquakeMonitorScreen() {
           : undefined;
         return {
           ...a,
-          mag: meta?.magnitude ?? 0,
-          depth: meta?.depth ?? 0,
-          locationName: meta?.locationName ?? a.title,
+          mag: meta.magnitude ?? 0,
+          depth: meta.depth ?? 0,
+          locationName: meta.locationName ?? a.title,
           distance: dist,
         };
       });
