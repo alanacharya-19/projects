@@ -34,10 +34,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return mode;
   }, [mode, systemScheme]);
 
-  const colors: ThemeColors = resolvedMode === 'dark'
-    ? { ...DarkColors, transparent: 'transparent' }
-    : { ...Colors, transparent: 'transparent' };
-
   const setTheme = useCallback((newMode: ThemeMode) => {
     setModeState(newMode);
     AsyncStorage.setItem(STORAGE_KEYS.THEME, newMode);
@@ -46,6 +42,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(() => {
     setTheme(mode === 'light' ? 'dark' : mode === 'dark' ? 'auto' : 'light');
   }, [mode, setTheme]);
+
+  const colors: ThemeColors = useMemo(() => {
+    return resolvedMode === 'dark'
+      ? { ...DarkColors, transparent: 'transparent' }
+      : { ...Colors, transparent: 'transparent' };
+  }, [resolvedMode]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ mode, resolvedMode, colors, toggleTheme, setTheme }),

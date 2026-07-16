@@ -28,12 +28,12 @@ interface OWMCurrentResponse {
     wind_gust?: number;
     visibility: number;
     clouds: number;
-    weather: Array<{ id: number; main: string; description: string; icon: string }>;
+    weather: { id: number; main: string; description: string; icon: string }[];
   };
-  daily: Array<{
+  daily: {
     sunrise: number;
     sunset: number;
-  }>;
+  }[];
   timezone_offset: number;
   lat: number;
   lon: number;
@@ -80,17 +80,17 @@ export async function fetchCurrentWeather(lat: number, lon: number): Promise<Wea
 }
 
 interface OWMHourlyResponse {
-  hourly: Array<{
+  hourly: {
     dt: number;
     temp: number;
     feels_like: number;
     humidity: number;
     wind_speed: number;
     wind_deg: number;
-    weather: Array<{ main: string; description: string; icon: string }>;
+    weather: { main: string; description: string; icon: string }[];
     pop: number;
     rain?: { '1h': number };
-  }>;
+  }[];
 }
 
 export async function fetchHourlyForecast(lat: number, lon: number): Promise<HourlyForecast[]> {
@@ -114,18 +114,18 @@ export async function fetchHourlyForecast(lat: number, lon: number): Promise<Hou
 }
 
 interface OWMDailyResponse {
-  daily: Array<{
+  daily: {
     dt: number;
     temp: { min: number; max: number };
     humidity: number;
     wind_speed: number;
     wind_deg: number;
-    weather: Array<{ main: string; description: string; icon: string }>;
+    weather: { main: string; description: string; icon: string }[];
     pop: number;
     rain?: number;
     sunrise: number;
     sunset: number;
-  }>;
+  }[];
 }
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -169,10 +169,10 @@ export async function fetchUVIndex(lat: number, lon: number): Promise<number> {
 }
 
 interface OWMAirPollutionResponse {
-  list: Array<{
+  list: {
     main: { aqi: number };
     components: { co: number; no2: number; o3: number; pm2_5: number; pm10: number; so2: number };
-  }>;
+  }[];
 }
 
 const AQI_DESCRIPTIONS: Record<number, string> = {
@@ -204,14 +204,14 @@ export async function fetchAirQuality(lat: number, lon: number): Promise<AirQual
 export async function fetchWeatherAlerts(lat: number, lon: number): Promise<WeatherAlert[]> {
   assertApiKey();
   const url = `${ONECALL_URL}?lat=${lat}&lon=${lon}&units=${UNITS.METRIC}&exclude=minutely,hourly,daily&appid=${API_KEY}`;
-  const data = await handleResponse<{ alerts?: Array<{
+  const data = await handleResponse<{ alerts?: {
     sender_name: string;
     event: string;
     start: number;
     end: number;
     description: string;
     tags: string[];
-  }> }>(await fetch(url));
+  }[] }>(await fetch(url));
 
   return (data.alerts ?? []).map((a) => ({
     id: `${a.event}-${a.start}`,

@@ -47,7 +47,7 @@ export function useLocation(): UseLocationReturn {
         watchRef.current = null;
       }
     };
-  }, []);
+  }, [fetchLocation]);
 
   useEffect(() => {
     if (!permissionGranted) return;

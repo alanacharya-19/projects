@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import type { UserLocation, Coordinates } from '@/types';
+import type { UserLocation } from '@/types';
 
 const EARTH_RADIUS_M = 6_371_000;
 
