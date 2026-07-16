@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useCallback, useMemo, type ReactNode } from 'react';
+import { AlertSeverity } from '@/types';
 import type {
   Coordinates,
   WeatherData,
@@ -7,7 +8,6 @@ import type {
   UserLocation,
   AppSettings,
   NotificationPrefs,
-  AlertSeverity,
 } from '@/types';
 
 interface AppState {

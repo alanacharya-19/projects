@@ -1,6 +1,6 @@
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { fetchCurrentWeather, fetchDailyForecast, fetchHourlyForecast, fetchUVIndex, fetchAirQuality } from '@/services/weatherService';
+import { fetchDailyForecast, fetchHourlyForecast, fetchUVIndex, fetchAirQuality } from '@/services/weatherService';
 import type { HourlyForecast, DailyForecast, AirQualityData } from '@/types';
 
 interface UseWeatherReturn {
@@ -13,11 +13,11 @@ interface UseWeatherReturn {
   uvIndex: number | null;
 }
 
-const REFRESH_INTERVAL_MS = 30 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 export function useWeather(): UseWeatherReturn {
   const { state, refreshWeather } = useAppContext();
-  const { weather, isLoadingWeather: isLoading, weatherError: error, location } = state;
+  const { isLoadingWeather: isLoading, weatherError: error, location } = state;
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [hourly, setHourly] = useState<HourlyForecast[]>([]);

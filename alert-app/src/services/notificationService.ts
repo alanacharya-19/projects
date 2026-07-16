@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import type { DisasterType } from '@/types';
+import { DisasterType } from '@/types';
+import { NOTIFICATION_CONFIG } from '@/constants/config';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,12 +13,15 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const CATEGORY_IDS: Record<DisasterType | 'emergency', string> = {
+const CATEGORY_IDS: Record<string, string> = {
+  [DisasterType.EARTHQUAKE]: 'earthquake-alert',
+  [DisasterType.FLOOD]: 'flood-alert',
+  [DisasterType.WILDFIRE]: 'wildfire-alert',
+  [DisasterType.CYCLONE]: 'cyclone-alert',
+  [DisasterType.TSUNAMI]: 'tsunami-alert',
+  [DisasterType.LANDSLIDE]: 'landslide-alert',
+  [DisasterType.HEATWAVE]: 'heatwave-alert',
   weather: 'weather-alert',
-  earthquake: 'earthquake-alert',
-  flood: 'flood-alert',
-  wildfire: 'wildfire-alert',
-  storm: 'storm-alert',
   emergency: 'emergency-alert',
 };
 
@@ -33,14 +37,16 @@ export async function registerForPushNotifications(): Promise<string | null> {
   if (finalStatus !== 'granted') return null;
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
+    await Notifications.setNotificationChannelAsync(NOTIFICATION_CONFIG.CHANNEL_ID, {
+      name: NOTIFICATION_CONFIG.CHANNEL_NAME,
+      description: NOTIFICATION_CONFIG.CHANNEL_DESCRIPTION,
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
     });
 
     await Notifications.setNotificationChannelAsync('emergency', {
       name: 'Emergency Alerts',
+      description: 'Critical emergency notifications',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 500, 500, 500],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
@@ -54,12 +60,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
 export async function scheduleLocalNotification(params: {
   title: string;
   body: string;
-  type: DisasterType | 'emergency';
+  type: string;
   data?: Record<string, unknown>;
   trigger?: Notifications.NotificationTriggerInput;
 }): Promise<string> {
-  const categoryId = params.type === 'emergency' ? CATEGORY_IDS.emergency : CATEGORY_IDS[params.type];
-  const channelId = params.type === 'emergency' ? 'emergency' : 'default';
+  const categoryId = CATEGORY_IDS[params.type] ?? 'weather-alert';
+  const isEmergency = params.type === 'emergency';
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
@@ -67,8 +73,7 @@ export async function scheduleLocalNotification(params: {
       body: params.body,
       data: { ...params.data, type: params.type },
       categoryIdentifier: categoryId,
-      sound: params.type === 'emergency' ? 'emergency.wav' : true,
-      ...(Platform.OS === 'android' && { priority: 'max' }),
+      sound: isEmergency ? 'emergency.wav' : true,
     },
     trigger: params.trigger ?? null,
   });
@@ -89,29 +94,29 @@ export function handleNotificationResponse(
 }
 
 export async function setupNotificationCategories(): Promise<void> {
-  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.weather, [
-    { identifier: 'view', buttonTitle: 'View Details' },
-    { identifier: 'dismiss', buttonTitle: 'Dismiss' },
-  ]);
-
-  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.earthquake, [
+  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS[DisasterType.EARTHQUAKE], [
     { identifier: 'view', buttonTitle: 'View Details' },
     { identifier: 'share', buttonTitle: 'Share' },
   ]);
 
-  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.flood, [
+  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS[DisasterType.FLOOD], [
     { identifier: 'view', buttonTitle: 'View Details' },
     { identifier: 'evacuation', buttonTitle: 'Evacuation Routes' },
   ]);
 
-  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.wildfire, [
+  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS[DisasterType.WILDFIRE], [
     { identifier: 'view', buttonTitle: 'View Details' },
     { identifier: 'evacuation', buttonTitle: 'Evacuation Routes' },
   ]);
 
-  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.storm, [
+  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS[DisasterType.CYCLONE], [
     { identifier: 'view', buttonTitle: 'View Details' },
     { identifier: 'shelter', buttonTitle: 'Find Shelter' },
+  ]);
+
+  await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.weather, [
+    { identifier: 'view', buttonTitle: 'View Details' },
+    { identifier: 'dismiss', buttonTitle: 'Dismiss' },
   ]);
 
   await Notifications.setNotificationCategoryAsync(CATEGORY_IDS.emergency, [

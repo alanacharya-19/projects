@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import type { Coordinates, UserLocation } from '@/types';
+import type { UserLocation, Coordinates } from '@/types';
 
 const EARTH_RADIUS_M = 6_371_000;
 
@@ -34,7 +34,7 @@ export async function getCurrentLocation(): Promise<UserLocation> {
       coords.country = place.country ?? undefined;
     }
   } catch {
-    // Geocoding is best-effort; return coords without address info
+    // Geocoding is best-effort
   }
 
   return coords;
@@ -96,14 +96,9 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 
 export async function getAddressFromCoords(lat: number, lon: number): Promise<string | null> {
   try {
-    const [place] = await Location.reverseGeocodeAsync({
-      latitude: lat,
-      longitude: lon,
-    });
+    const [place] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
     if (!place) return null;
-
-    const parts = [place.name, place.street, place.city, place.region, place.country].filter(Boolean);
-    return parts.join(', ') || null;
+    return [place.name, place.street, place.city, place.region, place.country].filter(Boolean).join(', ') || null;
   } catch {
     return null;
   }

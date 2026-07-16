@@ -41,7 +41,6 @@ export function useLocation(): UseLocationReturn {
 
   useEffect(() => {
     fetchLocation();
-
     return () => {
       if (watchRef.current) {
         watchRef.current.remove();

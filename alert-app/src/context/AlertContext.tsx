@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback, useMemo, type ReactNode } from 'react';
-import type { Alert, AlertFilter, AlertSeverity, DisasterType } from '@/types';
+import { DisasterType, AlertSeverity } from '@/types';
+import type { Alert, AlertFilter } from '@/types';
 
 interface AlertState {
   alerts: Alert[];
@@ -17,7 +18,7 @@ type AlertAction =
 
 const defaultFilter: AlertFilter = {
   types: [DisasterType.EARTHQUAKE, DisasterType.FLOOD, DisasterType.WILDFIRE, DisasterType.CYCLONE],
-  severities: [AlertSeverity.MODERATE, AlertSeverity.SEVERE, AlertSeverity.EXTREME, AlertSeverity.EMERGENCY],
+  severity: [AlertSeverity.MODERATE, AlertSeverity.SEVERE, AlertSeverity.EXTREME, AlertSeverity.EMERGENCY],
 };
 
 function computeUnread(alerts: Alert[]): number {
@@ -87,8 +88,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
     return state.alerts.filter((alert) => {
       if (alert.isDismissed) return false;
       if (state.filters.types && !state.filters.types.includes(alert.type as DisasterType)) return false;
-      if (state.filters.severities && !state.filters.severities.includes(alert.severity)) return false;
-      if (state.filters.isActive !== undefined && alert.isActive !== state.filters.isActive) return false;
+      if (state.filters.severity && !state.filters.severity.includes(alert.severity)) return false;
       return true;
     });
   }, [state.alerts, state.filters]);

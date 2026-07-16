@@ -1,4 +1,4 @@
-import type { AlertSeverity, DisasterType } from '@/types';
+import { AlertSeverity, DisasterType } from '@/types';
 
 export function formatTemperature(temp: number, unit: 'celsius' | 'fahrenheit' = 'celsius'): string {
   if (unit === 'fahrenheit') {
@@ -10,35 +10,23 @@ export function formatTemperature(temp: number, unit: 'celsius' | 'fahrenheit' =
 export function formatDate(date: string | number | Date, format: 'short' | 'long' | 'time' | 'relative' = 'short'): string {
   const d = new Date(date);
 
-  if (format === 'relative') {
-    return getRelativeTime(d);
-  }
-
-  if (format === 'time') {
-    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  }
-
+  if (format === 'relative') return getRelativeTime(d);
+  if (format === 'time') return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   if (format === 'long') {
     return d.toLocaleDateString(undefined, {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
   }
-
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function getRelativeTime(date: Date): string {
   const now = Date.now();
   const diff = now - date.getTime();
-  const absDiff = Math.abs(diff);
-  const seconds = Math.floor(absDiff / 1000);
+  const seconds = Math.floor(Math.abs(diff) / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-
   const suffix = diff > 0 ? 'ago' : 'from now';
 
   if (seconds < 60) return 'just now';
@@ -50,41 +38,37 @@ function getRelativeTime(date: Date): string {
 
 export function getWeatherIcon(condition: string): string {
   const map: Record<string, string> = {
-    Clear: '☀️',
-    Clouds: '☁️',
-    Rain: '🌧️',
-    Drizzle: '🌦️',
-    Thunderstorm: '⛈️',
-    Snow: '❄️',
-    Mist: '🌫️',
-    Smoke: '🌫️',
-    Haze: '🌫️',
-    Dust: '🌫️',
-    Fog: '🌫️',
-    Sand: '🌫️',
-    Ash: '🌫️',
-    Squall: '💨',
-    Tornado: '🌪️',
+    Clear: '☀️', Clouds: '☁️', Rain: '🌧️', Drizzle: '🌦️',
+    Thunderstorm: '⛈️', Snow: '❄️', Mist: '🌫️', Smoke: '🌫️',
+    Haze: '🌫️', Dust: '🌫️', Fog: '🌫️', Sand: '🌫️',
+    Ash: '🌫️', Squall: '💨', Tornado: '🌪️',
   };
   return map[condition] ?? '🌤️';
 }
 
 export function getSeverityColor(severity: AlertSeverity): string {
   const map: Record<AlertSeverity, string> = {
-    low: '#16A34A',
-    moderate: '#D97706',
-    high: '#EA580C',
-    extreme: '#DC2626',
+    [AlertSeverity.MINOR]: '#3B82F6',
+    [AlertSeverity.MODERATE]: '#F59E0B',
+    [AlertSeverity.SEVERE]: '#F97316',
+    [AlertSeverity.EXTREME]: '#DC2626',
+    [AlertSeverity.EMERGENCY]: '#7C2D12',
   };
   return map[severity];
 }
 
 export function getDisasterEmoji(type: DisasterType): string {
   const map: Record<DisasterType, string> = {
-    earthquake: '🌍',
-    flood: '🌊',
-    wildfire: '🔥',
-    storm: '⛈️',
+    [DisasterType.EARTHQUAKE]: '🌍',
+    [DisasterType.FLOOD]: '🌊',
+    [DisasterType.WILDFIRE]: '🔥',
+    [DisasterType.CYCLONE]: '🌀',
+    [DisasterType.TSUNAMI]: '🌊',
+    [DisasterType.LANDSLIDE]: '⛰️',
+    [DisasterType.HEATWAVE]: '🌡️',
+    [DisasterType.COLD_WAVE]: '🥶',
+    [DisasterType.DROUGHT]: '☀️',
+    [DisasterType.VOLCANIC]: '🌋',
   };
   return map[type];
 }

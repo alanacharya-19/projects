@@ -3,13 +3,13 @@ import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
 import { fetchEarthquakes, fetchFloodData, fetchWildfires, fetchStormData } from '@/services/disasterService';
 import { calculateDistance } from '@/services/locationService';
-import type { DisasterAlert } from '@/types';
+import type { Alert } from '@/types';
 
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 interface UseAlertsReturn {
-  alerts: DisasterAlert[];
-  filteredAlerts: DisasterAlert[];
+  alerts: Alert[];
+  filteredAlerts: Alert[];
   unreadCount: number;
   isLoading: boolean;
   error: string | null;
@@ -17,8 +17,8 @@ interface UseAlertsReturn {
 }
 
 export function useAlerts(): UseAlertsReturn {
-  const { state, setAlerts, addAlerts } = useAppContext();
-  const { filteredAlerts, unreadCount, addAlert, setFilter, filters } = useAlertContext();
+  const { state, setAlerts } = useAppContext();
+  const { filteredAlerts, unreadCount } = useAlertContext();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAll = useCallback(async () => {
@@ -40,28 +40,26 @@ export function useAlerts(): UseAlertsReturn {
         fetchStormData(loc),
       ]);
 
-      const allAlerts: DisasterAlert[] = [];
+      const allAlerts: Alert[] = [];
       for (const result of results) {
         if (result.status === 'fulfilled') {
           allAlerts.push(...result.value);
         }
       }
 
-      const withDistance = allAlerts.map((alert) => ({
-        ...alert,
-        distance: calculateDistance(
-          loc.latitude,
-          loc.longitude,
-          alert.location.latitude,
-          alert.location.longitude
-        ),
-      }));
+      const withDistance = allAlerts.map((alert) => {
+        const dist = calculateDistance(
+          loc.latitude, loc.longitude,
+          alert.coordinates.latitude, alert.coordinates.longitude
+        );
+        return { ...alert, radius: dist };
+      });
 
-      withDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+      withDistance.sort((a, b) => a.radius - b.radius);
 
       setAlerts(withDistance);
-    } catch (err) {
-      // Errors are non-fatal for alerts; keep existing state
+    } catch {
+      // Non-fatal; keep existing alerts
     }
   }, [state.location, setAlerts]);
 
@@ -78,13 +76,11 @@ export function useAlerts(): UseAlertsReturn {
     };
   }, [state.location, fetchAll]);
 
-  const isLoading = state.isLoadingAlerts;
-
   return {
     alerts: state.alerts,
     filteredAlerts,
     unreadCount,
-    isLoading,
+    isLoading: state.isLoadingAlerts,
     error: state.alertError,
     refresh,
   };
