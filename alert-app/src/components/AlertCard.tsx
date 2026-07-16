@@ -32,7 +32,7 @@ interface AlertCardProps {
   };
 }
 
-const SEVERITY_MAP: Record<AlertSeverity, { color: string; key: keyof typeof colors> & { key: string }> = {
+const SEVERITY_MAP: Record<AlertSeverity, { color: string }> = {
   extreme: { color: "#DC2626", key: "severityExtreme" },
   severe: { color: "#EA580C", key: "severitySevere" },
   moderate: { color: "#CA8A04", key: "severityModerate" },
