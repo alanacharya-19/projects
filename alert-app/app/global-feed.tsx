@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
+  ScrollView,
   FlatList,
   TouchableOpacity,
   StyleSheet,

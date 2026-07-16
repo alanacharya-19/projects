@@ -299,7 +299,7 @@ export default function AlertDetailScreen() {
               ))}
             </View>
             <View style={{ marginTop: Spacing.md }}>
-              <Text style={[styles.instructionSubtitle, { color: colors.error }]}>DON'T:</Text>
+              <Text style={[styles.instructionSubtitle, { color: colors.error }]}>{"DON'T:"}</Text>
               {instructions.donts.map((item, i) => (
                 <View key={i} style={styles.instructionRow}>
                   <Ionicons name="close-circle" size={16} color={colors.error} />

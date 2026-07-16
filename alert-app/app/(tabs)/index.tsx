@@ -103,7 +103,7 @@ export default function HomeScreen() {
   }, [refresh]);
 
   const goToAlerts = useCallback(() => {
-    router.navigate('/(tabs)/alerts');
+    router.navigate('/alerts' as any);
   }, [router]);
 
   const alertCards = useMemo((): AlertData[] => {

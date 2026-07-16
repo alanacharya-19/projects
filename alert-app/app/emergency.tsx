@@ -34,8 +34,8 @@ export default function EmergencyScreen() {
   const { state } = useAppContext();
   const { location } = useLocation();
   const [contacts, setContacts] = useState<EmergencyContact[]>([
-    { id: "1", name: "Mom", phone: "+91 98765 43210", relationship: "Family", isPrimary: true },
-    { id: "2", name: "Dad", phone: "+91 98765 43211", relationship: "Family", isPrimary: false },
+    { id: "1", name: "Mom", phoneNumber: "+91 98765 43210", relationship: "Family", isPrimary: true },
+    { id: "2", name: "Dad", phoneNumber: "+91 98765 43211", relationship: "Family", isPrimary: false },
   ]);
   const [sosSent, setSosSent] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -265,7 +265,7 @@ export default function EmergencyScreen() {
               <EmergencyContactCard
                 key={contact.id}
                 name={contact.name}
-                phone={contact.phone}
+                phone={contact.phoneNumber}
                 onCall={handleCall}
                 colors={{
                   card: colors.surface,

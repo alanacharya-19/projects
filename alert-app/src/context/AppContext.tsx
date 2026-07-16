@@ -38,6 +38,7 @@ type AppAction =
 
 const defaultSettings: AppSettings = {
   temperatureUnit: 'celsius',
+  windSpeedUnit: 'kmh',
   distanceUnit: 'km',
   alertDistance: 50000,
   severityFilter: [AlertSeverity.MODERATE, AlertSeverity.SEVERE, AlertSeverity.EXTREME],

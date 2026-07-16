@@ -46,8 +46,8 @@ export default function SettingsScreen() {
   const { settings } = state;
 
   const [contacts] = useState<EmergencyContact[]>([
-    { id: "1", name: "Mom", phone: "+91 98765 43210", relationship: "Family", isPrimary: true },
-    { id: "2", name: "Dad", phone: "+91 98765 43211", relationship: "Family", isPrimary: false },
+    { id: "1", name: "Mom", phoneNumber: "+91 98765 43210", relationship: "Family", isPrimary: true },
+    { id: "2", name: "Dad", phoneNumber: "+91 98765 43211", relationship: "Family", isPrimary: false },
   ]);
 
   const [savedLocations] = useState<SavedLocation[]>([
@@ -83,7 +83,7 @@ export default function SettingsScreen() {
     sectionTitle: { color: colors.text },
     rowLabel: { color: colors.text },
     rowSublabel: { color: colors.textMuted },
-    chevron: { color: colors.textMuted },
+    chevron: colors.textMuted,
     switchTrack: {
       false: colors.surfaceVariant,
       true: colors.primary + "40",
@@ -408,7 +408,7 @@ export default function SettingsScreen() {
                     {contact.name}
                   </Text>
                   <Text style={[styles.contactPhone, { color: colors.textMuted }]}>
-                    {contact.phone}
+                    {contact.phoneNumber}
                   </Text>
                 </View>
                 <Text style={[styles.contactRelationship, { color: colors.textMuted }]}>
@@ -468,6 +468,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSizes.xxxl,
     fontWeight: "800",
+  },
+  sectionCard: {
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
   },
   section: {
     marginBottom: Spacing.xl,

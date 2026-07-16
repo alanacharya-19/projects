@@ -528,6 +528,7 @@ export interface UserLocation extends Coordinates {
 
 export interface AppSettings {
   temperatureUnit: 'celsius' | 'fahrenheit';
+  windSpeedUnit: 'kmh' | 'mph';
   distanceUnit: 'km' | 'miles';
   alertDistance: number;
   severityFilter: AlertSeverity[];
