@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import ChatBubble from "@/components/ChatBubble";
-import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
+import { Spacing, FontSizes, BorderRadius } from "@/constants/theme";
 import { generateId, formatDate } from "@/utils/helpers";
 import type { ChatMessage } from "@/types";
 

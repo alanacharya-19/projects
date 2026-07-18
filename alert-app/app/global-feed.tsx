@@ -14,7 +14,6 @@ import SearchBar from "@/components/SearchBar";
 import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
 import { getSeverityColor, getDisasterEmoji, formatDate } from "@/utils/helpers";
 import { AlertSeverity, DisasterType } from "@/types";
-import type { Disaster } from "@/types";
 
 type FilterType = "country" | "type" | "severity" | "date";
 

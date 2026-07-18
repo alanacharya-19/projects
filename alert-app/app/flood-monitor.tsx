@@ -6,23 +6,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
-import { useAppContext } from '@/context/AppContext';
 import { useLocation } from '@/hooks/useLocation';
 import SectionHeader from '@/components/SectionHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import { Spacing, FontSizes, BorderRadius, Shadows } from '@/constants/theme';
-import { AlertSeverity, type Alert } from '@/types';
-import { formatDate, formatDistance, getSeverityColor } from '@/utils/helpers';
-import { calculateDistance } from '@/services/locationService';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import type { Alert } from '@/types';
+import { formatDate, getSeverityColor } from '@/utils/helpers';
 
 interface RiverLevel {
   id: string;
@@ -95,7 +90,7 @@ function getRouteStatusColor(status: string): string {
 export default function FloodMonitorScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { state } = useAppContext();
+
   const { location } = useLocation();
 
   const [floodAlerts, setFloodAlerts] = useState<FloodAlert[]>([]);

@@ -5,7 +5,6 @@ import {
   ScrollView,
   RefreshControl,
   FlatList,
-  TouchableOpacity,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

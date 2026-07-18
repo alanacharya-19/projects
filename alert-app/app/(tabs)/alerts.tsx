@@ -18,7 +18,7 @@ import AlertCard, { type AlertData } from '@/components/AlertCard';
 import EmptyState from '@/components/EmptyState';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GradientBackground from '@/components/GradientBackground';
-import { Spacing, BorderRadius, FontSizes, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes } from '@/constants/theme';
 import { formatDistance, getSeverityColor } from '@/utils/helpers';
 import type { Alert, DisasterType, AlertSeverity } from '@/types';
 import { DisasterType as DT } from '@/types';

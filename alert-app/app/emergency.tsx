@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
-import { useAppContext } from "@/context/AppContext";
 import { useLocation } from "@/hooks/useLocation";
 import SOSTouchableOpacity from "@/components/SOSTouchableOpacity";
 import EmergencyContactCard from "@/components/EmergencyContactCard";
@@ -31,14 +30,12 @@ const EMERGENCY_MESSAGE_TEMPLATE =
 
 export default function EmergencyScreen() {
   const { colors } = useTheme();
-  const { state } = useAppContext();
   const { location } = useLocation();
-  const [contacts, setContacts] = useState<EmergencyContact[]>([
+  const [contacts] = useState<EmergencyContact[]>([
     { id: "1", name: "Mom", phoneNumber: "+91 98765 43210", relationship: "Family", isPrimary: true },
     { id: "2", name: "Dad", phoneNumber: "+91 98765 43211", relationship: "Family", isPrimary: false },
   ]);
   const [sosSent, setSosSent] = useState(false);
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const themedStyles = {
     container: { backgroundColor: colors.background },

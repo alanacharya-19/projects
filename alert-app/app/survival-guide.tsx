@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
@@ -14,8 +13,7 @@ import SurvivalStepCard from "@/components/SurvivalStepCard";
 import SectionHeader from "@/components/SectionHeader";
 import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
 import { SURVIVAL_GUIDES } from "@/constants/survival";
-import { getSurvivalGuide, getFirstAidGuide } from "@/constants/survival";
-import type { SurvivalGuide, SurvivalStep, DisasterType } from "@/types";
+import type { SurvivalGuide, SurvivalStep } from "@/types";
 
 type Phase = "before" | "during" | "after";
 

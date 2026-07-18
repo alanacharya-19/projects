@@ -20,7 +20,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import GradientBackground from '@/components/GradientBackground';
 import { Spacing, BorderRadius, FontSizes, Shadows } from '@/constants/theme';
-import { formatTemperature, getWindDirection, formatDistance, formatTime, capitalizeWords } from '@/utils/helpers';
+import { formatTemperature, getWindDirection, formatDistance, capitalizeWords } from '@/utils/helpers';
 import type { HourlyForecast, DailyForecast } from '@/types';
 
 function getWeatherIconName(icon: string): keyof typeof Ionicons.glyphMap {
@@ -116,7 +116,7 @@ export default function ForecastScreen() {
   }, [weather, tempUnit, dailyForecast]);
 
   const metrics = useMemo(() => {
-    if (!weather) return [] as Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; value: string }>;
+    if (!weather) return [] as { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }[];
     const { current } = weather;
     return [
       { icon: 'thermometer' as const, label: 'Feels Like', value: formatTemperature(current.feelsLike, tempUnit) },

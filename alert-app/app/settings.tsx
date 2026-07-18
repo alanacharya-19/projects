@@ -69,13 +69,15 @@ export default function SettingsScreen() {
     },
   ]);
 
+  const { notificationPrefs } = settings;
+
   const toggleNotification = useCallback(
-    (key: keyof typeof settings.notificationPrefs) => {
+    (key: keyof typeof notificationPrefs) => {
       updateNotificationPrefs({
-        [key]: !(settings.notificationPrefs as any)[key],
+        [key]: !(notificationPrefs as any)[key],
       });
     },
-    [settings.notificationPrefs, updateNotificationPrefs]
+    [notificationPrefs, updateNotificationPrefs]
   );
 
   const themedStyles = {

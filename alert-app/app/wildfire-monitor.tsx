@@ -12,14 +12,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
-import { useAppContext } from '@/context/AppContext';
 import { useLocation } from '@/hooks/useLocation';
 import SectionHeader from '@/components/SectionHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import { Spacing, FontSizes, BorderRadius, Shadows } from '@/constants/theme';
-import { AlertSeverity, type Alert } from '@/types';
-import { formatDate, formatDistance, getSeverityColor } from '@/utils/helpers';
+import type { Alert } from '@/types';
+import { formatDate, formatDistance } from '@/utils/helpers';
 import { calculateDistance } from '@/services/locationService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -100,7 +99,7 @@ function getVillageStatusLabel(status: string): string {
 export default function WildfireMonitorScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const { state } = useAppContext();
+
   const { location } = useLocation();
 
   const [fires, setFires] = useState<WildfireEntry[]>([]);
