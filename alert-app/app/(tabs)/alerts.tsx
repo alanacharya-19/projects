@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  StyleSheet,
   Alert as RNAlert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -320,7 +319,7 @@ export default function AlertsScreen() {
                 lineHeight: 22,
               }}
             >
-              You're all clear! No active alerts match your current filters.
+              {"You're all clear! No active alerts match your current filters."}
             </Text>
           </View>
         ) : (

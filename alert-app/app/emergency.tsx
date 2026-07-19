@@ -10,15 +10,13 @@ import {
   Share,
   Platform,
   StatusBar,
-  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocation } from "@/hooks/useLocation";
 import SOSTouchableOpacity from "@/components/SOSTouchableOpacity";
 import EmergencyContactCard from "@/components/EmergencyContactCard";
-import SectionHeader from "@/components/SectionHeader";
-import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 import type { EmergencyContact } from "@/types";
 
 const EMERGENCY_NUMBERS = [

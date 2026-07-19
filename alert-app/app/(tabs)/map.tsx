@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,14 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
-import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { Shadows } from "@/constants/theme";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients } from "@/constants/theme";
 
 const LAYERS = [
   { key: "earthquake", label: "Earthquakes", color: "#EA580C" },
@@ -41,9 +40,13 @@ const LEGEND_ITEMS = [
 ];
 
 export default function MapScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const [activeLayers, setActiveLayers] = useState<string[]>(["earthquake", "flood", "wildfire"]);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+
+  const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
+    return resolvedMode === "dark" ? Gradients.homeDark : Gradients.home;
+  }, [resolvedMode]);
 
   const toggleLayer = (key: string) => {
     setActiveLayers((prev) =>
@@ -52,11 +55,15 @@ export default function MapScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <GradientBackground colors={gradientColors}>
       {/* Map Area */}
       <View style={styles.mapContainer}>
         <LinearGradient
-          colors={["#1a3a4a", "#2d5a5e", "#1a4a3a", "#2a4a5a"]}
+          colors={
+            resolvedMode === "dark"
+              ? (["#0F172A", "#1E293B", "#0F172A", "#1E3A5F"] as const)
+              : (["#1a3a4a", "#2d5a5e", "#1a4a3a", "#2a4a5a"] as const)
+          }
           style={styles.mapGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -113,7 +120,7 @@ export default function MapScreen() {
           </View>
 
           {/* Legend */}
-          <View style={[styles.legend, { backgroundColor: "rgba(0,0,0,0.6)" }]}>
+          <View style={[styles.legend, { backgroundColor: resolvedMode === "dark" ? "rgba(17,24,39,0.8)" : "rgba(0,0,0,0.55)" }]}>
             {LEGEND_ITEMS.map((item) => (
               <View key={item.label} style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: item.color }]} />
@@ -123,7 +130,7 @@ export default function MapScreen() {
           </View>
 
           {/* Stats Bar */}
-          <View style={[styles.statsBar, { backgroundColor: "rgba(0,0,0,0.6)" }]}>
+          <View style={[styles.statsBar, { backgroundColor: resolvedMode === "dark" ? "rgba(17,24,39,0.8)" : "rgba(0,0,0,0.55)" }]}>
             <Ionicons name="warning" size={14} color="#F59E0B" />
             <Text style={styles.statsText}>{MARKERS.length} active alerts</Text>
           </View>
@@ -131,7 +138,16 @@ export default function MapScreen() {
       </View>
 
       {/* Floating Search Bar */}
-      <View style={[styles.searchBar, { backgroundColor: colors.surface, ...Shadows.lg }]}>
+      <LinearGradient
+        colors={
+          resolvedMode === "dark"
+            ? (["rgba(31,41,55,0.85)", "rgba(17,24,39,0.75)"] as const)
+            : (["rgba(255,255,255,0.85)", "rgba(255,255,255,0.55)"] as const)
+        }
+        style={styles.searchBar}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
         <Ionicons name="search" size={20} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
@@ -141,7 +157,7 @@ export default function MapScreen() {
         <TouchableOpacity style={[styles.searchMic, { backgroundColor: colors.surfaceVariant }]}>
           <Ionicons name="mic" size={18} color={colors.primary} />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       {/* Layer Toggles */}
       <View style={styles.layersContainer}>
@@ -158,8 +174,10 @@ export default function MapScreen() {
                 style={[
                   styles.layerChip,
                   {
-                    backgroundColor: isActive ? layer.color + "18" : colors.surface,
-                    borderColor: isActive ? layer.color : colors.border,
+                    backgroundColor: isActive
+                      ? (resolvedMode === "dark" ? layer.color + "25" : layer.color + "18")
+                      : (resolvedMode === "dark" ? "rgba(31,41,55,0.7)" : "rgba(255,255,255,0.7)"),
+                    borderColor: isActive ? layer.color : (resolvedMode === "dark" ? "rgba(31,41,55,0.5)" : colors.border),
                   },
                 ]}
                 onPress={() => toggleLayer(layer.key)}
@@ -178,34 +196,40 @@ export default function MapScreen() {
       {/* Bottom Sheet */}
       {selectedMarker && (
         <View style={[styles.bottomSheet, { backgroundColor: colors.surface, ...Shadows.xl }]}>
-          <View style={styles.sheetHandle} />
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetContent}>
-            <View style={[styles.sheetIcon, { backgroundColor: "#EA580C" + "20" }]}>
-              <Ionicons name="earth" size={22} color="#EA580C" />
-            </View>
+            <LinearGradient
+              colors={["#EA580C", "#F97316"] as const}
+              style={styles.sheetIcon}
+            >
+              <Ionicons name="earth" size={22} color="#FFFFFF" />
+            </LinearGradient>
             <View style={styles.sheetInfo}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>Seismic Activity Detected</Text>
-              <Text style={[styles.sheetSubtitle, { color: colors.textMuted }]}>4.2 magnitude · 32 km depth</Text>
+              <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>4.2 magnitude · 32 km depth</Text>
             </View>
-            <TouchableOpacity style={[styles.sheetClose, { backgroundColor: colors.surfaceVariant }]}
-              onPress={() => setSelectedMarker(null)}>
+            <TouchableOpacity
+              style={[styles.sheetClose, { backgroundColor: colors.surfaceVariant }]}
+              onPress={() => setSelectedMarker(null)}
+            >
               <Ionicons name="close" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
       )}
-    </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   mapContainer: {
     flex: 1,
-    margin: 20,
-    borderRadius: 20,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 24,
     overflow: "hidden",
-    ...Shadows.md,
+    ...Shadows.lg,
   },
   mapGradient: {
     flex: 1,
@@ -258,13 +282,13 @@ const styles = StyleSheet.create({
     left: 16,
     flexDirection: "row",
     gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
   },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 10, fontWeight: "500", color: "#FFFFFF" },
+  legendLabel: { fontSize: 11, fontWeight: "600", color: "#FFFFFF" },
   statsBar: {
     position: "absolute",
     top: 16,
@@ -272,21 +296,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
   statsText: { fontSize: 12, fontWeight: "600", color: "#FFFFFF" },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 20,
-    marginTop: -24,
+    marginTop: -26,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
     gap: 10,
     zIndex: 10,
+    ...Shadows.md,
   },
   searchInput: { flex: 1, fontSize: 15, fontWeight: "500" },
   searchMic: {
@@ -297,13 +322,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   layersContainer: { marginTop: 16 },
-  layersScroll: { paddingHorizontal: 20, gap: 8 },
+  layersScroll: { paddingHorizontal: 20, gap: 10 },
   layerChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    gap: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1.5,
   },
@@ -314,15 +339,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 24,
   },
   sheetHandle: {
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#E2E8F0",
     alignSelf: "center",
     marginTop: 10,
     marginBottom: 14,
@@ -334,15 +358,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sheetIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   sheetInfo: { flex: 1 },
   sheetTitle: { fontSize: 15, fontWeight: "700" },
-  sheetSubtitle: { fontSize: 12, marginTop: 2 },
+  sheetSubtitle: { fontSize: 12, marginTop: 3 },
   sheetClose: {
     width: 32,
     height: 32,

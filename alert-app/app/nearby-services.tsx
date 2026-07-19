@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocation } from "@/hooks/useLocation";
 import SearchBar from "@/components/SearchBar";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 import { calculateDistance } from "@/services/locationService";
 
 type ServiceCategory = "all" | "hospitals" | "police" | "fire" | "shelters" | "food" | "water";

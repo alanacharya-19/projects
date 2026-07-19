@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import SearchBar from "@/components/SearchBar";
 import SurvivalStepCard from "@/components/SurvivalStepCard";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 import { SURVIVAL_GUIDES } from "@/constants/survival";
 import type { SurvivalGuide, SurvivalStep } from "@/types";
 
@@ -127,7 +127,7 @@ export default function SurvivalGuideScreen() {
             {/* Do's & Don'ts in two columns */}
             <View style={styles.dosDontsContainer}>
               <View style={styles.dosDontsColumn}>
-                <Text style={[styles.dosDontsTitle, { color: colors.success }]}>Do's</Text>
+                <Text style={[styles.dosDontsTitle, { color: colors.success }]}>{`Do's`}</Text>
                 {guide.dos.map((item, idx) => (
                   <View key={idx} style={styles.dosDontsItem}>
                     <Ionicons name="checkmark-circle" size={16} color={colors.success} />
@@ -137,7 +137,7 @@ export default function SurvivalGuideScreen() {
               </View>
               <View style={[styles.dosDontsDivider, { backgroundColor: colors.border }]} />
               <View style={styles.dosDontsColumn}>
-                <Text style={[styles.dosDontsTitle, { color: colors.error }]}>Don'ts</Text>
+                <Text style={[styles.dosDontsTitle, { color: colors.error }]}>{`Don'ts`}</Text>
                 {guide.donts.map((item, idx) => (
                   <View key={idx} style={styles.dosDontsItem}>
                     <Ionicons name="close-circle" size={16} color={colors.error} />

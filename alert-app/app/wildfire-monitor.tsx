@@ -15,7 +15,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from '@/hooks/useLocation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
-import { Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { Shadows } from '@/constants/theme';
 import type { Alert } from '@/types';
 import { formatDate, formatDistance } from '@/utils/helpers';
 import { calculateDistance } from '@/services/locationService';

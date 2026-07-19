@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, View, StyleSheet } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useAlertContext } from '@/context/AlertContext';
 

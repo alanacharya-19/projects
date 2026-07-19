@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from 
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import StatBar from "@/components/StatBar";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 
 type TimePeriod = "week" | "month" | "year";
 
@@ -63,7 +63,6 @@ export default function StatisticsScreen() {
   ];
 
   const maxRain = Math.max(...data.monthlyBars.map((b) => b.rain), 1);
-  const statColors = [colors.error, colors.info, colors.primary, colors.secondary];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

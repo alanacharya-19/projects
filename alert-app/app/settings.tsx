@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import { useAppContext } from "@/context/AppContext";
-import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 import { APP_CONFIG } from "@/constants/config";
 import type { ThemeMode, EmergencyContact, SavedLocation } from "@/types";
 import { AlertSeverity } from "@/types";

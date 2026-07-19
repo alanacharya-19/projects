@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
-import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 import { APP_CONFIG } from "@/constants/config";
 
 interface MenuItem {

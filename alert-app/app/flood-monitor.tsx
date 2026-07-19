@@ -14,7 +14,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from '@/hooks/useLocation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
-import { Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { Shadows } from '@/constants/theme';
 import type { Alert } from '@/types';
 import { formatDate, getSeverityColor } from '@/utils/helpers';
 
@@ -56,8 +56,6 @@ const MOCK_EVACUATION_ROUTES: EvacuationRoute[] = [
   { id: 'e3', name: 'Ring Road → Safe Zone B', direction: 'West', distance: 12.1, status: 'open' },
   { id: 'e4', name: 'Bridge Route → City Center', direction: 'South', distance: 6.7, status: 'closed' },
 ];
-
-const AFFECTED_DISTRICTS = ['Kamrup Metropolitan', 'Nagaon', 'Morigaon', 'Jorhat', 'Sivasagar', 'Dhemaji', 'Lakhimpur', 'Dibrugarh', 'Tinsukia'];
 
 function getStatusColor(status: string): string {
   switch (status) { case 'danger': return '#DC2626'; case 'warning': return '#F59E0B'; default: return '#16A34A'; }

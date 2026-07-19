@@ -13,7 +13,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import ChatBubble from "@/components/ChatBubble";
-import { BorderRadius } from "@/constants/theme";
 import { generateId, formatDate } from "@/utils/helpers";
 import type { ChatMessage } from "@/types";
 

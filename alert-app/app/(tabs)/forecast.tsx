@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  StyleSheet,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +19,7 @@ import WeatherMetric from '@/components/WeatherMetric';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import GradientBackground from '@/components/GradientBackground';
-import { Spacing, BorderRadius, FontSizes, Shadows, Gradients } from '@/constants/theme';
+import { Spacing, Gradients } from '@/constants/theme';
 import { formatTemperature, getWindDirection, formatDistance, capitalizeWords } from '@/utils/helpers';
 import type { HourlyForecast, DailyForecast } from '@/types';
 

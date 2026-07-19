@@ -5,7 +5,6 @@ import {
   ScrollView,
   RefreshControl,
   FlatList,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,7 +16,6 @@ import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
 import { useWeather } from '@/hooks/useWeather';
 
-import WeatherCard from '@/components/WeatherCard';
 import WeatherMetric from '@/components/WeatherMetric';
 import AlertCard, { type AlertData, type AlertSeverity as AlertCardSeverity } from '@/components/AlertCard';
 import ForecastItem from '@/components/ForecastItem';
@@ -29,7 +27,6 @@ import GradientBackground from '@/components/GradientBackground';
 import { formatDate, capitalizeWords, getWindDirection } from '@/utils/helpers';
 import { Gradients } from '@/constants/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function getWeatherIonicon(iconCode: string): keyof typeof Ionicons.glyphMap {
   const isNight = iconCode.endsWith('n');

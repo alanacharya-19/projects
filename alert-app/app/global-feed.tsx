@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import SearchBar from "@/components/SearchBar";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
 import { getSeverityColor, getDisasterEmoji, formatDate } from "@/utils/helpers";
 import { AlertSeverity, DisasterType } from "@/types";
 
