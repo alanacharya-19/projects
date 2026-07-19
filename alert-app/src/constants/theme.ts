@@ -149,32 +149,25 @@ export const Shadows = {
 } as const;
 
 export const Gradients = {
-  light: {
-    hero: ['#2563EB', '#3B82F6', '#60A5FA'] as readonly [string, string, string],
-    heroCard: ['#1E40AF', '#2563EB', '#3B82F6'] as readonly [string, string, string],
-    aiSummary: ['#4F46E5', '#6366F1', '#818CF8'] as readonly [string, string, string],
-    alert: ['#FEF2F2', '#FFF7ED', '#F8FAFC'] as readonly [string, string, string],
-    forecast: ['#EFF6FF', '#F0F9FF', '#F8FAFC'] as readonly [string, string, string],
-    home: ['#DBEAFE', '#F8FAFC'] as readonly [string, string, string],
-  },
-  dark: {
-    hero: ['#1E3A8A', '#1E40AF', '#2563EB'] as readonly [string, string, string],
-    heroCard: ['#1E3A8A', '#1D4ED8', '#2563EB'] as readonly [string, string, string],
-    aiSummary: ['#3730A3', '#4338CA', '#4F46E5'] as readonly [string, string, string],
-    alert: ['#0F172A', '#1E293B'] as readonly [string, string, string],
-    forecast: ['#0F172A', '#1E293B'] as readonly [string, string, string],
-    home: ['#0F172A', '#1E293B'] as readonly [string, string, string],
-  },
-} as const;
-
-export const Gradients = {
-  header: ['#0A1628', '#1E3A5F'] as const,
-  card: ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.4)'] as const,
-  cardDark: ['rgba(31,41,55,0.9)', 'rgba(17,24,39,0.5)'] as const,
-  warm: ['#EF4444', '#F97316'] as const,
-  cool: ['#3B82F6', '#6366F1'] as const,
-  glass: ['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.55)'] as const,
-  glassDark: ['rgba(31,41,55,0.85)', 'rgba(17,24,39,0.55)'] as const,
-  primary: ['#6366F1', '#8B5CF6'] as const,
-  primaryDark: ['#818CF8', '#A78BFA'] as const,
+  header: ['#0A1628', '#1E3A5F'] as readonly [string, string],
+  card: ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.4)'] as readonly [string, string],
+  cardDark: ['rgba(31,41,55,0.9)', 'rgba(17,24,39,0.5)'] as readonly [string, string],
+  warm: ['#EF4444', '#F97316'] as readonly [string, string],
+  cool: ['#3B82F6', '#6366F1'] as readonly [string, string],
+  glass: ['rgba(255,255,255,0.85)', 'rgba(255,255,255,0.55)'] as readonly [string, string],
+  glassDark: ['rgba(31,41,55,0.85)', 'rgba(17,24,39,0.55)'] as readonly [string, string],
+  primary: ['#6366F1', '#8B5CF6'] as readonly [string, string],
+  primaryDark: ['#818CF8', '#A78BFA'] as readonly [string, string],
+  hero: ['#2563EB', '#3B82F6', '#60A5FA'] as readonly [string, string, string],
+  heroDark: ['#1E3A8A', '#1E40AF', '#2563EB'] as readonly [string, string, string],
+  aiSummary: ['#4F46E5', '#6366F1', '#818CF8'] as readonly [string, string, string],
+  aiSummaryDark: ['#3730A3', '#4338CA', '#4F46E5'] as readonly [string, string, string],
+  home: ['#DBEAFE', '#F8FAFC'] as readonly [string, string],
+  homeDark: ['#0F172A', '#1E293B'] as readonly [string, string],
+  alert: ['#FEF2F2', '#FFF7ED', '#F8FAFC'] as readonly [string, string, string],
+  alertDark: ['#0F172A', '#1E293B'] as readonly [string, string],
+  forecast: ['#EFF6FF', '#F0F9FF', '#F8FAFC'] as readonly [string, string, string],
+  forecastDark: ['#0F172A', '#1E293B'] as readonly [string, string],
+  heroCard: ['#1E40AF', '#2563EB', '#3B82F6'] as readonly [string, string, string],
+  heroCardDark: ['#1E3A8A', '#1D4ED8', '#2563EB'] as readonly [string, string, string],
 } as const;

@@ -99,7 +99,7 @@ export default function HomeScreen() {
   }, [location]);
 
   const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
-    return resolvedMode === 'dark' ? Gradients.dark.home : Gradients.light.home;
+    return resolvedMode === 'dark' ? Gradients.homeDark : Gradients.home;
   }, [resolvedMode]);
 
   const handleRefresh = useCallback(async () => {
@@ -263,7 +263,7 @@ export default function HomeScreen() {
         {weather && (
           <>
             <LinearGradient
-              colors={resolvedMode === 'dark' ? Gradients.dark.heroCard : Gradients.light.heroCard}
+              colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
@@ -677,7 +677,7 @@ export default function HomeScreen() {
 
             {aiSummary && (
               <LinearGradient
-                colors={resolvedMode === 'dark' ? Gradients.dark.aiSummary : Gradients.light.aiSummary}
+                colors={resolvedMode === 'dark' ? Gradients.aiSummaryDark : Gradients.aiSummary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{

@@ -29,7 +29,6 @@ export default function TabLayout() {
           position: 'absolute',
           backgroundColor: isDark ? 'rgba(17, 24, 39, 0.82)' : 'rgba(255, 255, 255, 0.82)',
           borderTopWidth: 0,
-          elevation: 0,
           height: Platform.OS === 'ios' ? 82 : 64,
           paddingBottom: Platform.OS === 'ios' ? 24 : 6,
           paddingTop: 8,
@@ -44,7 +43,6 @@ export default function TabLayout() {
           elevation: 12,
           borderWidth: 1,
           borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-          ...StyleSheet.absoluteFillObject,
         },
         tabBarShowLabel: false,
         tabBarIconStyle: {

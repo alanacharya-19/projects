@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from '@/hooks/useLocation';
-import SectionHeader from '@/components/SectionHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import { Spacing, FontSizes, BorderRadius, Shadows } from '@/constants/theme';
@@ -57,7 +56,6 @@ function getMagnitudeLabel(mag: number): string {
 export default function EarthquakeMonitorScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-
   const { location } = useLocation();
 
   const [earthquakes, setEarthquakes] = useState<EarthquakeEntry[]>([]);
@@ -74,34 +72,16 @@ export default function EarthquakeMonitorScreen() {
       const { fetchEarthquakes: fetchEq } = await import('@/services/disasterService');
       const alerts = await fetchEq(
         location
-          ? {
-              minLat: location.latitude - 5,
-              minLon: location.longitude - 5,
-              maxLat: location.latitude + 5,
-              maxLon: location.longitude + 5,
-            }
+          ? { minLat: location.latitude - 5, minLon: location.longitude - 5, maxLat: location.latitude + 5, maxLon: location.longitude + 5 }
           : undefined
       );
-
       const entries: EarthquakeEntry[] = alerts.map((a) => {
         const meta: any = (a as any).metadata ?? {};
         const dist = location
-          ? calculateDistance(
-              location.latitude,
-              location.longitude,
-              a.coordinates.latitude,
-              a.coordinates.longitude
-            )
+          ? calculateDistance(location.latitude, location.longitude, a.coordinates.latitude, a.coordinates.longitude)
           : undefined;
-        return {
-          ...a,
-          mag: meta.magnitude ?? 0,
-          depth: meta.depth ?? 0,
-          locationName: meta.locationName ?? a.title,
-          distance: dist,
-        };
+        return { ...a, mag: meta.magnitude ?? 0, depth: meta.depth ?? 0, locationName: meta.locationName ?? a.title, distance: dist };
       });
-
       entries.sort((a, b) => b.startTime - a.startTime);
       setEarthquakes(entries);
     } catch (err) {
@@ -111,9 +91,7 @@ export default function EarthquakeMonitorScreen() {
     }
   }, [location]);
 
-  useEffect(() => {
-    fetchEarthquakes();
-  }, [fetchEarthquakes]);
+  useEffect(() => { fetchEarthquakes(); }, [fetchEarthquakes]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -130,10 +108,7 @@ export default function EarthquakeMonitorScreen() {
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
 
-  const maxMag = useMemo(
-    () => Math.max(...earthquakes.map((e) => e.mag), 0),
-    [earthquakes]
-  );
+  const maxMag = useMemo(() => Math.max(...earthquakes.map((e) => e.mag), 0), [earthquakes]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -156,6 +131,7 @@ export default function EarthquakeMonitorScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
+        {/* Map */}
         <View style={[styles.mapSection, { backgroundColor: colors.surfaceVariant }]}>
           <View style={styles.mapPlaceholder}>
             <Ionicons name="globe-outline" size={48} color={colors.textMuted} />
@@ -190,6 +166,7 @@ export default function EarthquakeMonitorScreen() {
           </View>
         </View>
 
+        {/* Filters */}
         <View style={styles.filterSection}>
           <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>Filter by Magnitude</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
@@ -214,9 +191,7 @@ export default function EarthquakeMonitorScreen() {
                     {f.label}
                   </Text>
                   <View style={[styles.filterCount, { backgroundColor: isActive ? f.color + '20' : colors.surface }]}>
-                    <Text style={[styles.filterCountText, { color: isActive ? f.color : colors.textMuted }]}>
-                      {count}
-                    </Text>
+                    <Text style={[styles.filterCountText, { color: isActive ? f.color : colors.textMuted }]}>{count}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -227,65 +202,40 @@ export default function EarthquakeMonitorScreen() {
         {isLoading && !refreshing ? (
           <LoadingSpinner message="Fetching earthquake data..." colors={{ text: colors.text, textMuted: colors.textMuted, accent: colors.primary }} />
         ) : error ? (
-          <EmptyState
-            icon="alert-circle-outline"
-            title="Error Loading Data"
-            description={error}
-            actionText="Retry"
-            onAction={fetchEarthquakes}
-            colors={{ card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary, textMuted: colors.textMuted, accent: colors.primary }}
-          />
+          <EmptyState icon="alert-circle-outline" title="Error Loading Data" description={error} actionText="Retry" onAction={fetchEarthquakes}
+            colors={{ card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary, textMuted: colors.textMuted, accent: colors.primary }} />
         ) : filteredEarthquakes.length === 0 ? (
-          <EmptyState
-            icon="checkmark-circle-outline"
-            title="No Earthquakes Found"
-            description="No earthquakes match the selected magnitude filter"
-            colors={{ card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary, textMuted: colors.textMuted, accent: colors.primary }}
-          />
+          <EmptyState icon="checkmark-circle-outline" title="No Earthquakes Found" description="No earthquakes match the selected magnitude filter"
+            colors={{ card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary, textMuted: colors.textMuted, accent: colors.primary }} />
         ) : (
           <View style={styles.listSection}>
-            <SectionHeader
-              title="Latest Earthquakes"
-              colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }}
-            />
+            <Text style={[styles.listTitle, { color: colors.text }]}>Latest Earthquakes</Text>
             {filteredEarthquakes.map((eq) => {
               const isExpanded = expandedId === eq.id;
               const magColor = getMagnitudeColor(eq.mag);
               const distText = eq.distance != null ? formatDistance(eq.distance) : null;
-
               return (
                 <TouchableOpacity
                   key={eq.id}
-                  style={[
-                    styles.eqCard,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
+                  style={[styles.eqCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   onPress={() => toggleExpand(eq.id)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.eqRow}>
                     <View style={[styles.magBadge, { backgroundColor: magColor + '15' }]}>
-                      <Text style={[styles.magValue, { color: magColor }]}>
-                        {eq.mag.toFixed(1)}
-                      </Text>
+                      <Text style={[styles.magValue, { color: magColor }]}>{eq.mag.toFixed(1)}</Text>
                       <Text style={[styles.magLabel, { color: magColor }]}>MAG</Text>
                     </View>
                     <View style={styles.eqInfo}>
-                      <Text style={[styles.eqLocation, { color: colors.text }]} numberOfLines={1}>
-                        {eq.locationName}
-                      </Text>
+                      <Text style={[styles.eqLocation, { color: colors.text }]} numberOfLines={1}>{eq.locationName}</Text>
                       <View style={styles.eqMetaRow}>
                         <View style={styles.eqMetaItem}>
                           <Ionicons name="arrow-down" size={11} color={colors.textMuted} />
-                          <Text style={[styles.eqMetaText, { color: colors.textMuted }]}>
-                            {eq.depth.toFixed(1)} km
-                          </Text>
+                          <Text style={[styles.eqMetaText, { color: colors.textMuted }]}>{eq.depth.toFixed(1)} km</Text>
                         </View>
                         <View style={styles.eqMetaItem}>
                           <Ionicons name="time-outline" size={11} color={colors.textMuted} />
-                          <Text style={[styles.eqMetaText, { color: colors.textMuted }]}>
-                            {formatDate(eq.startTime, 'relative')}
-                          </Text>
+                          <Text style={[styles.eqMetaText, { color: colors.textMuted }]}>{formatDate(eq.startTime, 'relative')}</Text>
                         </View>
                         {distText && (
                           <View style={styles.eqMetaItem}>
@@ -296,40 +246,27 @@ export default function EarthquakeMonitorScreen() {
                       </View>
                     </View>
                     <View style={[styles.severityPill, { backgroundColor: magColor + '18' }]}>
-                      <Text style={[styles.severityPillText, { color: magColor }]}>
-                        {getMagnitudeLabel(eq.mag)}
-                      </Text>
+                      <Text style={[styles.severityPillText, { color: magColor }]}>{getMagnitudeLabel(eq.mag)}</Text>
                     </View>
-                    <Ionicons
-                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={18}
-                      color={colors.textMuted}
-                    />
+                    <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
                   </View>
-
                   {isExpanded && (
                     <View style={[styles.eqExpanded, { borderTopColor: colors.border }]}>
                       <View style={styles.eqDetailGrid}>
                         <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
                           <Ionicons name="compass-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Latitude</Text>
-                          <Text style={[styles.eqDetailValue, { color: colors.text }]}>
-                            {eq.coordinates.latitude.toFixed(4)}
-                          </Text>
+                          <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.coordinates.latitude.toFixed(4)}</Text>
                         </View>
                         <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
                           <Ionicons name="compass-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Longitude</Text>
-                          <Text style={[styles.eqDetailValue, { color: colors.text }]}>
-                            {eq.coordinates.longitude.toFixed(4)}
-                          </Text>
+                          <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.coordinates.longitude.toFixed(4)}</Text>
                         </View>
                         <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
                           <Ionicons name="swap-vertical-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Depth</Text>
-                          <Text style={[styles.eqDetailValue, { color: colors.text }]}>
-                            {eq.depth.toFixed(1)} km
-                          </Text>
+                          <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.depth.toFixed(1)} km</Text>
                         </View>
                         <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
                           <Ionicons name="radio-outline" size={16} color={colors.textMuted} />
@@ -337,14 +274,8 @@ export default function EarthquakeMonitorScreen() {
                           <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.source}</Text>
                         </View>
                       </View>
-                      {eq.message ? (
-                        <Text style={[styles.eqDescription, { color: colors.textSecondary }]}>
-                          {eq.message}
-                        </Text>
-                      ) : null}
-                      <Text style={[styles.eqTimestamp, { color: colors.textMuted }]}>
-                        Occurred: {formatDate(eq.startTime, 'long')}
-                      </Text>
+                      {eq.message ? <Text style={[styles.eqDescription, { color: colors.textSecondary }]}>{eq.message}</Text> : null}
+                      <Text style={[styles.eqTimestamp, { color: colors.textMuted }]}>Occurred: {formatDate(eq.startTime, 'long')}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -362,112 +293,78 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backBtn: { padding: Spacing.xs },
+  backBtn: { padding: 4 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: FontSizes.xl, fontWeight: '700' },
-  headerSubtitle: { fontSize: FontSizes.xs, marginTop: 2 },
-  refreshBtn: { padding: Spacing.xs },
+  headerTitle: { fontSize: 17, fontWeight: '700' },
+  headerSubtitle: { fontSize: 11, marginTop: 2 },
+  refreshBtn: { padding: 4 },
   scrollContent: { paddingBottom: 40 },
   mapSection: {
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.lg,
+    marginHorizontal: 20,
+    marginTop: 20,
     height: 200,
-    borderRadius: BorderRadius.xl,
+    borderRadius: 20,
     overflow: 'hidden',
   },
-  mapPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-  },
-  mapLabel: { fontSize: FontSizes.sm, fontWeight: '500' },
+  mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  mapLabel: { fontSize: 13, fontWeight: '500' },
   mapDots: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   mapDot: { position: 'absolute', opacity: 0.85 },
   mapStats: {
     position: 'absolute',
-    bottom: Spacing.sm,
-    left: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.md,
+    bottom: 8,
+    left: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
     ...Shadows.sm,
   },
-  mapStatsText: { fontSize: FontSizes.xs, fontWeight: '600' },
-  filterSection: { marginTop: Spacing.lg, paddingHorizontal: Spacing.lg },
-  filterLabel: { fontSize: FontSizes.sm, fontWeight: '600', marginBottom: Spacing.sm },
-  filterScroll: { gap: Spacing.sm },
+  mapStatsText: { fontSize: 11, fontWeight: '600' },
+  filterSection: { marginTop: 20, paddingHorizontal: 20 },
+  filterLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  filterScroll: { gap: 8 },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1.5,
   },
   filterDot: { width: 8, height: 8, borderRadius: 4 },
-  filterChipText: { fontSize: FontSizes.sm, fontWeight: '600' },
-  filterCount: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: BorderRadius.sm,
-  },
-  filterCountText: { fontSize: FontSizes.xs, fontWeight: '700' },
-  listSection: { marginTop: Spacing.lg, paddingHorizontal: Spacing.lg },
+  filterChipText: { fontSize: 13, fontWeight: '600' },
+  filterCount: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  filterCountText: { fontSize: 10, fontWeight: '700' },
+  listSection: { marginTop: 24, paddingHorizontal: 20 },
+  listTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
   eqCard: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: 20,
     borderWidth: 1,
-    marginBottom: Spacing.sm,
+    marginBottom: 10,
     overflow: 'hidden',
     ...Shadows.sm,
   },
-  eqRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    gap: Spacing.sm,
-  },
-  magBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  magValue: { fontSize: FontSizes.xl, fontWeight: '800' },
+  eqRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
+  magBadge: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  magValue: { fontSize: 18, fontWeight: '800' },
   magLabel: { fontSize: 8, fontWeight: '700', marginTop: 1 },
   eqInfo: { flex: 1 },
-  eqLocation: { fontSize: FontSizes.md, fontWeight: '600', marginBottom: 4 },
-  eqMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  eqLocation: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  eqMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   eqMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  eqMetaText: { fontSize: FontSizes.xs },
-  severityPill: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.full,
-  },
-  severityPillText: { fontSize: FontSizes.xs, fontWeight: '700' },
-  eqExpanded: {
-    borderTopWidth: 1,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    paddingTop: Spacing.md,
-    gap: Spacing.md,
-  },
-  eqDetailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  eqDetailItem: {
-    width: '48%',
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    gap: 4,
-  },
-  eqDetailLabel: { fontSize: FontSizes.xs, fontWeight: '500' },
-  eqDetailValue: { fontSize: FontSizes.md, fontWeight: '600' },
-  eqDescription: { fontSize: FontSizes.sm, lineHeight: 20 },
-  eqTimestamp: { fontSize: FontSizes.xs },
+  eqMetaText: { fontSize: 11 },
+  severityPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  severityPillText: { fontSize: 10, fontWeight: '700' },
+  eqExpanded: { borderTopWidth: StyleSheet.hairlineWidth, padding: 14, gap: 12 },
+  eqDetailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  eqDetailItem: { width: '48%', padding: 8, borderRadius: 12, gap: 4 },
+  eqDetailLabel: { fontSize: 10, fontWeight: '500' },
+  eqDetailValue: { fontSize: 14, fontWeight: '600' },
+  eqDescription: { fontSize: 13, lineHeight: 20 },
+  eqTimestamp: { fontSize: 11 },
 });

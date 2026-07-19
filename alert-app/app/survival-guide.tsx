@@ -5,13 +5,13 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import SearchBar from "@/components/SearchBar";
 import SurvivalStepCard from "@/components/SurvivalStepCard";
-import SectionHeader from "@/components/SectionHeader";
-import { Spacing, FontSizes, BorderRadius, Shadows } from "@/constants/theme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { SURVIVAL_GUIDES } from "@/constants/survival";
 import type { SurvivalGuide, SurvivalStep } from "@/types";
 
@@ -52,12 +52,9 @@ export default function SurvivalGuideScreen() {
 
   const getSteps = (guide: SurvivalGuide, phase: Phase): SurvivalStep[] => {
     switch (phase) {
-      case "before":
-        return guide.beforeSteps;
-      case "during":
-        return guide.duringSteps;
-      case "after":
-        return guide.afterSteps;
+      case "before": return guide.beforeSteps;
+      case "during": return guide.duringSteps;
+      case "after": return guide.afterSteps;
     }
   };
 
@@ -67,27 +64,14 @@ export default function SurvivalGuideScreen() {
     const phaseColor = PHASE_COLORS[activePhase];
 
     return (
-      <View
-        key={guide.id}
-        style={[styles.guideCard, { backgroundColor: colors.surface, ...Shadows.md }]}
-      >
-        <TouchableOpacity
-          style={styles.guideHeader}
-          onPress={() => toggleExpand(guide.id)}
-          activeOpacity={0.7}
-        >
+      <View key={guide.id} style={[styles.guideCard, { backgroundColor: colors.surface, ...Shadows.md }]}>
+        <TouchableOpacity style={styles.guideHeader} onPress={() => toggleExpand(guide.id)} activeOpacity={0.7}>
           <Text style={styles.guideIcon}>{guide.icon}</Text>
           <View style={styles.guideHeaderText}>
             <Text style={[styles.guideTitle, { color: colors.text }]}>{guide.title}</Text>
-            <Text style={[styles.guideDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-              {guide.description}
-            </Text>
+            <Text style={[styles.guideDesc, { color: colors.textSecondary }]} numberOfLines={2}>{guide.description}</Text>
           </View>
-          <Ionicons
-            name={isExpanded ? "chevron-up" : "chevron-down"}
-            size={22}
-            color={colors.textMuted}
-          />
+          <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={colors.textMuted} />
         </TouchableOpacity>
 
         {isExpanded && (
@@ -97,38 +81,18 @@ export default function SurvivalGuideScreen() {
               {PHASE_OPTIONS.map((phase) => (
                 <TouchableOpacity
                   key={phase.key}
-                  style={[
-                    styles.phaseTab,
-                    activePhase === phase.key && {
-                      backgroundColor:
-                        phase.key === "before"
-                          ? "#DCFCE7"
-                          : phase.key === "during"
-                          ? "#FEF3C7"
-                          : "#E0F2FE",
-                    },
-                  ]}
+                  style={[styles.phaseTab, activePhase === phase.key && {
+                    backgroundColor: phase.key === "before" ? "#DCFCE7" : phase.key === "during" ? "#FEF3C7" : "#E0F2FE",
+                  }]}
                   onPress={() => setActivePhase(phase.key)}
                   activeOpacity={0.7}
                 >
                   <Ionicons
                     name={phase.icon as keyof typeof Ionicons.glyphMap}
                     size={16}
-                    color={
-                      activePhase === phase.key ? PHASE_COLORS[phase.key] : colors.textMuted
-                    }
+                    color={activePhase === phase.key ? PHASE_COLORS[phase.key] : colors.textMuted}
                   />
-                  <Text
-                    style={[
-                      styles.phaseTabText,
-                      {
-                        color:
-                          activePhase === phase.key
-                            ? PHASE_COLORS[phase.key]
-                            : colors.textMuted,
-                      },
-                    ]}
-                  >
+                  <Text style={[styles.phaseTabText, { color: activePhase === phase.key ? PHASE_COLORS[phase.key] : colors.textMuted }]}>
                     {phase.label}
                   </Text>
                 </TouchableOpacity>
@@ -143,69 +107,44 @@ export default function SurvivalGuideScreen() {
                   step={step.order}
                   title={step.title}
                   description={step.description}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    accent: phaseColor,
-                  }}
+                  colors={{ card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary, accent: phaseColor }}
                 />
               ))}
             </View>
 
             {/* Emergency Kit */}
-            <View style={styles.subSection}>
-              <SectionHeader
-                title="Emergency Kit"
-                colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }}
-              />
-              {guide.emergencyKit.map((item, idx) => (
-                <View
-                  key={idx}
-                  style={[styles.kitItem, { backgroundColor: colors.surfaceVariant }]}
-                >
-                  <Ionicons
-                    name={item.essential ? "checkmark-circle" : "ellipse-outline"}
-                    size={20}
-                    color={item.essential ? colors.success : colors.textMuted}
-                  />
-                  <View style={styles.kitItemText}>
-                    <Text style={[styles.kitItemName, { color: colors.text }]}>{item.item}</Text>
-                    <Text style={[styles.kitItemQty, { color: colors.textMuted }]}>
-                      {item.quantity}
-                    </Text>
+            <Text style={[styles.subSectionTitle, { color: colors.text }]}>Emergency Kit</Text>
+            {guide.emergencyKit.map((item, idx) => (
+              <View key={idx} style={[styles.kitItem, { backgroundColor: colors.surfaceVariant }]}>
+                <Ionicons name={item.essential ? "checkmark-circle" : "ellipse-outline"} size={20} color={item.essential ? colors.success : colors.textMuted} />
+                <View style={styles.kitItemText}>
+                  <Text style={[styles.kitItemName, { color: colors.text }]}>{item.item}</Text>
+                  <Text style={[styles.kitItemQty, { color: colors.textMuted }]}>{item.quantity}</Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Do's & Don'ts in two columns */}
+            <View style={styles.dosDontsContainer}>
+              <View style={styles.dosDontsColumn}>
+                <Text style={[styles.dosDontsTitle, { color: colors.success }]}>Do's</Text>
+                {guide.dos.map((item, idx) => (
+                  <View key={idx} style={styles.dosDontsItem}>
+                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                    <Text style={[styles.dosDontsText, { color: colors.textSecondary }]}>{item}</Text>
                   </View>
-                </View>
-              ))}
-            </View>
-
-            {/* Dos */}
-            <View style={styles.subSection}>
-              <SectionHeader
-                title="Do's"
-                colors={{ text: colors.text, accent: colors.success, textMuted: colors.textMuted }}
-              />
-              {guide.dos.map((item, idx) => (
-                <View key={idx} style={styles.dosDontsItem}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                  <Text style={[styles.dosDontsText, { color: colors.textSecondary }]}>{item}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Don'ts */}
-            <View style={styles.subSection}>
-              <SectionHeader
-                title="Don'ts"
-                colors={{ text: colors.text, accent: colors.error, textMuted: colors.textMuted }}
-              />
-              {guide.donts.map((item, idx) => (
-                <View key={idx} style={styles.dosDontsItem}>
-                  <Ionicons name="close-circle" size={18} color={colors.error} />
-                  <Text style={[styles.dosDontsText, { color: colors.textSecondary }]}>{item}</Text>
-                </View>
-              ))}
+                ))}
+              </View>
+              <View style={[styles.dosDontsDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.dosDontsColumn}>
+                <Text style={[styles.dosDontsTitle, { color: colors.error }]}>Don'ts</Text>
+                {guide.donts.map((item, idx) => (
+                  <View key={idx} style={styles.dosDontsItem}>
+                    <Ionicons name="close-circle" size={16} color={colors.error} />
+                    <Text style={[styles.dosDontsText, { color: colors.textSecondary }]}>{item}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
         )}
@@ -215,41 +154,24 @@ export default function SurvivalGuideScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <StatusBar barStyle="default" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Survival Guide</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            Essential knowledge for any disaster
-          </Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Essential knowledge for any disaster</Text>
         </View>
 
         {/* Search */}
         <View style={styles.searchContainer}>
-          <SearchBar
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search guides..."
-            colors={{
-              card: colors.surface,
-              text: colors.text,
-              textMuted: colors.textMuted,
-              cardAlt: colors.surfaceVariant,
-              accent: colors.primary,
-            }}
-          />
+          <SearchBar value={search} onChangeText={setSearch} placeholder="Search guides..."
+            colors={{ card: colors.surface, text: colors.text, textMuted: colors.textMuted, cardAlt: colors.surfaceVariant, accent: colors.primary }} />
         </View>
 
         {/* Offline Indicator */}
         <View style={[styles.offlineIndicator, { backgroundColor: colors.successLight }]}>
           <Ionicons name="cloud-offline" size={16} color={colors.success} />
-          <Text style={[styles.offlineText, { color: colors.success }]}>
-            Available offline
-          </Text>
+          <Text style={[styles.offlineText, { color: colors.success }]}>Available offline</Text>
         </View>
 
         {/* Guide Cards */}
@@ -257,9 +179,7 @@ export default function SurvivalGuideScreen() {
           {guides.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="search" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No guides found
-              </Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No guides found</Text>
             </View>
           ) : (
             guides.map(renderGuideCard)
@@ -273,137 +193,64 @@ export default function SurvivalGuideScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-  },
-  header: {
-    marginBottom: Spacing.xl,
-    paddingTop: Spacing.xxxl,
-  },
-  headerTitle: {
-    fontSize: FontSizes.xxxl,
-    fontWeight: "800",
-    marginBottom: Spacing.xs,
-  },
-  headerSubtitle: {
-    fontSize: FontSizes.md,
-  },
-  searchContainer: {
-    marginBottom: Spacing.md,
-  },
+  container: { flex: 1 },
+  scrollContent: { padding: 20 },
+  header: { marginTop: 48, marginBottom: 24 },
+  headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
+  headerSubtitle: { fontSize: 14 },
+  searchContainer: { marginBottom: 12 },
   offlineIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.xl,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    marginBottom: 24,
   },
-  offlineText: {
-    fontSize: FontSizes.sm,
-    fontWeight: "600",
-  },
-  guidesList: {
-    gap: Spacing.lg,
-  },
-  guideCard: {
-    borderRadius: BorderRadius.xl,
-    overflow: "hidden",
-  },
-  guideHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  guideIcon: {
-    fontSize: 36,
-  },
-  guideHeaderText: {
-    flex: 1,
-  },
-  guideTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  guideDesc: {
-    fontSize: FontSizes.sm,
-    lineHeight: 18,
-  },
-  guideContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-  },
-  phaseTabs: {
-    flexDirection: "row",
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xs,
-    marginBottom: Spacing.lg,
-  },
+  offlineText: { fontSize: 13, fontWeight: "600" },
+  guidesList: { gap: 16 },
+  guideCard: { borderRadius: 20, overflow: "hidden" },
+  guideHeader: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
+  guideIcon: { fontSize: 36 },
+  guideHeaderText: { flex: 1 },
+  guideTitle: { fontSize: 16, fontWeight: "700", marginBottom: 2 },
+  guideDesc: { fontSize: 13, lineHeight: 18 },
+  guideContent: { paddingHorizontal: 16, paddingBottom: 20 },
+  phaseTabs: { flexDirection: "row", borderRadius: 14, padding: 4, marginBottom: 20 },
   phaseTab: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.xs,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
-  phaseTabText: {
-    fontSize: FontSizes.sm,
-    fontWeight: "600",
-  },
-  stepsList: {
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  subSection: {
-    marginBottom: Spacing.xl,
-  },
+  phaseTabText: { fontSize: 13, fontWeight: "600" },
+  stepsList: { gap: 10, marginBottom: 20 },
+  subSectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 10 },
   kitItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.md,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.sm,
+    gap: 12,
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
   },
-  kitItemText: {
-    flex: 1,
-  },
-  kitItemName: {
-    fontSize: FontSizes.md,
-    fontWeight: "600",
-  },
-  kitItemQty: {
-    fontSize: FontSizes.sm,
-  },
-  dosDontsItem: {
+  kitItemText: { flex: 1 },
+  kitItemName: { fontSize: 14, fontWeight: "600" },
+  kitItemQty: { fontSize: 12 },
+  dosDontsContainer: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.xs,
+    gap: 12,
+    marginTop: 8,
   },
-  dosDontsText: {
-    fontSize: FontSizes.md,
-    flex: 1,
-    lineHeight: 22,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    paddingVertical: Spacing.xxxxl,
-    gap: Spacing.md,
-  },
-  emptyText: {
-    fontSize: FontSizes.lg,
-  },
+  dosDontsColumn: { flex: 1, gap: 8 },
+  dosDontsDivider: { width: StyleSheet.hairlineWidth },
+  dosDontsTitle: { fontSize: 14, fontWeight: "700", marginBottom: 4 },
+  dosDontsItem: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  dosDontsText: { fontSize: 13, flex: 1, lineHeight: 18 },
+  emptyContainer: { alignItems: "center", paddingVertical: 60, gap: 12 },
+  emptyText: { fontSize: 16 },
 });

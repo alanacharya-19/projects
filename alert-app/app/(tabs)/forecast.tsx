@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/context/ThemeContext';
 import { useAppContext } from '@/context/AppContext';
 import { useWeather } from '@/hooks/useWeather';
@@ -19,7 +20,7 @@ import WeatherMetric from '@/components/WeatherMetric';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import GradientBackground from '@/components/GradientBackground';
-import { Spacing, BorderRadius, FontSizes, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, Shadows, Gradients } from '@/constants/theme';
 import { formatTemperature, getWindDirection, formatDistance, capitalizeWords } from '@/utils/helpers';
 import type { HourlyForecast, DailyForecast } from '@/types';
 
@@ -171,308 +172,399 @@ export default function ForecastScreen() {
 
   return (
     <GradientBackground
-      colors={resolvedMode === 'dark' ? ['#0F172A', '#1E293B'] as const : ['#EFF6FF', '#F8FAFC'] as const}
+      colors={resolvedMode === 'dark' ? Gradients.forecastDark : Gradients.forecast}
     >
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + Spacing.lg,
-          paddingBottom: insets.bottom + Spacing.xxxl,
-          paddingHorizontal: Spacing.lg,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 32,
+          paddingHorizontal: 20,
         }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.unitToggle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={toggleUnit}
-            style={[styles.unitButton, isCelsius && { backgroundColor: colors.primary }]}
-          >
-            <Text style={[styles.unitText, { color: isCelsius ? colors.white : colors.textSecondary }]}>°C</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={toggleUnit}
-            style={[styles.unitButton, !isCelsius && { backgroundColor: colors.primary }]}
-          >
-            <Text style={[styles.unitText, { color: !isCelsius ? colors.white : colors.textSecondary }]}>°F</Text>
-          </TouchableOpacity>
-        </View>
-
         {currentSummary && (
-          <View style={[styles.currentCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.currentMain}>
-              <View style={styles.currentTempRow}>
-                <Ionicons name={currentSummary.icon} size={48} color={colors.primary} />
-                <Text style={[styles.currentTemp, { color: colors.text }]}>{currentSummary.temp}</Text>
-              </View>
-              <Text style={[styles.currentDescription, { color: colors.textSecondary }]}>{currentSummary.description}</Text>
-              <Text style={[styles.currentFeelsLike, { color: colors.textMuted }]}>
-                Feels like {currentSummary.feelsLike} &middot; H:{currentSummary.high} L:{currentSummary.low}
-              </Text>
-            </View>
-          </View>
+          <LinearGradient
+            colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 24,
+              padding: 28,
+              alignItems: 'center',
+              marginBottom: 20,
+              shadowColor: '#2563EB',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 24,
+              elevation: 12,
+            }}
+          >
+            <Ionicons
+              name={currentSummary.icon}
+              size={64}
+              color="#FFFFFF"
+              style={{ marginBottom: 8 }}
+            />
+            <Text
+              style={{
+                fontSize: 72,
+                fontWeight: '200',
+                color: '#FFFFFF',
+                letterSpacing: -4,
+                lineHeight: 80,
+              }}
+            >
+              {currentSummary.temp}
+            </Text>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: '600',
+                color: 'rgba(255,255,255,0.95)',
+                marginBottom: 6,
+                textTransform: 'capitalize',
+              }}
+            >
+              {currentSummary.description}
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.7)',
+              }}
+            >
+              Feels like {currentSummary.feelsLike} · H:{currentSummary.high} L:{currentSummary.low}
+            </Text>
+          </LinearGradient>
         )}
 
-        <View style={{ marginTop: Spacing.xxl }}>
-          <SectionHeader title="Today" colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }} />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: Spacing.sm, paddingVertical: Spacing.sm }}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignSelf: 'center',
+            borderRadius: 9999,
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 3,
+            backgroundColor: colors.surface,
+            marginBottom: 24,
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={toggleUnit}
+            style={{
+              paddingHorizontal: 20,
+              paddingVertical: 8,
+              borderRadius: 9999,
+              backgroundColor: isCelsius ? colors.primary : 'transparent',
+            }}
           >
-            {hourlyForecast.length > 0 ? (
-              hourlyForecast.filter((h) => isToday(h.time)).length > 0 ? (
-                hourlyForecast.filter((h) => isToday(h.time)).map((h: HourlyForecast) => (
-                  <ForecastItem
-                    key={h.time}
-                    time={isNow(h.time) ? 'Now' : formatHour(h.time)}
-                    icon={getWeatherIconName(h.icon)}
-                    temp={Math.round(tempUnit === 'fahrenheit' ? h.temperature * 9 / 5 + 32 : h.temperature)}
-                    rainChance={h.precipitationProbability}
-                    isNow={isNow(h.time)}
-                    colors={forecastColors}
-                  />
-                ))
-              ) : (
-                hourlyForecast.slice(0, 24).map((h: HourlyForecast) => (
-                  <ForecastItem
-                    key={h.time}
-                    time={isNow(h.time) ? 'Now' : formatHour(h.time)}
-                    icon={getWeatherIconName(h.icon)}
-                    temp={Math.round(tempUnit === 'fahrenheit' ? h.temperature * 9 / 5 + 32 : h.temperature)}
-                    rainChance={h.precipitationProbability}
-                    isNow={isNow(h.time)}
-                    colors={forecastColors}
-                  />
-                ))
-              )
-            ) : (
-              <View style={{ width: Dimensions.get('window').width - Spacing.lg * 2, alignItems: 'center', paddingVertical: Spacing.xl }}>
-                <Text style={{ color: colors.textMuted, fontSize: FontSizes.md }}>
-                  No hourly data available
-                </Text>
-              </View>
-            )}
-          </ScrollView>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '700',
+                color: isCelsius ? '#FFFFFF' : colors.textSecondary,
+              }}
+            >
+              °C
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={toggleUnit}
+            style={{
+              paddingHorizontal: 20,
+              paddingVertical: 8,
+              borderRadius: 9999,
+              backgroundColor: !isCelsius ? colors.primary : 'transparent',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '700',
+                color: !isCelsius ? '#FFFFFF' : colors.textSecondary,
+              }}
+            >
+              °F
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={{ marginTop: Spacing.xxl }}>
-          <SectionHeader title="7-Day Forecast" colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }} />
-          <View style={[styles.dailyContainer, { backgroundColor: colors.surface }]}>
-            {dailyForecast.length > 0 ? (
-              dailyForecast.map((day: DailyForecast, idx: number) => (
-                <View
-                  key={day.date}
-                  style={[
-                    styles.dailyRow,
-                    idx < dailyForecast.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-                  ]}
-                >
-                  <Text style={[styles.dailyDayName, { color: colors.text }]}>
-                    {idx === 0 ? 'Today' : day.dayName}
-                  </Text>
-                  <Ionicons name={getWeatherIconName(day.icon)} size={22} color={colors.primary} />
-                  <View style={styles.dailyTemps}>
-                    <Text style={[styles.dailyTempHigh, { color: colors.text }]}>
-                      {formatTemperature(day.tempHigh, tempUnit)}
-                    </Text>
-                    <Text style={[styles.dailyTempLow, { color: colors.textMuted }]}>
-                      {formatTemperature(day.tempLow, tempUnit)}
-                    </Text>
-                  </View>
-                  <View style={styles.dailyRain}>
-                    {day.precipitationProbability > 0 && (
-                      <>
-                        <Ionicons name="water" size={12} color={colors.info} />
-                        <Text style={[styles.dailyRainText, { color: colors.textMuted }]}>
-                          {day.precipitationProbability}%
-                        </Text>
-                      </>
-                    )}
-                  </View>
-                  <Text style={[styles.dailyDesc, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {capitalizeWords(day.description)}
-                  </Text>
-                </View>
+        <SectionHeader
+          title="Hourly Forecast"
+          colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }}
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 10, paddingVertical: Spacing.sm, marginBottom: 24 }}
+        >
+          {hourlyForecast.length > 0 ? (
+            hourlyForecast.filter((h) => isToday(h.time)).length > 0 ? (
+              hourlyForecast.filter((h) => isToday(h.time)).map((h: HourlyForecast) => (
+                <ForecastItem
+                  key={h.time}
+                  time={isNow(h.time) ? 'Now' : formatHour(h.time)}
+                  icon={getWeatherIconName(h.icon)}
+                  temp={Math.round(tempUnit === 'fahrenheit' ? h.temperature * 9 / 5 + 32 : h.temperature)}
+                  rainChance={h.precipitationProbability}
+                  isNow={isNow(h.time)}
+                  colors={forecastColors}
+                />
               ))
             ) : (
-              <View style={{ alignItems: 'center', paddingVertical: Spacing.xl }}>
-                <Text style={{ color: colors.textMuted, fontSize: FontSizes.md }}>
-                  No forecast data available
+              hourlyForecast.slice(0, 24).map((h: HourlyForecast) => (
+                <ForecastItem
+                  key={h.time}
+                  time={isNow(h.time) ? 'Now' : formatHour(h.time)}
+                  icon={getWeatherIconName(h.icon)}
+                  temp={Math.round(tempUnit === 'fahrenheit' ? h.temperature * 9 / 5 + 32 : h.temperature)}
+                  rainChance={h.precipitationProbability}
+                  isNow={isNow(h.time)}
+                  colors={forecastColors}
+                />
+              ))
+            )
+          ) : (
+            <View style={{ width: Dimensions.get('window').width - 40, alignItems: 'center', paddingVertical: 20 }}>
+              <Text style={{ color: colors.textMuted, fontSize: 14 }}>
+                No hourly data available
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <SectionHeader
+          title="7-Day Forecast"
+          colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }}
+        />
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 20,
+            padding: 4,
+            marginBottom: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          {dailyForecast.length > 0 ? (
+            dailyForecast.map((day: DailyForecast, idx: number) => (
+              <View
+                key={day.date}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 14,
+                  paddingHorizontal: 14,
+                  borderBottomWidth: idx < dailyForecast.length - 1 ? 1 : 0,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: idx === 0 ? '700' : '500',
+                    color: idx === 0 ? colors.primary : colors.text,
+                    width: 52,
+                  }}
+                >
+                  {idx === 0 ? 'Today' : day.dayName}
+                </Text>
+                <Ionicons
+                  name={getWeatherIconName(day.icon)}
+                  size={22}
+                  color={colors.primary}
+                  style={{ width: 30 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: colors.textMuted,
+                    width: 32,
+                    textAlign: 'right',
+                  }}
+                >
+                  {formatTemperature(day.tempLow, tempUnit)}
+                </Text>
+                <View
+                  style={{
+                    flex: 1,
+                    marginHorizontal: 12,
+                    height: 5,
+                    borderRadius: 3,
+                    backgroundColor: colors.border,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <View
+                    style={{
+                      height: '100%',
+                      borderRadius: 3,
+                      backgroundColor: colors.primary,
+                      width: `${Math.min(((day.tempHigh - day.tempLow) / 20) * 100, 100)}%`,
+                    }}
+                  />
+                </View>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: colors.text,
+                    width: 32,
+                    textAlign: 'right',
+                  }}
+                >
+                  {formatTemperature(day.tempHigh, tempUnit)}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 3,
+                    width: 44,
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  {day.precipitationProbability > 0 && (
+                    <>
+                      <Ionicons name="water" size={12} color={colors.info} />
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: colors.textMuted,
+                          fontWeight: '500',
+                        }}
+                      >
+                        {day.precipitationProbability}%
+                      </Text>
+                    </>
+                  )}
+                </View>
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    textAlign: 'right',
+                    marginLeft: 8,
+                  }}
+                  numberOfLines={1}
+                >
+                  {capitalizeWords(day.description)}
                 </Text>
               </View>
-            )}
-          </View>
+            ))
+          ) : (
+            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+              <Text style={{ color: colors.textMuted, fontSize: 14 }}>
+                No forecast data available
+              </Text>
+            </View>
+          )}
         </View>
 
-        <View style={{ marginTop: Spacing.xxl }}>
-          <SectionHeader title="Weather Details" colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }} />
-          <View style={styles.metricsGrid}>
-            {metrics.map((m) => (
-              <View key={m.label} style={{ width: '48%' }}>
-                <WeatherMetric icon={m.icon as keyof typeof Ionicons.glyphMap} label={m.label} value={m.value} colors={metricColors} />
-              </View>
-            ))}
-          </View>
+        <SectionHeader
+          title="Weather Details"
+          colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }}
+        />
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 24,
+          }}
+        >
+          {metrics.map((m) => (
+            <View key={m.label} style={{ width: '48%' }}>
+              <WeatherMetric icon={m.icon as keyof typeof Ionicons.glyphMap} label={m.label} value={m.value} colors={metricColors} />
+            </View>
+          ))}
         </View>
 
         {aiSummary && (
-          <View style={{ marginTop: Spacing.xxl }}>
-            <SectionHeader title="AI Weather Summary" colors={{ text: colors.text, accent: colors.primary, textMuted: colors.textMuted }} />
-            <View style={[styles.aiSummaryCard, { backgroundColor: colors.surface, borderColor: colors.primary + '30' }]}>
-              <View style={styles.aiSummaryHeader}>
-                <Ionicons name="sparkles" size={20} color={colors.primary} />
-                <Text style={[styles.aiSummaryTitle, { color: colors.text }]}>Week Ahead</Text>
-              </View>
-              <Text style={[styles.aiSummaryText, { color: colors.textSecondary }]}>
-                {aiSummary.summary}
+          <LinearGradient
+            colors={resolvedMode === 'dark' ? Gradients.aiSummaryDark : Gradients.aiSummary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 20,
+              padding: 20,
+              marginBottom: 24,
+              shadowColor: '#4F46E5',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 12,
+              elevation: 6,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+              <Text
+                style={{
+                  fontSize: 17,
+                  fontWeight: '700',
+                  color: '#FFFFFF',
+                }}
+              >
+                AI Weather Summary
               </Text>
-              <View style={styles.aiHighlights}>
-                {aiSummary.highlights.map((h, i) => (
-                  <View key={i} style={[styles.aiHighlightBadge, { backgroundColor: colors.surfaceVariant }]}>
-                    <Text style={[styles.aiHighlightText, { color: colors.text }]}>{h}</Text>
-                  </View>
-                ))}
-              </View>
             </View>
-          </View>
+
+            <Text
+              style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.9)',
+                lineHeight: 22,
+                marginBottom: 14,
+              }}
+            >
+              {aiSummary.summary}
+            </Text>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {aiSummary.highlights.map((h, i) => (
+                <View
+                  key={i}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 9999,
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '600',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {h}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </LinearGradient>
         )}
       </ScrollView>
     </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  unitToggle: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    padding: 3,
-    marginBottom: Spacing.lg,
-  },
-  unitButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.full,
-  },
-  unitText: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-  },
-  currentCard: {
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xxl,
-    ...Shadows.md,
-  },
-  currentMain: {
-    alignItems: 'center',
-  },
-  currentTempRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    marginBottom: Spacing.sm,
-  },
-  currentTemp: {
-    fontSize: FontSizes.display,
-    fontWeight: '800',
-  },
-  currentDescription: {
-    fontSize: FontSizes.lg,
-    fontWeight: '600',
-    marginBottom: Spacing.xs,
-  },
-  currentFeelsLike: {
-    fontSize: FontSizes.md,
-  },
-  dailyContainer: {
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    ...Shadows.sm,
-  },
-  dailyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  dailyDayName: {
-    fontSize: FontSizes.md,
-    fontWeight: '600',
-    width: 48,
-  },
-  dailyTemps: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-    width: 72,
-  },
-  dailyTempHigh: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-  },
-  dailyTempLow: {
-    fontSize: FontSizes.md,
-    fontWeight: '500',
-  },
-  dailyRain: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    width: 48,
-  },
-  dailyRainText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '500',
-  },
-  dailyDesc: {
-    flex: 1,
-    fontSize: FontSizes.sm,
-    textAlign: 'right',
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  aiSummaryCard: {
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    borderWidth: 1,
-    ...Shadows.sm,
-  },
-  aiSummaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  aiSummaryTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: '700',
-  },
-  aiSummaryText: {
-    fontSize: FontSizes.md,
-    lineHeight: 22,
-    marginBottom: Spacing.md,
-  },
-  aiHighlights: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  aiHighlightBadge: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.full,
-  },
-  aiHighlightText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-  },
-});

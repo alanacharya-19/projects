@@ -18,7 +18,7 @@ import AlertCard, { type AlertData } from '@/components/AlertCard';
 import EmptyState from '@/components/EmptyState';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GradientBackground from '@/components/GradientBackground';
-import { Spacing, BorderRadius, FontSizes } from '@/constants/theme';
+import { Gradients } from '@/constants/theme';
 import { formatDistance, getSeverityColor } from '@/utils/helpers';
 import type { Alert, DisasterType, AlertSeverity } from '@/types';
 import { DisasterType as DT } from '@/types';
@@ -154,25 +154,48 @@ export default function AlertsScreen() {
 
   return (
     <GradientBackground
-      colors={resolvedMode === 'dark' ? ['#0F172A', '#1E293B'] as const : ['#FEF2F2', '#FFF7ED', '#F8FAFC'] as const}
+      colors={resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert}
     >
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + Spacing.lg,
-          paddingBottom: insets.bottom + Spacing.xxxl,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 32,
         }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
       >
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: '700',
+            color: colors.text,
+            paddingHorizontal: 20,
+            marginBottom: 6,
+          }}
+        >
+          Alerts
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            color: colors.textSecondary,
+            paddingHorizontal: 20,
+            marginBottom: 20,
+            fontWeight: '500',
+          }}
+        >
+          {filteredBySeverity.length} active {filteredBySeverity.length === 1 ? 'alert' : 'alerts'}
+        </Text>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            paddingHorizontal: Spacing.lg,
-            gap: Spacing.sm,
-            marginBottom: Spacing.md,
+            paddingHorizontal: 20,
+            gap: 8,
+            marginBottom: 14,
           }}
         >
           {TYPE_FILTERS.map((chip) => {
@@ -182,24 +205,34 @@ export default function AlertsScreen() {
                 key={chip.key}
                 activeOpacity={0.7}
                 onPress={() => handleTypeFilter(chip)}
-                style={[
-                  styles.filterChip,
-                  {
-                    backgroundColor: isActive ? colors.primary : colors.surface,
-                    borderColor: isActive ? colors.primary : colors.border,
-                  },
-                ]}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 9999,
+                  backgroundColor: isActive ? colors.primary : colors.surface,
+                  borderWidth: 1,
+                  borderColor: isActive ? colors.primary : colors.border,
+                  shadowColor: isActive ? colors.primary : '#000',
+                  shadowOffset: { width: 0, height: isActive ? 2 : 0 },
+                  shadowOpacity: isActive ? 0.2 : 0.05,
+                  shadowRadius: isActive ? 4 : 2,
+                  elevation: isActive ? 3 : 1,
+                }}
               >
                 <Ionicons
                   name={chip.icon}
                   size={16}
-                  color={isActive ? colors.white : colors.textSecondary}
+                  color={isActive ? '#FFFFFF' : colors.textSecondary}
                 />
                 <Text
-                  style={[
-                    styles.filterChipText,
-                    { color: isActive ? colors.white : colors.textSecondary },
-                  ]}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '600',
+                    color: isActive ? '#FFFFFF' : colors.textSecondary,
+                  }}
                 >
                   {chip.label}
                 </Text>
@@ -212,9 +245,9 @@ export default function AlertsScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            paddingHorizontal: Spacing.lg,
-            gap: Spacing.sm,
-            marginBottom: Spacing.xl,
+            paddingHorizontal: 20,
+            gap: 8,
+            marginBottom: 24,
           }}
         >
           {SEVERITY_FILTERS.map((sf) => {
@@ -224,22 +257,21 @@ export default function AlertsScreen() {
                 key={sf.key}
                 activeOpacity={0.7}
                 onPress={() => setActiveSeverityFilter(sf.key)}
-                style={[
-                  styles.severityChip,
-                  {
-                    backgroundColor: isActive ? colors.surfaceVariant : 'transparent',
-                    borderColor: isActive ? colors.primary : colors.border,
-                  },
-                ]}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 9999,
+                  backgroundColor: isActive ? colors.surfaceVariant : 'transparent',
+                  borderWidth: 1,
+                  borderColor: isActive ? colors.primary : colors.border,
+                }}
               >
                 <Text
-                  style={[
-                    styles.severityChipText,
-                    {
-                      color: isActive ? colors.primary : colors.textMuted,
-                      fontWeight: isActive ? '700' : '500' as const,
-                    },
-                  ]}
+                  style={{
+                    fontSize: 13,
+                    color: isActive ? colors.primary : colors.textMuted,
+                    fontWeight: isActive ? '700' : '500',
+                  }}
                 >
                   {sf.label}
                 </Text>
@@ -249,21 +281,50 @@ export default function AlertsScreen() {
         </ScrollView>
 
         {filteredBySeverity.length === 0 ? (
-          <EmptyState
-            icon="shield-checkmark"
-            title="No Alerts"
-            description="You're all clear! No active alerts match your current filters."
-            colors={{
-              card: colors.surface,
-              cardAlt: colors.surfaceVariant,
-              text: colors.text,
-              textSecondary: colors.textSecondary,
-              textMuted: colors.textMuted,
-              accent: colors.primary,
+          <View
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 60,
+              paddingHorizontal: 40,
             }}
-          />
+          >
+            <View
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: colors.successLight || '#DCFCE7',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 20,
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={44} color={colors.success} />
+            </View>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: colors.text,
+                marginBottom: 8,
+              }}
+            >
+              No active alerts
+            </Text>
+            <Text
+              style={{
+                fontSize: 15,
+                color: colors.textSecondary,
+                textAlign: 'center',
+                lineHeight: 22,
+              }}
+            >
+              You're all clear! No active alerts match your current filters.
+            </Text>
+          </View>
         ) : (
-          <View style={{ paddingHorizontal: Spacing.lg, gap: Spacing.md }}>
+          <View style={{ paddingHorizontal: 20, gap: 12 }}>
             {filteredBySeverity.map((alert) => {
               const alertData = alertToAlertData(alert);
               return (
@@ -330,28 +391,3 @@ function SwipeableAlertCard({
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: Spacing.md + 2,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-  },
-  filterChipText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-  },
-  severityChip: {
-    paddingHorizontal: Spacing.md + 4,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-  },
-  severityChipText: {
-    fontSize: FontSizes.sm,
-  },
-});
