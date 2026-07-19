@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -15,162 +17,90 @@ import { APP_CONFIG } from "@/constants/config";
 interface MenuItem {
   id: string;
   title: string;
-  subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
+  iconBg: string;
   route: string;
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  {
-    id: "emergency",
-    title: "Emergency SOS",
-    subtitle: "Quick emergency access",
-    icon: "alert-circle",
-    iconColor: "#DC2626",
-    route: "/emergency",
-  },
-  {
-    id: "earthquake",
-    title: "Earthquake Monitor",
-    subtitle: "Live seismic activity",
-    icon: "earth",
-    iconColor: "#92400E",
-    route: "/earthquake-monitor",
-  },
-  {
-    id: "flood",
-    title: "Flood Monitor",
-    subtitle: "Flood risk & warnings",
-    icon: "water",
-    iconColor: "#1D4ED8",
-    route: "/flood-monitor",
-  },
-  {
-    id: "wildfire",
-    title: "Wildfire Monitor",
-    subtitle: "Active fire tracking",
-    icon: "flame",
-    iconColor: "#DC2626",
-    route: "/wildfire-monitor",
-  },
-  {
-    id: "survival",
-    title: "Survival Guide",
-    subtitle: "Disaster preparedness",
-    icon: "book",
-    iconColor: "#16A34A",
-    route: "/survival-guide",
-  },
-  {
-    id: "services",
-    title: "Nearby Services",
-    subtitle: "Hospitals, police, fire",
-    icon: "location",
-    iconColor: "#0EA5E9",
-    route: "/nearby-services",
-  },
-  {
-    id: "statistics",
-    title: "Statistics",
-    subtitle: "Weather & disaster data",
-    icon: "bar-chart",
-    iconColor: "#7C3AED",
-    route: "/statistics",
-  },
-  {
-    id: "feed",
-    title: "Global Feed",
-    subtitle: "Worldwide disaster news",
-    icon: "globe",
-    iconColor: "#0891B2",
-    route: "/global-feed",
-  },
-  {
-    id: "ai",
-    title: "AI Assistant",
-    subtitle: "Weather & safety answers",
-    icon: "chatbubble-ellipses",
-    iconColor: "#7C3AED",
-    route: "/ai-chat",
-  },
-  {
-    id: "settings",
-    title: "Settings",
-    subtitle: "App preferences",
-    icon: "settings",
-    iconColor: "#64748B",
-    route: "/settings",
-  },
+  { id: "emergency", title: "Emergency SOS", icon: "alert-circle", iconColor: "#DC2626", iconBg: "#FEE2E2", route: "/emergency" },
+  { id: "earthquake", title: "Earthquake Monitor", icon: "earth", iconColor: "#EA580C", iconBg: "#FFF7ED", route: "/earthquake-monitor" },
+  { id: "flood", title: "Flood Monitor", icon: "water", iconColor: "#2563EB", iconBg: "#EFF6FF", route: "/flood-monitor" },
+  { id: "wildfire", title: "Wildfire Monitor", icon: "flame", iconColor: "#DC2626", iconBg: "#FEF2F2", route: "/wildfire-monitor" },
+  { id: "survival", title: "Survival Guide", icon: "book", iconColor: "#16A34A", iconBg: "#F0FDF4", route: "/survival-guide" },
+  { id: "services", title: "Nearby Services", icon: "location", iconColor: "#4F46E5", iconBg: "#EEF2FF", route: "/nearby-services" },
+  { id: "statistics", title: "Statistics", icon: "bar-chart", iconColor: "#7C3AED", iconBg: "#F5F3FF", route: "/statistics" },
+  { id: "feed", title: "Global Feed", icon: "globe", iconColor: "#0D9488", iconBg: "#F0FDFA", route: "/global-feed" },
+  { id: "ai", title: "AI Assistant", icon: "chatbubble-ellipses", iconColor: "#7C3AED", iconBg: "#F5F3FF", route: "/ai-chat" },
+  { id: "settings", title: "Settings", icon: "settings", iconColor: "#64748B", iconBg: "#F1F5F9", route: "/settings" },
 ];
 
 export default function MoreScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const handleNavigate = useCallback(
-    (route: string) => {
-      router.push(route as any);
-    },
+    (route: string) => router.push(route as any),
     [router]
   );
 
-  const renderItem = (item: MenuItem) => (
-    <TouchableOpacity
-      key={item.id}
-      style={[styles.menuItem, { backgroundColor: colors.surface, ...Shadows.sm }]}
-      onPress={() => handleNavigate(item.route)}
-      activeOpacity={0.7}
-    >
-      <View
-        style={[
-          styles.menuIconContainer,
-          { backgroundColor: item.iconColor + "15" },
-        ]}
-      >
-        <Ionicons name={item.icon} size={26} color={item.iconColor} />
-      </View>
-      <View style={styles.menuTextContainer}>
-        <Text style={[styles.menuTitle, { color: colors.text }]}>{item.title}</Text>
-        <Text style={[styles.menuSubtitle, { color: colors.textMuted }]}>
-          {item.subtitle}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-    </TouchableOpacity>
-  );
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="default" />
       <ScrollView
-        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
+        {/* Profile Card */}
+        <View style={[styles.profileCard, { backgroundColor: colors.surface, ...Shadows.md }]}>
+          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+            <Text style={styles.avatarText}>JD</Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileName, { color: colors.text }]}>John Doe</Text>
+            <Text style={[styles.profileEmail, { color: colors.textMuted }]}>john.doe@email.com</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>More</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            Explore all features
-          </Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Explore all features</Text>
         </View>
 
-        {/* Menu List */}
-        <View style={styles.menuList}>
-          {MENU_ITEMS.map(renderItem)}
+        {/* Menu Grid */}
+        <View style={styles.menuGrid}>
+          {MENU_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.menuItem, { backgroundColor: colors.surface, ...Shadows.sm }]}
+              onPress={() => handleNavigate(item.route)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: item.iconBg }]}>
+                <Ionicons name={item.icon} size={24} color={item.iconColor} />
+              </View>
+              <Text style={[styles.menuLabel, { color: colors.text }]} numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={styles.menuChevron} />
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* App Info */}
-        <View style={styles.appInfo}>
-          <Text style={[styles.appName, { color: colors.textMuted }]}>
-            {APP_CONFIG.NAME}
-          </Text>
-          <Text style={[styles.appVersion, { color: colors.textMuted }]}>
-            Version {APP_CONFIG.VERSION}
-          </Text>
-          <Text style={[styles.appDesc, { color: colors.textMuted }]}>
-            {APP_CONFIG.DESCRIPTION}
-          </Text>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerName, { color: colors.textMuted }]}>{APP_CONFIG.NAME}</Text>
+          <Text style={[styles.footerVersion, { color: colors.textMuted }]}>Version {APP_CONFIG.VERSION}</Text>
         </View>
 
         <View style={{ height: 40 }} />
@@ -180,69 +110,65 @@ export default function MoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: Spacing.lg,
-  },
-  header: {
-    marginBottom: Spacing.xxl,
-    paddingTop: Spacing.xxxl + Spacing.lg,
-  },
-  headerTitle: {
-    fontSize: FontSizes.xxxl,
-    fontWeight: "800",
-    marginBottom: Spacing.xs,
-  },
-  headerSubtitle: {
-    fontSize: FontSizes.md,
-  },
-  menuList: {
-    gap: Spacing.sm,
-  },
-  menuItem: {
+  container: { flex: 1 },
+  scrollContent: { padding: 20 },
+  profileCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.xl,
-    gap: Spacing.lg,
+    padding: 16,
+    borderRadius: 20,
+    marginTop: 48,
+    marginBottom: 24,
   },
-  menuIconContainer: {
+  avatar: {
     width: 52,
     height: 52,
-    borderRadius: BorderRadius.xl,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
   },
-  menuTextContainer: {
-    flex: 1,
+  avatarText: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
+  profileInfo: { flex: 1, marginLeft: 14 },
+  profileName: { fontSize: 17, fontWeight: "700" },
+  profileEmail: { fontSize: 13, marginTop: 1 },
+  header: { marginBottom: 20 },
+  headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
+  headerSubtitle: { fontSize: 14 },
+  menuGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
   },
-  menuTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  menuSubtitle: {
-    fontSize: FontSizes.sm,
-  },
-  appInfo: {
+  menuItem: {
+    width: "47.5%",
+    borderRadius: 20,
+    padding: 16,
     alignItems: "center",
-    marginTop: Spacing.xxxl,
-    gap: Spacing.xs,
+    gap: 10,
   },
-  appName: {
-    fontSize: FontSizes.lg,
-    fontWeight: "700",
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  appVersion: {
-    fontSize: FontSizes.sm,
-  },
-  appDesc: {
-    fontSize: FontSizes.sm,
+  menuLabel: {
+    fontSize: 13,
+    fontWeight: "600",
     textAlign: "center",
+    lineHeight: 17,
   },
+  menuChevron: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+  },
+  footer: {
+    alignItems: "center",
+    marginTop: 32,
+    gap: 4,
+  },
+  footerName: { fontSize: 15, fontWeight: "700" },
+  footerVersion: { fontSize: 12 },
 });

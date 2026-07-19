@@ -1,12 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { useAlertContext } from '@/context/AlertContext';
 
+const TAB_ICONS: Record<string, { focused: keyof typeof Ionicons.glyphMap; outline: keyof typeof Ionicons.glyphMap }> = {
+  index: { focused: 'home', outline: 'home-outline' },
+  forecast: { focused: 'cloud', outline: 'cloud-outline' },
+  map: { focused: 'map', outline: 'map-outline' },
+  alerts: { focused: 'notifications', outline: 'notifications-outline' },
+  more: { focused: 'ellipsis-horizontal', outline: 'ellipsis-horizontal-outline' },
+};
+
+const ICON_SIZE = 22;
+
 export default function TabLayout() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const { unreadCount } = useAlertContext();
+  const isDark = resolvedMode === 'dark';
 
   return (
     <Tabs
@@ -15,98 +26,76 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          position: 'absolute',
+          backgroundColor: isDark ? 'rgba(17, 24, 39, 0.82)' : 'rgba(255, 255, 255, 0.82)',
+          borderTopWidth: 0,
+          elevation: 0,
+          height: Platform.OS === 'ios' ? 82 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 6,
           paddingTop: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 8,
-          elevation: 8,
+          marginLeft: 20,
+          marginRight: 20,
+          marginBottom: Platform.OS === 'ios' ? 12 : 8,
+          borderRadius: 28,
+          shadowColor: '#0A1628',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.3 : 0.08,
+          shadowRadius: 16,
+          elevation: 12,
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+          ...StyleSheet.absoluteFillObject,
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
+        tabBarShowLabel: false,
+        tabBarIconStyle: {
+          marginTop: 0,
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="forecast"
-        options={{
-          title: 'Forecast',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'cloud' : 'cloud-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'map' : 'map-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="alerts"
-        options={{
-          title: 'Alerts',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'notifications' : 'notifications-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: colors.error,
-            fontSize: 10,
-            fontWeight: '700',
-            minWidth: 18,
-            height: 18,
-            lineHeight: 18,
-          },
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: 'More',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
+      {Object.entries(TAB_ICONS).map(([name, icon]) => (
+        <Tabs.Screen
+          key={name}
+          name={name}
+          options={{
+            title: name === 'index' ? 'Home' : name.charAt(0).toUpperCase() + name.slice(1),
+            tabBarIcon: ({ color, focused }) => (
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 48,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: focused
+                    ? isDark
+                      ? 'rgba(129, 140, 248, 0.18)'
+                      : 'rgba(99, 102, 241, 0.12)'
+                    : 'transparent',
+                }}
+              >
+                <Ionicons
+                  name={focused ? icon.focused : icon.outline}
+                  size={ICON_SIZE}
+                  color={color}
+                />
+              </View>
+            ),
+            tabBarBadge: name === 'alerts' && unreadCount > 0 ? unreadCount : undefined,
+            tabBarBadgeStyle: {
+              backgroundColor: colors.error,
+              fontSize: 10,
+              fontWeight: '700',
+              minWidth: 18,
+              height: 18,
+              lineHeight: 18,
+              top: 2,
+              right: 8,
+              paddingHorizontal: 5,
+              borderRadius: 9,
+            },
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

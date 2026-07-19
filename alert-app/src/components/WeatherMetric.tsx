@@ -33,10 +33,9 @@ const WeatherMetric: React.FC<WeatherMetricProps> = ({
       style={{
         backgroundColor: colors.card,
         borderRadius: 16,
-        padding: 16,
-        flexDirection: "row",
+        padding: 18,
         alignItems: "center",
-        gap: 14,
+        gap: 12,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
@@ -46,10 +45,10 @@ const WeatherMetric: React.FC<WeatherMetricProps> = ({
     >
       <View
         style={{
-          width: 44,
-          height: 44,
-          borderRadius: 14,
-          backgroundColor: colors.cardAlt,
+          width: 48,
+          height: 48,
+          borderRadius: 24,
+          backgroundColor: indicatorColor + "15",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -57,44 +56,47 @@ const WeatherMetric: React.FC<WeatherMetricProps> = ({
         <Ionicons name={icon} size={22} color={indicatorColor} />
       </View>
 
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            color: colors.textMuted,
-            fontWeight: "500",
-            marginBottom: 2,
-          }}
-        >
-          {label}
-        </Text>
-        <Text
-          style={{
-            fontSize: 18,
-            color: colors.text,
-            fontWeight: "700",
-          }}
-        >
-          {value}
-        </Text>
+      <Text
+        style={{
+          fontSize: 22,
+          color: colors.text,
+          fontWeight: "700",
+          letterSpacing: -0.5,
+        }}
+      >
+        {value}
+      </Text>
+
+      <Text
+        style={{
+          fontSize: 12,
+          color: colors.textMuted,
+          fontWeight: "500",
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}
+      >
+        {label}
+      </Text>
+
+      <View
+        style={{
+          width: "100%",
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: colors.barTrack,
+          overflow: "hidden",
+          marginTop: 2,
+        }}
+      >
         <View
           style={{
-            marginTop: 8,
-            height: 4,
+            width: "65%",
+            height: "100%",
             borderRadius: 2,
-            backgroundColor: colors.barTrack,
-            overflow: "hidden",
+            backgroundColor: indicatorColor,
           }}
-        >
-          <View
-            style={{
-              width: "65%",
-              height: "100%",
-              borderRadius: 2,
-              backgroundColor: indicatorColor,
-            }}
-          />
-        </View>
+        />
       </View>
     </View>
   );

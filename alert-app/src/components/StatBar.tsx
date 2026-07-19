@@ -31,7 +31,7 @@ const StatBar: React.FC<StatBarProps> = ({
   useEffect(() => {
     Animated.timing(scaleX, {
       toValue: percentage,
-      duration: 800,
+      duration: 900,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
@@ -41,8 +41,8 @@ const StatBar: React.FC<StatBarProps> = ({
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 12,
-        padding: 14,
+        borderRadius: 14,
+        padding: 16,
       }}
     >
       <View
@@ -50,12 +50,12 @@ const StatBar: React.FC<StatBarProps> = ({
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 10,
+          marginBottom: 12,
         }}
       >
         <Text
           style={{
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: "600",
             color: colors.textSecondary,
           }}
@@ -64,9 +64,10 @@ const StatBar: React.FC<StatBarProps> = ({
         </Text>
         <Text
           style={{
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: "700",
             color: colors.text,
+            letterSpacing: -0.2,
           }}
         >
           {value}
@@ -75,8 +76,8 @@ const StatBar: React.FC<StatBarProps> = ({
 
       <View
         style={{
-          height: 8,
-          borderRadius: 4,
+          height: 6,
+          borderRadius: 3,
           backgroundColor: colors.barTrack,
           overflow: "hidden",
         }}
@@ -84,7 +85,7 @@ const StatBar: React.FC<StatBarProps> = ({
         <Animated.View
           style={{
             height: "100%",
-            borderRadius: 4,
+            borderRadius: 3,
             backgroundColor: barColor,
             width: "100%",
             transformOrigin: "left",

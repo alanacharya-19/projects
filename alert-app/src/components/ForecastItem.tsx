@@ -27,23 +27,33 @@ const ForecastItem: React.FC<ForecastItemProps> = ({
   isNow = false,
   colors,
 }) => {
+  const textColor = isNow ? "#FFFFFF" : colors.text;
+  const subColor = isNow ? "rgba(255,255,255,0.8)" : colors.textMuted;
+
   return (
     <View
       style={{
         width: 72,
         alignItems: "center",
-        paddingVertical: 14,
+        paddingVertical: 16,
         paddingHorizontal: 8,
-        borderRadius: 20,
+        borderRadius: 24,
         backgroundColor: isNow ? colors.accent : colors.card,
         gap: 8,
+        shadowColor: isNow ? colors.accent : "#000",
+        shadowOffset: { width: 0, height: isNow ? 4 : 1 },
+        shadowOpacity: isNow ? 0.3 : 0.04,
+        shadowRadius: isNow ? 12 : 4,
+        elevation: isNow ? 6 : 1,
       }}
     >
       <Text
         style={{
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: isNow ? "700" : "500",
-          color: isNow ? "#FFFFFF" : colors.textSecondary,
+          color: subColor,
+          textTransform: "uppercase",
+          letterSpacing: 0.3,
         }}
       >
         {time}
@@ -51,32 +61,43 @@ const ForecastItem: React.FC<ForecastItemProps> = ({
 
       <Ionicons
         name={icon}
-        size={26}
-        color={isNow ? "#FFFFFF" : colors.text}
+        size={28}
+        color={textColor}
       />
 
       <Text
         style={{
           fontSize: 18,
           fontWeight: "700",
-          color: isNow ? "#FFFFFF" : colors.text,
+          color: textColor,
+          letterSpacing: -0.3,
         }}
       >
         {temp}°
       </Text>
 
-      {rainChance !== undefined && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+      {rainChance !== undefined && rainChance > 0 && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 3,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 10,
+            backgroundColor: isNow ? "rgba(255,255,255,0.2)" : colors.accent + "12",
+          }}
+        >
           <Ionicons
             name="water"
-            size={11}
-            color={isNow ? "rgba(255,255,255,0.8)" : colors.accent}
+            size={10}
+            color={subColor}
           />
           <Text
             style={{
               fontSize: 11,
               fontWeight: "600",
-              color: isNow ? "rgba(255,255,255,0.8)" : colors.textMuted,
+              color: subColor,
             }}
           >
             {rainChance}%

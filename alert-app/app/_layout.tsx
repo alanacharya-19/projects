@@ -22,16 +22,23 @@ function RootLayoutNav() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
+          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="emergency" />
+        <Stack.Screen
+          name="emergency"
+          options={{ animation: 'slide_from_bottom' }}
+        />
         <Stack.Screen name="survival-guide" />
         <Stack.Screen name="nearby-services" />
         <Stack.Screen name="statistics" />
         <Stack.Screen name="global-feed" />
         <Stack.Screen name="settings" />
-        <Stack.Screen name="ai-chat" />
+        <Stack.Screen
+          name="ai-chat"
+          options={{ animation: 'slide_from_bottom' }}
+        />
         <Stack.Screen
           name="+not-found"
           options={{

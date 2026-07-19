@@ -15,20 +15,20 @@ const SOSTouchableOpacity: React.FC<SOSTouchableOpacityProps> = ({
 }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const ringAnim = useRef(new Animated.Value(0.6)).current;
-  const ringOpacity = useRef(new Animated.Value(0.4)).current;
+  const ringOpacity = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.12,
-          duration: 900,
+          toValue: 1.1,
+          duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 900,
+          duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
@@ -39,14 +39,14 @@ const SOSTouchableOpacity: React.FC<SOSTouchableOpacityProps> = ({
       Animated.sequence([
         Animated.parallel([
           Animated.timing(ringAnim, {
-            toValue: 1.6,
-            duration: 1400,
+            toValue: 1.5,
+            duration: 1500,
             easing: Easing.out(Easing.ease),
             useNativeDriver: true,
           }),
           Animated.timing(ringOpacity, {
             toValue: 0,
-            duration: 1400,
+            duration: 1500,
             easing: Easing.out(Easing.ease),
             useNativeDriver: true,
           }),
@@ -58,7 +58,7 @@ const SOSTouchableOpacity: React.FC<SOSTouchableOpacityProps> = ({
             useNativeDriver: true,
           }),
           Animated.timing(ringOpacity, {
-            toValue: 0.4,
+            toValue: 0.35,
             duration: 0,
             useNativeDriver: true,
           }),
@@ -106,11 +106,11 @@ const SOSTouchableOpacity: React.FC<SOSTouchableOpacityProps> = ({
       <Animated.View
         style={{
           position: "absolute",
-          width: 120,
-          height: 120,
-          borderRadius: 60,
+          width: 100,
+          height: 100,
+          borderRadius: 50,
           backgroundColor: sosColor,
-          opacity: 0.25,
+          opacity: 0.2,
           transform: [{ scale: pulseAnim }],
         }}
       />
@@ -119,22 +119,22 @@ const SOSTouchableOpacity: React.FC<SOSTouchableOpacityProps> = ({
         activeOpacity={0.85}
         onPress={handlePress}
         style={{
-          width: 100,
-          height: 100,
-          borderRadius: 50,
+          width: 80,
+          height: 80,
+          borderRadius: 40,
           backgroundColor: sosColor,
           alignItems: "center",
           justifyContent: "center",
           shadowColor: sosColor,
           shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.5,
-          shadowRadius: 20,
-          elevation: 16,
+          shadowOpacity: 0.4,
+          shadowRadius: 16,
+          elevation: 12,
         }}
       >
         <Text
           style={{
-            fontSize: 26,
+            fontSize: 22,
             fontWeight: "900",
             color: "#FFFFFF",
             letterSpacing: 3,

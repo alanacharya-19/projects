@@ -24,10 +24,11 @@ const SurvivalStepCard: React.FC<SurvivalStepCardProps> = ({
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 16,
-        padding: 18,
+        borderRadius: 20,
+        padding: 20,
         flexDirection: "row",
         gap: 16,
+        alignItems: "flex-start",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
@@ -40,16 +41,16 @@ const SurvivalStepCard: React.FC<SurvivalStepCardProps> = ({
           width: 42,
           height: 42,
           borderRadius: 21,
-          backgroundColor: colors.accent,
+          backgroundColor: colors.accent + "15",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         <Text
           style={{
-            fontSize: 18,
-            fontWeight: "800",
-            color: "#FFFFFF",
+            fontSize: 17,
+            fontWeight: "700",
+            color: colors.accent,
           }}
         >
           {step}
@@ -63,6 +64,7 @@ const SurvivalStepCard: React.FC<SurvivalStepCardProps> = ({
             fontWeight: "700",
             color: colors.text,
             marginBottom: 4,
+            letterSpacing: -0.2,
           }}
         >
           {title}

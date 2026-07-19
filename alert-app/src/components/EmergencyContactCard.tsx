@@ -33,8 +33,8 @@ const EmergencyContactCard: React.FC<EmergencyContactCardProps> = ({
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: 20,
+        padding: 18,
         flexDirection: "row",
         alignItems: "center",
         gap: 14,
@@ -50,7 +50,7 @@ const EmergencyContactCard: React.FC<EmergencyContactCardProps> = ({
           width: 52,
           height: 52,
           borderRadius: 26,
-          backgroundColor: colors.cardAlt,
+          backgroundColor: colors.accent + "15",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -73,6 +73,7 @@ const EmergencyContactCard: React.FC<EmergencyContactCardProps> = ({
             fontWeight: "600",
             color: colors.text,
             marginBottom: 2,
+            letterSpacing: -0.2,
           }}
           numberOfLines={1}
         >
@@ -80,9 +81,9 @@ const EmergencyContactCard: React.FC<EmergencyContactCardProps> = ({
         </Text>
         <Text
           style={{
-            fontSize: 14,
+            fontSize: 13,
             color: colors.textMuted,
-            fontWeight: "500",
+            fontWeight: "400",
           }}
         >
           {phone}
@@ -93,15 +94,20 @@ const EmergencyContactCard: React.FC<EmergencyContactCardProps> = ({
         activeOpacity={0.7}
         onPress={() => onCall(phone)}
         style={{
-          width: 46,
-          height: 46,
-          borderRadius: 23,
+          width: 48,
+          height: 48,
+          borderRadius: 24,
           backgroundColor: colors.accent,
           alignItems: "center",
           justifyContent: "center",
+          shadowColor: colors.accent,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 3,
         }}
       >
-        <Ionicons name="call" size={22} color="#FFFFFF" />
+        <Ionicons name="call" size={20} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );

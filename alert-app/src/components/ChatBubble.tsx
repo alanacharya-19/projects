@@ -28,7 +28,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
       style={{
         flexDirection: "row",
         justifyContent: isUser ? "flex-end" : "flex-start",
-        marginBottom: 12,
+        marginBottom: 14,
         paddingHorizontal: 16,
       }}
     >
@@ -38,11 +38,16 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           paddingHorizontal: 18,
           paddingVertical: 14,
           borderRadius: 20,
-          borderBottomRightRadius: isUser ? 6 : 20,
-          borderBottomLeftRadius: isUser ? 20 : 6,
+          borderBottomRightRadius: isUser ? 4 : 20,
+          borderBottomLeftRadius: isUser ? 20 : 4,
           backgroundColor: isUser
             ? colors.userBubble || colors.accent
             : colors.aiBubble || colors.cardAlt,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: isUser ? 0.1 : 0.04,
+          shadowRadius: 4,
+          elevation: isUser ? 2 : 1,
         }}
       >
         <Text
@@ -58,9 +63,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         {timestamp && (
           <Text
             style={{
-              fontSize: 11,
+              fontSize: 10,
               color: isUser
-                ? "rgba(255,255,255,0.65)"
+                ? "rgba(255,255,255,0.55)"
                 : colors.textMuted,
               marginTop: 6,
               alignSelf: isUser ? "flex-end" : "flex-start",

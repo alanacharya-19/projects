@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useAppContext } from '@/context/AppContext';
@@ -26,6 +27,7 @@ import SearchBar from '@/components/SearchBar';
 import GradientBackground from '@/components/GradientBackground';
 
 import { formatDate, capitalizeWords, getWindDirection } from '@/utils/helpers';
+import { Gradients } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -69,6 +71,13 @@ function formatSunTime(timestamp: number): string {
   });
 }
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function HomeScreen() {
   const { colors, resolvedMode } = useTheme();
   const { state } = useAppContext();
@@ -90,10 +99,8 @@ export default function HomeScreen() {
   }, [location]);
 
   const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
-    return resolvedMode === 'dark'
-      ? (['#0F172A', colors.background] as const)
-      : (['#DBEAFE', colors.background] as const);
-  }, [colors.background, resolvedMode]);
+    return resolvedMode === 'dark' ? Gradients.dark.home : Gradients.light.home;
+  }, [resolvedMode]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -205,7 +212,7 @@ export default function HomeScreen() {
     <GradientBackground colors={gradientColors}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 8,
+          paddingTop: insets.top + 20,
           paddingBottom: insets.bottom + 24,
           paddingHorizontal: 20,
         }}
@@ -219,6 +226,27 @@ export default function HomeScreen() {
           />
         }
       >
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: '700',
+            color: colors.text,
+            marginBottom: 4,
+          }}
+        >
+          {getGreeting()} 👋
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            color: colors.textSecondary,
+            marginBottom: 16,
+            fontWeight: '500',
+          }}
+        >
+          {locationName}
+        </Text>
+
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -232,57 +260,103 @@ export default function HomeScreen() {
           }}
         />
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginTop: 8,
-            marginBottom: 4,
-            gap: 6,
-          }}
-        >
-          <Ionicons name="location" size={16} color={colors.primary} />
-          <Text
-            style={{
-              fontSize: 14,
-              color: colors.textSecondary,
-              fontWeight: '500',
-            }}
-          >
-            {locationName}
-          </Text>
-        </View>
-
         {weather && (
           <>
-            <View style={{ marginTop: 12, marginBottom: 20 }}>
-              <WeatherCard
-                temperature={Math.round(weather.current.temperature)}
-                condition={capitalizeWords(weather.current.description)}
-                icon={getWeatherIonicon(weather.current.icon)}
-                location={locationName}
-                feelsLike={Math.round(weather.current.feelsLike)}
-                colors={{
-                  card: colors.surface,
-                  cardAlt: colors.surfaceVariant,
-                  text: colors.text,
-                  textSecondary: colors.textSecondary,
-                  textMuted: colors.textMuted,
-                  icon: colors.primary,
-                  accent: colors.primary,
-                }}
-              />
-            </View>
-
-            <View
+            <LinearGradient
+              colors={resolvedMode === 'dark' ? Gradients.dark.heroCard : Gradients.light.heroCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                gap: 12,
-                marginBottom: 12,
+                borderRadius: 24,
+                padding: 28,
+                alignItems: 'center',
+                marginTop: 20,
+                marginBottom: 24,
+                shadowColor: '#2563EB',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.3,
+                shadowRadius: 24,
+                elevation: 12,
               }}
             >
-              <View style={{ width: (SCREEN_WIDTH - 52) / 2 }}>
+              <Ionicons
+                name={getWeatherIonicon(weather.current.icon)}
+                size={72}
+                color="#FFFFFF"
+                style={{ marginBottom: 12 }}
+              />
+              <Text
+                style={{
+                  fontSize: 80,
+                  fontWeight: '200',
+                  color: '#FFFFFF',
+                  letterSpacing: -4,
+                  lineHeight: 88,
+                }}
+              >
+                {Math.round(weather.current.temperature)}°
+              </Text>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: '600',
+                  color: 'rgba(255,255,255,0.95)',
+                  marginTop: 4,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {capitalizeWords(weather.current.description)}
+              </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginTop: 8,
+                  gap: 6,
+                }}
+              >
+                <Ionicons name="location" size={16} color="rgba(255,255,255,0.7)" />
+                <Text
+                  style={{
+                    fontSize: 15,
+                    color: 'rgba(255,255,255,0.7)',
+                    fontWeight: '500',
+                  }}
+                >
+                  {locationName}
+                </Text>
+              </View>
+              <View
+                style={{
+                  marginTop: 14,
+                  paddingHorizontal: 18,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: 'rgba(255,255,255,0.85)',
+                    fontWeight: '500',
+                  }}
+                >
+                  Feels like {Math.round(weather.current.feelsLike)}°
+                </Text>
+              </View>
+            </LinearGradient>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 10,
+                paddingBottom: 8,
+                marginBottom: 24,
+              }}
+            >
+              <View style={{ width: 150 }}>
                 <WeatherMetric
                   icon="leaf"
                   label="Air Quality"
@@ -300,7 +374,7 @@ export default function HomeScreen() {
                   }}
                 />
               </View>
-              <View style={{ width: (SCREEN_WIDTH - 52) / 2 }}>
+              <View style={{ width: 150 }}>
                 <WeatherMetric
                   icon="sunny"
                   label="UV Index"
@@ -318,7 +392,7 @@ export default function HomeScreen() {
                   }}
                 />
               </View>
-              <View style={{ width: (SCREEN_WIDTH - 52) / 2 }}>
+              <View style={{ width: 150 }}>
                 <WeatherMetric
                   icon="water"
                   label="Humidity"
@@ -336,7 +410,7 @@ export default function HomeScreen() {
                   }}
                 />
               </View>
-              <View style={{ width: (SCREEN_WIDTH - 52) / 2 }}>
+              <View style={{ width: 150 }}>
                 <WeatherMetric
                   icon="navigate"
                   label="Wind Speed"
@@ -354,7 +428,7 @@ export default function HomeScreen() {
                   }}
                 />
               </View>
-            </View>
+            </ScrollView>
 
             <View
               style={{
@@ -490,92 +564,111 @@ export default function HomeScreen() {
                     textMuted: colors.textMuted,
                   }}
                 />
-                <View style={{ gap: 10, marginBottom: 24 }}>
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 20,
+                    padding: 4,
+                    marginBottom: 24,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
                   {dailyForecast.slice(0, 7).map((day, index) => (
                     <View
                       key={day.date}
                       style={{
-                        backgroundColor: colors.surface,
-                        borderRadius: 16,
-                        padding: 14,
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: 14,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.04,
-                        shadowRadius: 4,
-                        elevation: 2,
+                        paddingVertical: 14,
+                        paddingHorizontal: 14,
+                        borderBottomWidth: index < 6 ? 1 : 0,
+                        borderBottomColor: colors.border,
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: index === 0 ? '700' : '500',
                           color: index === 0 ? colors.primary : colors.text,
-                          width: 44,
+                          width: 52,
                         }}
                       >
                         {index === 0 ? 'Today' : day.dayName}
                       </Text>
                       <Ionicons
                         name={getWeatherIonicon(day.icon)}
-                        size={24}
+                        size={22}
                         color={colors.text}
+                        style={{ width: 30 }}
                       />
                       <Text
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           color: colors.textMuted,
-                          width: 28,
+                          width: 32,
                           textAlign: 'right',
                         }}
                       >
                         {Math.round(day.tempLow)}°
                       </Text>
-                      <View style={{ flex: 1, marginHorizontal: 8 }}>
+                      <View
+                        style={{
+                          flex: 1,
+                          marginHorizontal: 12,
+                          height: 5,
+                          borderRadius: 3,
+                          backgroundColor: colors.border,
+                          overflow: 'hidden',
+                        }}
+                      >
                         <View
                           style={{
-                            height: 4,
-                            borderRadius: 2,
-                            backgroundColor: colors.border,
-                            overflow: 'hidden',
+                            height: '100%',
+                            borderRadius: 3,
+                            backgroundColor: colors.primary,
+                            width: `${Math.min(((day.tempHigh - day.tempLow) / 20) * 100, 100)}%`,
                           }}
-                        >
-                          <View
-                            style={{
-                              height: '100%',
-                              borderRadius: 2,
-                              backgroundColor: colors.primary,
-                              width: `${Math.min(((day.tempHigh - day.tempLow) / 20) * 100, 100)}%`,
-                            }}
-                          />
-                        </View>
+                        />
                       </View>
                       <Text
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: '600',
                           color: colors.text,
-                          width: 28,
+                          width: 32,
+                          textAlign: 'right',
                         }}
                       >
                         {Math.round(day.tempHigh)}°
                       </Text>
-                      {day.precipitationProbability > 0 && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, width: 36 }}>
-                          <Ionicons name="water" size={12} color={colors.info} />
-                          <Text
-                            style={{
-                              fontSize: 12,
-                              color: colors.textMuted,
-                              fontWeight: '500',
-                            }}
-                          >
-                            {day.precipitationProbability}%
-                          </Text>
-                        </View>
-                      )}
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 3,
+                          width: 40,
+                          justifyContent: 'flex-end',
+                        }}
+                      >
+                        {day.precipitationProbability > 0 ? (
+                          <>
+                            <Ionicons name="water" size={12} color={colors.info} />
+                            <Text
+                              style={{
+                                fontSize: 13,
+                                color: colors.textMuted,
+                                fontWeight: '500',
+                              }}
+                            >
+                              {day.precipitationProbability}%
+                            </Text>
+                          </>
+                        ) : null}
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -583,17 +676,19 @@ export default function HomeScreen() {
             )}
 
             {aiSummary && (
-              <View
+              <LinearGradient
+                colors={resolvedMode === 'dark' ? Gradients.dark.aiSummary : Gradients.light.aiSummary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={{
-                  backgroundColor: colors.surface,
                   borderRadius: 20,
                   padding: 20,
                   marginBottom: 24,
-                  shadowColor: '#000',
+                  shadowColor: '#4F46E5',
                   shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.08,
+                  shadowOpacity: 0.2,
                   shadowRadius: 12,
-                  elevation: 4,
+                  elevation: 6,
                 }}
               >
                 <View
@@ -604,23 +699,12 @@ export default function HomeScreen() {
                     marginBottom: 14,
                   }}
                 >
-                  <View
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      backgroundColor: colors.primaryLight + '20',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Ionicons name="sparkles" size={20} color={colors.primary} />
-                  </View>
+                  <Ionicons name="sparkles" size={20} color="#FFFFFF" />
                   <Text
                     style={{
                       fontSize: 17,
                       fontWeight: '700',
-                      color: colors.text,
+                      color: '#FFFFFF',
                     }}
                   >
                     AI Weather Summary
@@ -630,7 +714,7 @@ export default function HomeScreen() {
                 <Text
                   style={{
                     fontSize: 14,
-                    color: colors.textSecondary,
+                    color: 'rgba(255,255,255,0.9)',
                     lineHeight: 22,
                     marginBottom: 14,
                   }}
@@ -648,14 +732,14 @@ export default function HomeScreen() {
                         <Ionicons
                           name="information-circle"
                           size={16}
-                          color={colors.info}
+                          color="rgba(255,255,255,0.8)"
                           style={{ marginTop: 1 }}
                         />
                         <Text
                           style={{
                             flex: 1,
                             fontSize: 13,
-                            color: colors.textSecondary,
+                            color: 'rgba(255,255,255,0.85)',
                             lineHeight: 19,
                           }}
                         >
@@ -676,14 +760,14 @@ export default function HomeScreen() {
                         <Ionicons
                           name="alert-circle"
                           size={16}
-                          color={colors.warning}
+                          color="#FBBF24"
                           style={{ marginTop: 1 }}
                         />
                         <Text
                           style={{
                             flex: 1,
                             fontSize: 13,
-                            color: colors.warning,
+                            color: '#FBBF24',
                             fontWeight: '500',
                             lineHeight: 19,
                           }}
@@ -694,7 +778,7 @@ export default function HomeScreen() {
                     ))}
                   </View>
                 )}
-              </View>
+              </LinearGradient>
             )}
           </>
         )}

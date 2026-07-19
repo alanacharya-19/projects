@@ -48,20 +48,22 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
       onPress={() => onPress(alert)}
       style={{
         backgroundColor: colors.card,
-        borderRadius: 16,
+        borderRadius: 20,
         flexDirection: "row",
         overflow: "hidden",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.08,
-        shadowRadius: 8,
+        shadowRadius: 10,
         elevation: 4,
       }}
     >
       <View
         style={{
-          width: 5,
+          width: 4,
           backgroundColor: stripeColor,
+          borderTopLeftRadius: 20,
+          borderBottomLeftRadius: 20,
         }}
       />
 
@@ -70,16 +72,16 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
           flex: 1,
           flexDirection: "row",
           alignItems: "center",
-          padding: 16,
+          padding: 18,
           gap: 14,
         }}
       >
         <View
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            backgroundColor: colors.cardAlt,
+            width: 52,
+            height: 52,
+            borderRadius: 16,
+            backgroundColor: stripeColor + "12",
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -96,7 +98,8 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
               fontSize: 16,
               fontWeight: "700",
               color: colors.text,
-              marginBottom: 3,
+              marginBottom: 4,
+              letterSpacing: -0.2,
             }}
             numberOfLines={1}
           >
@@ -106,25 +109,26 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
             style={{
               fontSize: 13,
               color: colors.textSecondary,
-              marginBottom: 6,
+              marginBottom: 8,
+              lineHeight: 18,
             }}
             numberOfLines={2}
           >
             {alert.description}
           </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+              <Ionicons name="time-outline" size={12} color={colors.textMuted} />
               <Text
-                style={{ fontSize: 12, color: colors.textMuted, fontWeight: "500" }}
+                style={{ fontSize: 11, color: colors.textMuted, fontWeight: "500" }}
               >
                 {alert.timeAgo}
               </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="navigate-outline" size={13} color={colors.textMuted} />
+              <Ionicons name="navigate-outline" size={12} color={colors.textMuted} />
               <Text
-                style={{ fontSize: 12, color: colors.textMuted, fontWeight: "500" }}
+                style={{ fontSize: 11, color: colors.textMuted, fontWeight: "500" }}
               >
                 {alert.distance}
               </Text>
@@ -132,7 +136,7 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
           </View>
         </View>
 
-        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </View>
     </TouchableOpacity>
   );

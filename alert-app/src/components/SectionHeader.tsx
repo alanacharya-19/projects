@@ -25,14 +25,16 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 4,
-        marginBottom: 12,
+        marginTop: 24,
+        marginBottom: 14,
       }}
     >
       <Text
         style={{
-          fontSize: 20,
-          fontWeight: "700",
+          fontSize: 18,
+          fontWeight: "600",
           color: colors.text,
+          letterSpacing: -0.3,
         }}
       >
         {title}

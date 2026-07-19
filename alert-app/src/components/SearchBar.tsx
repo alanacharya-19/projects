@@ -26,19 +26,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
       style={{
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: colors.card,
-        borderRadius: 16,
-        paddingHorizontal: 16,
+        backgroundColor: colors.cardAlt,
+        borderRadius: 9999,
+        paddingHorizontal: 18,
         height: 52,
         gap: 10,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        elevation: 2,
       }}
     >
-      <Ionicons name="search" size={20} color={colors.textMuted} />
+      <Ionicons name="search" size={18} color={colors.textMuted} />
 
       <TextInput
         value={value}
@@ -47,9 +47,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         placeholderTextColor={colors.textMuted}
         style={{
           flex: 1,
-          fontSize: 16,
+          fontSize: 15,
           color: colors.text,
-          fontWeight: "500",
+          fontWeight: "400",
           paddingVertical: 0,
         }}
         returnKeyType="search"
@@ -61,15 +61,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
           activeOpacity={0.6}
           onPress={() => onChangeText("")}
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: colors.cardAlt,
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            backgroundColor: colors.card,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Ionicons name="close" size={16} color={colors.textMuted} />
+          <Ionicons name="close" size={14} color={colors.textMuted} />
         </TouchableOpacity>
       )}
     </View>

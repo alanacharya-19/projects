@@ -20,7 +20,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        gap: 16,
+        gap: 18,
       }}
     >
       <ActivityIndicator size="large" color={colors.accent} />
@@ -28,9 +28,10 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       {message && (
         <Text
           style={{
-            fontSize: 15,
+            fontSize: 14,
             color: colors.textMuted,
             fontWeight: "500",
+            letterSpacing: 0.2,
           }}
         >
           {message}

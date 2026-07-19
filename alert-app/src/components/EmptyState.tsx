@@ -31,7 +31,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       style={{
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 48,
+        paddingVertical: 56,
         paddingHorizontal: 32,
       }}
     >
@@ -40,13 +40,13 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           width: 88,
           height: 88,
           borderRadius: 44,
-          backgroundColor: colors.cardAlt,
+          backgroundColor: colors.accent + "12",
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 24,
         }}
       >
-        <Ionicons name={icon} size={40} color={colors.textMuted} />
+        <Ionicons name={icon} size={40} color={colors.accent} />
       </View>
 
       <Text
@@ -56,6 +56,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           color: colors.text,
           textAlign: "center",
           marginBottom: 8,
+          letterSpacing: -0.3,
         }}
       >
         {title}
@@ -64,7 +65,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       <Text
         style={{
           fontSize: 15,
-          color: colors.textSecondary,
+          color: colors.textMuted,
           textAlign: "center",
           lineHeight: 22,
           marginBottom: actionText ? 28 : 0,
@@ -82,11 +83,16 @@ const EmptyState: React.FC<EmptyStateProps> = ({
             paddingHorizontal: 28,
             paddingVertical: 14,
             borderRadius: 14,
+            shadowColor: colors.accent,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 8,
+            elevation: 4,
           }}
         >
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: "600",
               color: "#FFFFFF",
             }}
