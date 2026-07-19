@@ -9,11 +9,13 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocation } from "@/hooks/useLocation";
 import SearchBar from "@/components/SearchBar";
-import { Shadows } from "@/constants/theme";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients, Shadows } from "@/constants/theme";
 import { calculateDistance } from "@/services/locationService";
 
 type ServiceCategory = "all" | "hospitals" | "police" | "fire" | "shelters" | "food" | "water";
@@ -58,10 +60,14 @@ const CATEGORY_COLORS: Record<ServiceCategory, string> = {
 };
 
 export default function NearbyServicesScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const { location } = useLocation();
   const [activeCategory, setActiveCategory] = useState<ServiceCategory>("all");
   const [search, setSearch] = useState("");
+
+  const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
+    return resolvedMode === "dark" ? Gradients.forecastDark : Gradients.forecast;
+  }, [resolvedMode]);
 
   const services = useMemo(() => {
     let filtered = MOCK_SERVICES;
@@ -93,21 +99,26 @@ export default function NearbyServicesScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="default" />
+    <GradientBackground colors={gradientColors}>
+      <StatusBar barStyle={resolvedMode === "dark" ? "light-content" : "dark-content"} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Nearby Services</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Emergency services near your location</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Emergency services near your location</Text>
         </View>
 
         {/* Map Placeholder */}
-        <View style={[styles.mapPlaceholder, { backgroundColor: colors.surfaceVariant, ...Shadows.sm }]}>
+        <LinearGradient
+          colors={resolvedMode === "dark" ? ["rgba(31,41,55,0.7)", "rgba(17,24,39,0.5)"] : ["rgba(255,255,255,0.8)", "rgba(255,255,255,0.4)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.mapPlaceholder, Shadows.md]}
+        >
           <Ionicons name="map" size={40} color={colors.textMuted} />
-          <Text style={[styles.mapText, { color: colors.textMuted }]}>Map View</Text>
+          <Text style={[styles.mapText, { color: colors.text }]}>Map View</Text>
           <Text style={[styles.mapSubtext, { color: colors.textMuted }]}>Tap to expand</Text>
-        </View>
+        </LinearGradient>
 
         {/* Search */}
         <View style={styles.searchContainer}>
@@ -123,8 +134,8 @@ export default function NearbyServicesScreen() {
               <TouchableOpacity
                 key={cat.key}
                 style={[styles.categoryChip, {
-                  backgroundColor: isActive ? CATEGORY_COLORS[cat.key] + "20" : colors.surfaceVariant,
-                  borderColor: isActive ? CATEGORY_COLORS[cat.key] : "transparent",
+                  backgroundColor: isActive ? CATEGORY_COLORS[cat.key] + "20" : (resolvedMode === "dark" ? "rgba(31,41,55,0.6)" : "rgba(255,255,255,0.7)"),
+                  borderColor: isActive ? CATEGORY_COLORS[cat.key] : (resolvedMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
                 }]}
                 onPress={() => setActiveCategory(cat.key)}
                 activeOpacity={0.7}
@@ -147,14 +158,20 @@ export default function NearbyServicesScreen() {
             services.map((service) => {
               const catColor = CATEGORY_COLORS[service.category];
               return (
-                <View key={service.id} style={[styles.serviceCard, { backgroundColor: colors.surface, ...Shadows.sm }]}>
+                <LinearGradient
+                  key={service.id}
+                  colors={resolvedMode === "dark" ? ["rgba(31,41,55,0.85)", "rgba(17,24,39,0.55)"] : ["rgba(255,255,255,0.9)", "rgba(255,255,255,0.5)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.serviceCard, Shadows.md]}
+                >
                   <View style={styles.serviceCardTop}>
                     <View style={[styles.serviceIconContainer, { backgroundColor: catColor + "15" }]}>
                       <Ionicons name={CATEGORY_ICONS[service.category]} size={22} color={catColor} />
                     </View>
                     <View style={styles.serviceInfo}>
                       <Text style={[styles.serviceName, { color: colors.text }]}>{service.name}</Text>
-                      <Text style={[styles.serviceAddress, { color: colors.textMuted }]}>{service.address}</Text>
+                      <Text style={[styles.serviceAddress, { color: colors.textSecondary }]}>{service.address}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: service.isOpen ? colors.successLight : colors.errorLight }]}>
                       <View style={[styles.statusDot, { backgroundColor: service.isOpen ? colors.success : colors.error }]} />
@@ -164,7 +181,7 @@ export default function NearbyServicesScreen() {
                     </View>
                   </View>
 
-                  <View style={[styles.serviceDistance, { borderTopColor: colors.border }]}>
+                  <View style={[styles.serviceDistance, { borderTopColor: resolvedMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}>
                     <Ionicons name="navigate" size={14} color={colors.textMuted} />
                     <Text style={[styles.distanceText, { color: colors.textSecondary }]}>{formatDistance(service.distance)}</Text>
                   </View>
@@ -179,7 +196,7 @@ export default function NearbyServicesScreen() {
                       <Text style={[styles.actionButtonText, { color: colors.primary }]}>Call</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </LinearGradient>
               );
             })
           )}
@@ -187,60 +204,59 @@ export default function NearbyServicesScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { padding: 20 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
   header: { marginTop: 48, marginBottom: 24 },
-  headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
-  headerSubtitle: { fontSize: 14 },
+  headerTitle: { fontSize: 28, fontWeight: "700", marginBottom: 6, letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 15, fontWeight: "500" },
   mapPlaceholder: {
-    height: 160,
-    borderRadius: 20,
+    height: 170,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
-    gap: 4,
+    gap: 6,
   },
   mapText: { fontSize: 16, fontWeight: "600" },
   mapSubtext: { fontSize: 12 },
-  searchContainer: { marginBottom: 12 },
-  categoriesContainer: { gap: 8, paddingBottom: 20 },
+  searchContainer: { marginBottom: 14 },
+  categoriesContainer: { gap: 10, paddingBottom: 20 },
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
+    gap: 7,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1.5,
   },
   categoryChipText: { fontSize: 13, fontWeight: "600" },
-  servicesList: { gap: 12 },
-  serviceCard: { borderRadius: 20, padding: 16 },
-  serviceCardTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 12 },
-  serviceIconContainer: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  servicesList: { gap: 14 },
+  serviceCard: { borderRadius: 24, padding: 18 },
+  serviceCardTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 14 },
+  serviceIconContainer: { width: 50, height: 50, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   serviceInfo: { flex: 1 },
-  serviceName: { fontSize: 16, fontWeight: "700", marginBottom: 2 },
-  serviceAddress: { fontSize: 13 },
-  statusBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
+  serviceName: { fontSize: 16, fontWeight: "700", marginBottom: 3 },
+  serviceAddress: { fontSize: 13, fontWeight: "400" },
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
-  serviceDistance: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 12 },
+  serviceDistance: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 14 },
   distanceText: { fontSize: 13, fontWeight: "500" },
-  serviceActions: { flexDirection: "row", gap: 10 },
+  serviceActions: { flexDirection: "row", gap: 12 },
   actionButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 13,
+    borderRadius: 16,
   },
   actionButtonText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
   emptyContainer: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 16 },
+  emptyText: { fontSize: 16, fontWeight: "500" },
 });

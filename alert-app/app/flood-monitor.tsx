@@ -7,14 +7,15 @@ import {
   StyleSheet,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from '@/hooks/useLocation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
-import { Shadows } from '@/constants/theme';
+import GradientBackground from '@/components/GradientBackground';
+import { Gradients } from '@/constants/theme';
 import type { Alert } from '@/types';
 import { formatDate, getSeverityColor } from '@/utils/helpers';
 
@@ -68,7 +69,7 @@ function getRouteStatusColor(status: string): string {
 }
 
 export default function FloodMonitorScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const router = useRouter();
   const { location } = useLocation();
   const [floodAlerts, setFloodAlerts] = useState<FloodAlert[]>([]);
@@ -98,26 +99,85 @@ export default function FloodMonitorScreen() {
     return Math.min(100, Math.round((warningCount / riverLevels.length) * 100 + floodAlerts.length * 8));
   }, [riverLevels, floodAlerts]);
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Flood Monitor</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>River levels & flood alerts</Text>
-        </View>
-        <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
-          <Ionicons name="refresh" size={20} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+  const probColor = floodProbability > 70 ? '#DC2626' : floodProbability > 40 ? '#F59E0B' : '#16A34A';
+  const dangerCount = riverLevels.filter((r) => r.status === 'danger').length;
+  const warningCount = riverLevels.filter((r) => r.status === 'warning').length;
 
-      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
+  return (
+    <GradientBackground
+      colors={resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Flood Monitor</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>River levels & flood alerts</Text>
+          </View>
+          <TouchableOpacity onPress={onRefresh} style={[styles.refreshBtn, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
+            <Ionicons name="refresh" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Hero Flood Probability Card */}
+        <LinearGradient
+          colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroIconRow}>
+            <View style={styles.heroIconWrap}>
+              <Ionicons name="water" size={26} color="#FFFFFF" />
+            </View>
+            <View style={styles.heroBadge}>
+              <Ionicons name="analytics-outline" size={14} color="#FFFFFF" />
+              <Text style={styles.heroBadgeText}>PROBABILITY</Text>
+            </View>
+          </View>
+          <Text style={styles.heroProbValue}>{floodProbability}%</Text>
+          <Text style={styles.heroProbLabel}>
+            {floodProbability > 70 ? 'High risk — prepare for possible flooding' : floodProbability > 40 ? 'Moderate risk — monitor river levels' : 'Low risk — conditions are favorable'}
+          </Text>
+          <View style={styles.heroGaugeTrack}>
+            <View style={styles.heroGaugeBg}>
+              <View style={[styles.heroGaugeFill, { width: `${floodProbability}%`, backgroundColor: probColor }]} />
+            </View>
+          </View>
+          <View style={styles.heroStatsRow}>
+            <View style={styles.heroStat}>
+              <Text style={[styles.heroStatValue, { color: '#FCA5A5' }]}>{dangerCount}</Text>
+              <Text style={styles.heroStatLabel}>Danger</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={[styles.heroStatValue, { color: '#FCD34D' }]}>{warningCount}</Text>
+              <Text style={styles.heroStatLabel}>Warning</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{riverLevels.length - dangerCount - warningCount}</Text>
+              <Text style={styles.heroStatLabel}>Normal</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{floodAlerts.length}</Text>
+              <Text style={styles.heroStatLabel}>Alerts</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
         {/* Map */}
-        <View style={[styles.mapSection, { backgroundColor: colors.surfaceVariant }]}>
+        <View style={[styles.mapSection, { backgroundColor: 'rgba(255,255,255,0.7)' }]}>
           <View style={styles.mapPlaceholder}>
-            <Ionicons name="water-outline" size={48} color={colors.textMuted} />
+            <Ionicons name="water-outline" size={44} color={colors.textMuted} />
             <Text style={[styles.mapLabel, { color: colors.textMuted }]}>Flood Coverage Map</Text>
           </View>
           <View style={styles.mapOverlay}>
@@ -125,7 +185,7 @@ export default function FloodMonitorScreen() {
               <View key={river.id} style={[styles.riverDot, { left: 30 + (i % 3) * 80, top: 20 + Math.floor(i / 3) * 50, backgroundColor: getStatusColor(river.status) }]} />
             ))}
           </View>
-          <View style={[styles.mapLegend, { backgroundColor: colors.surface }]}>
+          <View style={[styles.mapLegend, { backgroundColor: 'rgba(255,255,255,0.85)' }]}>
             {[{ color: '#16A34A', label: 'Normal' }, { color: '#F59E0B', label: 'Warning' }, { color: '#DC2626', label: 'Danger' }].map((item) => (
               <View key={item.label} style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: item.color }]} />
@@ -133,25 +193,6 @@ export default function FloodMonitorScreen() {
               </View>
             ))}
           </View>
-        </View>
-
-        {/* Probability */}
-        <View style={[styles.probCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.probHeader}>
-            <Ionicons name="analytics-outline" size={20} color={colors.primary} />
-            <Text style={[styles.probTitle, { color: colors.text }]}>Flood Probability</Text>
-          </View>
-          <View style={styles.gaugeContainer}>
-            <View style={[styles.gaugeTrack, { backgroundColor: colors.surfaceVariant }]}>
-              <View style={[styles.gaugeFill, { width: `${floodProbability}%`, backgroundColor: floodProbability > 70 ? '#DC2626' : floodProbability > 40 ? '#F59E0B' : '#16A34A' }]} />
-            </View>
-            <Text style={[styles.gaugeValue, { color: floodProbability > 70 ? '#DC2626' : floodProbability > 40 ? '#F59E0B' : '#16A34A' }]}>
-              {floodProbability}%
-            </Text>
-          </View>
-          <Text style={[styles.probSubtext, { color: colors.textSecondary }]}>
-            {floodProbability > 70 ? 'High risk - prepare for possible flooding' : floodProbability > 40 ? 'Moderate risk - monitor river levels' : 'Low risk - conditions are favorable'}
-          </Text>
         </View>
 
         {isLoading && !refreshing ? (
@@ -169,10 +210,12 @@ export default function FloodMonitorScreen() {
               const trendIcon = river.trend === 'rising' ? 'trending-up' : river.trend === 'falling' ? 'trending-down' : 'remove-outline';
               const trendColor = river.trend === 'rising' ? '#DC2626' : river.trend === 'falling' ? '#16A34A' : colors.textMuted;
               return (
-                <View key={river.id} style={[styles.riverCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View key={river.id} style={[styles.riverCard, { backgroundColor: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.4)' }]}>
                   <View style={styles.riverHeader}>
                     <View style={styles.riverNameRow}>
-                      <Ionicons name="water" size={16} color={statusColor} />
+                      <View style={[styles.riverIconWrap, { backgroundColor: statusColor + '15' }]}>
+                        <Ionicons name="water" size={16} color={statusColor} />
+                      </View>
                       <Text style={[styles.riverName, { color: colors.text }]}>{river.name}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
@@ -185,7 +228,7 @@ export default function FloodMonitorScreen() {
                       <Text style={[styles.levelLabel, { color: colors.textMuted }]}>Current</Text>
                       <Text style={[styles.levelValue, { color: colors.text }]}>{river.currentLevel.toFixed(1)} m</Text>
                     </View>
-                    <View style={[styles.levelTrack, { backgroundColor: colors.surfaceVariant }]}>
+                    <View style={[styles.levelTrack, { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
                       <View style={[styles.levelFill, { width: `${levelPercent}%`, backgroundColor: statusColor }]} />
                       <View style={[styles.warningMarker, { left: `${(river.warningLevel / river.dangerLevel) * 100}%` }]} />
                     </View>
@@ -210,7 +253,7 @@ export default function FloodMonitorScreen() {
               <>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Flood Alerts</Text>
                 {floodAlerts.slice(0, 8).map((alert) => (
-                  <View key={alert.id} style={[styles.floodAlertCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <View key={alert.id} style={[styles.floodAlertCard, { backgroundColor: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.4)' }]}>
                     <View style={[styles.alertStripe, { backgroundColor: getSeverityColor(alert.severity) }]} />
                     <View style={styles.floodAlertContent}>
                       <Text style={[styles.floodAlertTitle, { color: colors.text }]} numberOfLines={1}>{alert.title}</Text>
@@ -230,11 +273,13 @@ export default function FloodMonitorScreen() {
             {evacuationRoutes.map((route) => {
               const statusColor = getRouteStatusColor(route.status);
               return (
-                <View key={route.id} style={[styles.evacCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View key={route.id} style={[styles.evacCard, { backgroundColor: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.4)' }]}>
                   <View style={[styles.evacStripe, { backgroundColor: statusColor }]} />
                   <View style={styles.evacContent}>
                     <View style={styles.evacHeader}>
-                      <Ionicons name="git-merge-outline" size={18} color={colors.text} />
+                      <View style={[styles.evacIconWrap, { backgroundColor: statusColor + '15' }]}>
+                        <Ionicons name="git-merge-outline" size={16} color={statusColor} />
+                      </View>
                       <Text style={[styles.evacName, { color: colors.text }]}>{route.name}</Text>
                     </View>
                     <View style={styles.evacMetaRow}>
@@ -253,42 +298,170 @@ export default function FloodMonitorScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  backBtn: { padding: 4 },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700' },
-  headerSubtitle: { fontSize: 11, marginTop: 2 },
-  refreshBtn: { padding: 4 },
   scrollContent: { paddingBottom: 40, paddingHorizontal: 20 },
-  mapSection: { marginTop: 20, height: 180, borderRadius: 20, overflow: 'hidden' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerSubtitle: { fontSize: 12, marginTop: 2 },
+  refreshBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCard: {
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  heroIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  heroIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  heroBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  heroProbValue: {
+    fontSize: 52,
+    fontWeight: '200',
+    color: '#FFFFFF',
+    letterSpacing: -2,
+    lineHeight: 58,
+  },
+  heroProbLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 16,
+  },
+  heroGaugeTrack: {
+    marginBottom: 20,
+  },
+  heroGaugeBg: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    overflow: 'hidden',
+  },
+  heroGaugeFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  heroStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  heroStat: { alignItems: 'center', flex: 1 },
+  heroStatValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 2,
+  },
+  heroStatDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  mapSection: { height: 180, borderRadius: 24, overflow: 'hidden', marginBottom: 20 },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   mapLabel: { fontSize: 13, fontWeight: '500' },
   mapOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  riverDot: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#FFFFFF', ...Shadows.sm },
-  mapLegend: { position: 'absolute', bottom: 8, left: 8, flexDirection: 'row', gap: 12, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, ...Shadows.sm },
+  riverDot: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  mapLegend: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { fontSize: 10, fontWeight: '500' },
-  probCard: { marginTop: 20, padding: 16, borderRadius: 20, borderWidth: 1, ...Shadows.sm },
-  probHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  probTitle: { fontSize: 16, fontWeight: '700' },
-  gaugeContainer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  gaugeTrack: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
-  gaugeFill: { height: '100%', borderRadius: 6 },
-  gaugeValue: { fontSize: 22, fontWeight: '800', minWidth: 50, textAlign: 'right' },
-  probSubtext: { fontSize: 13, marginTop: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 12 },
-  riverCard: { borderRadius: 20, borderWidth: 1, marginBottom: 10, overflow: 'hidden', ...Shadows.sm },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginTop: 8, marginBottom: 14 },
+  riverCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   riverHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, paddingBottom: 8 },
   riverNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  riverIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   riverName: { fontSize: 14, fontWeight: '700', flex: 1 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 10, fontWeight: '700' },
   levelBars: { paddingHorizontal: 14 },
@@ -304,21 +477,50 @@ const styles = StyleSheet.create({
   trendRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   trendText: { fontSize: 11, fontWeight: '600' },
   lastUpdated: { fontSize: 11 },
-  floodAlertCard: { flexDirection: 'row', borderRadius: 20, borderWidth: 1, marginBottom: 10, overflow: 'hidden', ...Shadows.sm },
+  floodAlertCard: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   alertStripe: { width: 4 },
   floodAlertContent: { flex: 1, padding: 14 },
   floodAlertTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
   floodAlertDesc: { fontSize: 13, lineHeight: 18, marginBottom: 6 },
   floodAlertMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   floodAlertMetaText: { fontSize: 11 },
-  evacCard: { flexDirection: 'row', borderRadius: 20, borderWidth: 1, marginBottom: 10, overflow: 'hidden', ...Shadows.sm },
+  evacCard: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   evacStripe: { width: 4 },
   evacContent: { flex: 1, padding: 14 },
   evacHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  evacIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   evacName: { fontSize: 14, fontWeight: '700', flex: 1 },
   evacMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   evacMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   evacMetaText: { fontSize: 13 },
-  evacStatusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  evacStatusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
   evacStatusText: { fontSize: 10, fontWeight: '700' },
 });

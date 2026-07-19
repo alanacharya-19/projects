@@ -8,14 +8,16 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from '@/hooks/useLocation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
-import { Shadows } from '@/constants/theme';
+import GradientBackground from '@/components/GradientBackground';
+import { Gradients, Shadows } from '@/constants/theme';
 import type { Alert } from '@/types';
 import { formatDate, formatDistance } from '@/utils/helpers';
 import { calculateDistance } from '@/services/locationService';
@@ -75,7 +77,8 @@ function getVillageStatusLabel(status: string): string {
 }
 
 export default function WildfireMonitorScreen() {
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { colors, resolvedMode } = useTheme();
   const router = useRouter();
   const { location } = useLocation();
   const [fires, setFires] = useState<WildfireEntry[]>([]);
@@ -108,28 +111,44 @@ export default function WildfireMonitorScreen() {
   const maxBrightness = useMemo(() => Math.max(...fires.map((f) => f.brightness), 1), [fires]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Wildfire Monitor</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {fires.length} active fire{fires.length !== 1 ? 's' : ''} detected
-          </Text>
+    <GradientBackground
+      colors={resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert}
+    >
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 12,
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 20,
+        }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.surface }]}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Wildfire Monitor</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {fires.length} active fire{fires.length !== 1 ? 's' : ''} detected
+            </Text>
+          </View>
+          <TouchableOpacity onPress={onRefresh} style={[styles.refreshBtn, { backgroundColor: colors.surface }]}>
+            <Ionicons name="refresh" size={18} color={colors.primary} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
-          <Ionicons name="refresh" size={20} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
-        {/* Map */}
-        <View style={[styles.mapSection, { backgroundColor: colors.surfaceVariant }]}>
+        {/* Hero Map Card */}
+        <LinearGradient
+          colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
           <View style={styles.mapPlaceholder}>
-            <Ionicons name="flame-outline" size={48} color={colors.textMuted} />
-            <Text style={[styles.mapLabel, { color: colors.textMuted }]}>Fire Hotspot Map</Text>
+            <Ionicons name="flame-outline" size={48} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.mapLabel}>Fire Hotspot Map</Text>
           </View>
           <View style={styles.mapOverlay}>
             {fires.slice(0, 25).map((fire) => {
@@ -140,17 +159,17 @@ export default function WildfireMonitorScreen() {
                 <View key={fire.id} style={[styles.fireDot, {
                   left: 15 + Math.abs(offsetX), top: 10 + Math.abs(offsetY),
                   width: size, height: size, borderRadius: size / 2,
-                  backgroundColor: fire.brightness > 450 ? '#DC2626' : fire.brightness > 350 ? '#F97316' : '#F59E0B',
+                  backgroundColor: fire.brightness > 450 ? '#FF6B6B' : fire.brightness > 350 ? '#FFB347' : '#FFDA77',
                 }]} />
               );
             })}
           </View>
-          <View style={[styles.mapStatsBar, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.mapStatsText, { color: colors.text }]}>
+          <View style={styles.mapStatsBar}>
+            <Text style={styles.mapStatsText}>
               {fires.length} hotspots · {fires.filter((f) => f.brightness > 450).length} high intensity
             </Text>
           </View>
-        </View>
+        </LinearGradient>
 
         {isLoading && !refreshing ? (
           <LoadingSpinner message="Fetching wildfire data..." colors={{ text: colors.text, textMuted: colors.textMuted, accent: colors.primary }} />
@@ -171,7 +190,7 @@ export default function WildfireMonitorScreen() {
               const brightnessPercent = Math.min(100, (fire.brightness / 500) * 100);
               const brightnessColor = fire.brightness > 450 ? '#DC2626' : fire.brightness > 350 ? '#F97316' : '#F59E0B';
               return (
-                <TouchableOpacity key={fire.id} style={[styles.fireCard, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => toggleExpand(fire.id)} activeOpacity={0.7}>
+                <TouchableOpacity key={fire.id} style={[styles.fireCard, { backgroundColor: colors.surface }]} onPress={() => toggleExpand(fire.id)} activeOpacity={0.7}>
                   <View style={styles.fireCardMain}>
                     <View style={[styles.fireIconWrap, { backgroundColor: brightnessColor + '15' }]}>
                       <Ionicons name="flame" size={20} color={brightnessColor} />
@@ -232,7 +251,7 @@ export default function WildfireMonitorScreen() {
               const intColor = getIntensityColor(zone.intensity);
               const intPercent = zone.intensity === 'very_high' ? 100 : zone.intensity === 'high' ? 75 : zone.intensity === 'moderate' ? 50 : 25;
               return (
-                <View key={zone.id} style={[styles.smokeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View key={zone.id} style={[styles.smokeCard, { backgroundColor: colors.surface }]}>
                   <View style={styles.smokeHeader}>
                     <Ionicons name="cloudy" size={18} color={intColor} />
                     <Text style={[styles.smokeArea, { color: colors.text }]}>{zone.area}</Text>
@@ -258,7 +277,7 @@ export default function WildfireMonitorScreen() {
             {MOCK_VILLAGES.map((village) => {
               const statusColor = getVillageStatusColor(village.status);
               return (
-                <View key={village.id} style={[styles.villageCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View key={village.id} style={[styles.villageCard, { backgroundColor: colors.surface }]}>
                   <View style={[styles.villageStripe, { backgroundColor: statusColor }]} />
                   <View style={styles.villageContent}>
                     <View style={styles.villageHeader}>
@@ -285,28 +304,68 @@ export default function WildfireMonitorScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  backBtn: { padding: 4 },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700' },
-  headerSubtitle: { fontSize: 11, marginTop: 2 },
-  refreshBtn: { padding: 4 },
-  scrollContent: { paddingBottom: 40, paddingHorizontal: 20 },
-  mapSection: { marginTop: 20, height: 180, borderRadius: 20, overflow: 'hidden' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 12,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.sm,
+  },
+  refreshBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.sm,
+  },
+  headerTitle: { fontSize: 28, fontWeight: '700', marginBottom: 2 },
+  headerSubtitle: { fontSize: 14, fontWeight: '500' },
+  heroCard: {
+    borderRadius: 24,
+    height: 200,
+    overflow: 'hidden',
+    marginBottom: 24,
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  mapLabel: { fontSize: 13, fontWeight: '500' },
+  mapLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
   mapOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  fireDot: { position: 'absolute', opacity: 0.85 },
-  mapStatsBar: { position: 'absolute', bottom: 8, left: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, ...Shadows.sm },
-  mapStatsText: { fontSize: 11, fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 12 },
-  fireCard: { borderRadius: 20, borderWidth: 1, marginBottom: 10, overflow: 'hidden', ...Shadows.sm },
+  fireDot: { position: 'absolute', opacity: 0.9 },
+  mapStatsBar: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    ...Shadows.sm,
+  },
+  mapStatsText: { fontSize: 11, fontWeight: '700', color: '#0A1628' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginTop: 8, marginBottom: 14 },
+  fireCard: {
+    borderRadius: 20,
+    marginBottom: 12,
+    overflow: 'hidden',
+    ...Shadows.sm,
+  },
   fireCardMain: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
   fireIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   fireInfo: { flex: 1 },
@@ -320,33 +379,44 @@ const styles = StyleSheet.create({
   miniGauge: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
   miniGaugeFill: { height: '100%', borderRadius: 2 },
   quickStatValue: { fontSize: 11, fontWeight: '700', minWidth: 40 },
-  quickStatBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  quickStatBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   quickStatBadgeText: { fontSize: 10, fontWeight: '700' },
   fireExpanded: { borderTopWidth: StyleSheet.hairlineWidth, padding: 14, gap: 12 },
   detailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  detailItem: { width: '48%', padding: 8, borderRadius: 12, gap: 4 },
+  detailItem: { width: '48%', padding: 10, borderRadius: 14, gap: 4 },
   detailLabel: { fontSize: 10, fontWeight: '500' },
   detailValue: { fontSize: 14, fontWeight: '600' },
   fireDescription: { fontSize: 13, lineHeight: 20 },
   windIndicator: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16 },
   windTitle: { fontSize: 13, fontWeight: '700' },
   windText: { fontSize: 11, marginTop: 2 },
-  smokeCard: { borderRadius: 20, borderWidth: 1, padding: 14, marginBottom: 10, ...Shadows.sm },
-  smokeHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  smokeCard: {
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    ...Shadows.sm,
+  },
+  smokeHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   smokeArea: { fontSize: 14, fontWeight: '700', flex: 1 },
-  intensityBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  intensityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   intensityText: { fontSize: 10, fontWeight: '700' },
-  smokeGauge: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 10 },
+  smokeGauge: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 12 },
   smokeGaugeFill: { height: '100%', borderRadius: 3 },
   smokeFooter: { flexDirection: 'row', justifyContent: 'space-between' },
   windDirRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   windDirText: { fontSize: 11, fontWeight: '500' },
-  villageCard: { flexDirection: 'row', borderRadius: 20, borderWidth: 1, marginBottom: 10, overflow: 'hidden', ...Shadows.sm },
+  villageCard: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    marginBottom: 12,
+    overflow: 'hidden',
+    ...Shadows.sm,
+  },
   villageStripe: { width: 4 },
   villageContent: { flex: 1, padding: 14 },
   villageHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   villageName: { fontSize: 14, fontWeight: '700', flex: 1 },
-  villageStatusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
+  villageStatusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   villageStatusText: { fontSize: 10, fontWeight: '700' },
   villageMetaRow: { flexDirection: 'row', gap: 16 },
   villageMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },

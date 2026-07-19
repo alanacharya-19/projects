@@ -8,14 +8,15 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from '@/hooks/useLocation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
-import { Shadows } from '@/constants/theme';
+import GradientBackground from '@/components/GradientBackground';
+import { Gradients } from '@/constants/theme';
 import { type Alert } from '@/types';
 import { formatDate, formatDistance } from '@/utils/helpers';
 import { calculateDistance } from '@/services/locationService';
@@ -54,7 +55,7 @@ function getMagnitudeLabel(mag: number): string {
 }
 
 export default function EarthquakeMonitorScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const router = useRouter();
   const { location } = useLocation();
 
@@ -110,31 +111,81 @@ export default function EarthquakeMonitorScreen() {
 
   const maxMag = useMemo(() => Math.max(...earthquakes.map((e) => e.mag), 0), [earthquakes]);
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Earthquake Monitor</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {earthquakes.length} event{earthquakes.length !== 1 ? 's' : ''} detected
-          </Text>
-        </View>
-        <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
-          <Ionicons name="refresh" size={20} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+  const stats = useMemo(() => {
+    const major = earthquakes.filter((eq) => eq.mag >= 7).length;
+    const strong = earthquakes.filter((eq) => eq.mag >= 6 && eq.mag < 7).length;
+    const avgDepth = earthquakes.length > 0 ? earthquakes.reduce((s, e) => s + e.depth, 0) / earthquakes.length : 0;
+    return { major, strong, avgDepth };
+  }, [earthquakes]);
 
+  return (
+    <GradientBackground
+      colors={resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert}
+    >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Earthquake Monitor</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {earthquakes.length} event{earthquakes.length !== 1 ? 's' : ''} detected
+            </Text>
+          </View>
+          <TouchableOpacity onPress={onRefresh} style={[styles.refreshBtn, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
+            <Ionicons name="refresh" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Hero Stats Card */}
+        <LinearGradient
+          colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroIconRow}>
+            <Ionicons name="globe-outline" size={28} color="rgba(255,255,255,0.9)" />
+            <View style={styles.heroBadge}>
+              <Ionicons name="pulse" size={14} color="#FFFFFF" />
+              <Text style={styles.heroBadgeText}>LIVE</Text>
+            </View>
+          </View>
+          <Text style={styles.heroMaxMag}>M{maxMag.toFixed(1)}</Text>
+          <Text style={styles.heroMaxLabel}>Maximum Magnitude</Text>
+          <View style={styles.heroStatsRow}>
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{earthquakes.length}</Text>
+              <Text style={styles.heroStatLabel}>Total</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={[styles.heroStatValue, { color: '#FCA5A5' }]}>{stats.major}</Text>
+              <Text style={styles.heroStatLabel}>Major</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={[styles.heroStatValue, { color: '#FCD34D' }]}>{stats.strong}</Text>
+              <Text style={styles.heroStatLabel}>Strong</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{stats.avgDepth.toFixed(0)}</Text>
+              <Text style={styles.heroStatLabel}>Avg km</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
         {/* Map */}
-        <View style={[styles.mapSection, { backgroundColor: colors.surfaceVariant }]}>
+        <View style={[styles.mapSection, { backgroundColor: 'rgba(255,255,255,0.7)' }]}>
           <View style={styles.mapPlaceholder}>
-            <Ionicons name="globe-outline" size={48} color={colors.textMuted} />
+            <Ionicons name="globe-outline" size={44} color={colors.textMuted} />
             <Text style={[styles.mapLabel, { color: colors.textMuted }]}>Earthquake Locations</Text>
           </View>
           <View style={styles.mapDots}>
@@ -159,7 +210,7 @@ export default function EarthquakeMonitorScreen() {
               );
             })}
           </View>
-          <View style={[styles.mapStats, { backgroundColor: colors.surface }]}>
+          <View style={[styles.mapStats, { backgroundColor: 'rgba(255,255,255,0.85)' }]}>
             <Text style={[styles.mapStatsText, { color: colors.text }]}>
               Max: M{maxMag.toFixed(1)} · {filteredEarthquakes.length} shown
             </Text>
@@ -180,8 +231,8 @@ export default function EarthquakeMonitorScreen() {
                   style={[
                     styles.filterChip,
                     {
-                      backgroundColor: isActive ? f.color + '18' : colors.surfaceVariant,
-                      borderColor: isActive ? f.color : colors.border,
+                      backgroundColor: isActive ? f.color + '20' : 'rgba(255,255,255,0.7)',
+                      borderColor: isActive ? f.color : 'rgba(255,255,255,0.4)',
                     },
                   ]}
                   activeOpacity={0.7}
@@ -190,7 +241,7 @@ export default function EarthquakeMonitorScreen() {
                   <Text style={[styles.filterChipText, { color: isActive ? f.color : colors.textMuted }]}>
                     {f.label}
                   </Text>
-                  <View style={[styles.filterCount, { backgroundColor: isActive ? f.color + '20' : colors.surface }]}>
+                  <View style={[styles.filterCount, { backgroundColor: isActive ? f.color + '25' : 'rgba(255,255,255,0.5)' }]}>
                     <Text style={[styles.filterCountText, { color: isActive ? f.color : colors.textMuted }]}>{count}</Text>
                   </View>
                 </TouchableOpacity>
@@ -217,7 +268,7 @@ export default function EarthquakeMonitorScreen() {
               return (
                 <TouchableOpacity
                   key={eq.id}
-                  style={[styles.eqCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  style={[styles.eqCard, { backgroundColor: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.4)' }]}
                   onPress={() => toggleExpand(eq.id)}
                   activeOpacity={0.7}
                 >
@@ -253,22 +304,22 @@ export default function EarthquakeMonitorScreen() {
                   {isExpanded && (
                     <View style={[styles.eqExpanded, { borderTopColor: colors.border }]}>
                       <View style={styles.eqDetailGrid}>
-                        <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
+                        <View style={[styles.eqDetailItem, { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
                           <Ionicons name="compass-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Latitude</Text>
                           <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.coordinates.latitude.toFixed(4)}</Text>
                         </View>
-                        <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
+                        <View style={[styles.eqDetailItem, { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
                           <Ionicons name="compass-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Longitude</Text>
                           <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.coordinates.longitude.toFixed(4)}</Text>
                         </View>
-                        <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
+                        <View style={[styles.eqDetailItem, { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
                           <Ionicons name="swap-vertical-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Depth</Text>
                           <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.depth.toFixed(1)} km</Text>
                         </View>
-                        <View style={[styles.eqDetailItem, { backgroundColor: colors.surfaceVariant }]}>
+                        <View style={[styles.eqDetailItem, { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
                           <Ionicons name="radio-outline" size={16} color={colors.textMuted} />
                           <Text style={[styles.eqDetailLabel, { color: colors.textMuted }]}>Source</Text>
                           <Text style={[styles.eqDetailValue, { color: colors.text }]}>{eq.source}</Text>
@@ -284,31 +335,108 @@ export default function EarthquakeMonitorScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
+  scrollContent: { paddingBottom: 40, paddingHorizontal: 20 },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
-  backBtn: { padding: 4 },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700' },
-  headerSubtitle: { fontSize: 11, marginTop: 2 },
-  refreshBtn: { padding: 4 },
-  scrollContent: { paddingBottom: 40 },
-  mapSection: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    height: 200,
+  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerSubtitle: { fontSize: 12, marginTop: 2 },
+  refreshBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCard: {
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  heroIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 20,
+  },
+  heroBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  heroMaxMag: {
+    fontSize: 52,
+    fontWeight: '200',
+    color: '#FFFFFF',
+    letterSpacing: -2,
+    lineHeight: 58,
+  },
+  heroMaxLabel: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 20,
+  },
+  heroStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  heroStat: { alignItems: 'center', flex: 1 },
+  heroStatValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 2,
+  },
+  heroStatDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  mapSection: {
+    height: 200,
+    borderRadius: 24,
     overflow: 'hidden',
+    marginBottom: 20,
   },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   mapLabel: { fontSize: 13, fontWeight: '500' },
@@ -316,38 +444,46 @@ const styles = StyleSheet.create({
   mapDot: { position: 'absolute', opacity: 0.85 },
   mapStats: {
     position: 'absolute',
-    bottom: 8,
-    left: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    ...Shadows.sm,
+    bottom: 10,
+    left: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  mapStatsText: { fontSize: 11, fontWeight: '600' },
-  filterSection: { marginTop: 20, paddingHorizontal: 20 },
-  filterLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  mapStatsText: { fontSize: 12, fontWeight: '600' },
+  filterSection: { marginBottom: 20 },
+  filterLabel: { fontSize: 13, fontWeight: '600', marginBottom: 10 },
   filterScroll: { gap: 8 },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: 20,
     borderWidth: 1.5,
   },
   filterDot: { width: 8, height: 8, borderRadius: 4 },
   filterChipText: { fontSize: 13, fontWeight: '600' },
-  filterCount: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  filterCount: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8 },
   filterCountText: { fontSize: 10, fontWeight: '700' },
-  listSection: { marginTop: 24, paddingHorizontal: 20 },
-  listTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  listSection: { marginTop: 4 },
+  listTitle: { fontSize: 20, fontWeight: '700', marginBottom: 14 },
   eqCard: {
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 10,
     overflow: 'hidden',
-    ...Shadows.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   eqRow: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
   magBadge: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
@@ -358,11 +494,11 @@ const styles = StyleSheet.create({
   eqMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   eqMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   eqMetaText: { fontSize: 11 },
-  severityPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  severityPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   severityPillText: { fontSize: 10, fontWeight: '700' },
   eqExpanded: { borderTopWidth: StyleSheet.hairlineWidth, padding: 14, gap: 12 },
   eqDetailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  eqDetailItem: { width: '48%', padding: 8, borderRadius: 12, gap: 4 },
+  eqDetailItem: { width: '48%', padding: 10, borderRadius: 14, gap: 4 },
   eqDetailLabel: { fontSize: 10, fontWeight: '500' },
   eqDetailValue: { fontSize: 14, fontWeight: '600' },
   eqDescription: { fontSize: 13, lineHeight: 20 },

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
 import { Shadows } from "@/constants/theme";
 import { APP_CONFIG } from "@/constants/config";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients } from "@/constants/theme";
 
 interface MenuItem {
   id: string;
@@ -37,9 +40,13 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 export default function MoreScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const router = useRouter();
   const [refreshing, setRefreshing] = React.useState(false);
+
+  const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
+    return resolvedMode === "dark" ? Gradients.profileDark : Gradients.profile;
+  }, [resolvedMode]);
 
   const handleNavigate = useCallback(
     (route: string) => router.push(route as any),
@@ -52,29 +59,41 @@ export default function MoreScreen() {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="default" />
+    <GradientBackground colors={gradientColors}>
+      <StatusBar barStyle={resolvedMode === "dark" ? "light-content" : "default"} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         {/* Profile Card */}
-        <View style={[styles.profileCard, { backgroundColor: colors.surface, ...Shadows.md }]}>
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+        <LinearGradient
+          colors={
+            resolvedMode === "dark"
+              ? (["rgba(31,41,55,0.9)", "rgba(17,24,39,0.5)"] as const)
+              : (["rgba(255,255,255,0.9)", "rgba(255,255,255,0.55)"] as const)
+          }
+          style={styles.profileCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <LinearGradient
+            colors={Gradients.primary}
+            style={styles.avatar}
+          >
             <Text style={styles.avatarText}>JD</Text>
-          </View>
+          </LinearGradient>
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.text }]}>John Doe</Text>
-            <Text style={[styles.profileEmail, { color: colors.textMuted }]}>john.doe@email.com</Text>
+            <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>john.doe@email.com</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </View>
+        </LinearGradient>
 
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>More</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Explore all features</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Explore all features</Text>
         </View>
 
         {/* Menu Grid */}
@@ -82,7 +101,13 @@ export default function MoreScreen() {
           {MENU_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={[styles.menuItem, { backgroundColor: colors.surface, ...Shadows.sm }]}
+              style={[
+                styles.menuItem,
+                {
+                  backgroundColor: resolvedMode === "dark" ? "rgba(31,41,55,0.7)" : "rgba(255,255,255,0.7)",
+                  ...Shadows.sm,
+                },
+              ]}
               onPress={() => handleNavigate(item.route)}
               activeOpacity={0.7}
             >
@@ -105,51 +130,51 @@ export default function MoreScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   scrollContent: { padding: 20 },
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 20,
+    padding: 18,
+    borderRadius: 24,
     marginTop: 48,
-    marginBottom: 24,
+    marginBottom: 28,
+    gap: 14,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
-  profileInfo: { flex: 1, marginLeft: 14 },
+  profileInfo: { flex: 1 },
   profileName: { fontSize: 17, fontWeight: "700" },
-  profileEmail: { fontSize: 13, marginTop: 1 },
-  header: { marginBottom: 20 },
+  profileEmail: { fontSize: 13, marginTop: 2 },
+  header: { marginBottom: 24 },
   headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
   headerSubtitle: { fontSize: 14 },
   menuGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 14,
   },
   menuItem: {
     width: "47.5%",
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: 22,
+    padding: 18,
     alignItems: "center",
-    gap: 10,
+    gap: 12,
   },
   iconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -161,13 +186,13 @@ const styles = StyleSheet.create({
   },
   menuChevron: {
     position: "absolute",
-    top: 14,
-    right: 14,
+    top: 16,
+    right: 16,
   },
   footer: {
     alignItems: "center",
-    marginTop: 32,
-    gap: 4,
+    marginTop: 36,
+    gap: 6,
   },
   footerName: { fontSize: 15, fontWeight: "700" },
   footerVersion: { fontSize: 12 },

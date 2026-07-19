@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import StatBar from "@/components/StatBar";
-import { Shadows } from "@/constants/theme";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients, Shadows } from "@/constants/theme";
 
 type TimePeriod = "week" | "month" | "year";
 
@@ -50,9 +52,19 @@ const MOCK_DATA = {
 };
 
 export default function StatisticsScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const [period, setPeriod] = useState<TimePeriod>("month");
   const data = useMemo(() => MOCK_DATA[period], [period]);
+
+  const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
+    return resolvedMode === "dark" ? Gradients.forecastDark : Gradients.forecast;
+  }, [resolvedMode]);
+
+  const glassColors = useMemo(() => {
+    return resolvedMode === "dark"
+      ? ["rgba(31,41,55,0.85)", "rgba(17,24,39,0.55)"] as const
+      : ["rgba(255,255,255,0.9)", "rgba(255,255,255,0.5)"] as readonly [string, string];
+  }, [resolvedMode]);
 
   const severityItems = [
     { label: "Minor", value: data.severity.minor, color: "#3B82F6", max: 60 },
@@ -65,17 +77,22 @@ export default function StatisticsScreen() {
   const maxRain = Math.max(...data.monthlyBars.map((b) => b.rain), 1);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="default" />
+    <GradientBackground colors={gradientColors}>
+      <StatusBar barStyle={resolvedMode === "dark" ? "light-content" : "dark-content"} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Statistics</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Weather & disaster analytics</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Weather & disaster analytics</Text>
         </View>
 
         {/* Time Period Selector */}
-        <View style={[styles.periodSelector, { backgroundColor: colors.surfaceVariant }]}>
+        <LinearGradient
+          colors={glassColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.periodSelector, Shadows.sm]}
+        >
           {PERIODS.map((p) => (
             <TouchableOpacity
               key={p.key}
@@ -86,7 +103,7 @@ export default function StatisticsScreen() {
               <Text style={[styles.periodTabText, { color: period === p.key ? "#FFFFFF" : colors.textMuted }]}>{p.label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </LinearGradient>
 
         {/* Weather Trends */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Weather Trends</Text>
@@ -96,7 +113,7 @@ export default function StatisticsScreen() {
             { label: "Total Rainfall", value: `${data.weather.totalRainfall}mm`, maxValue: period === "year" ? 1500 : period === "month" ? 100 : 20, color: colors.info, icon: "rainy" },
             { label: "Avg Humidity", value: `${data.weather.avgHumidity}%`, maxValue: 100, color: colors.primary, icon: "water" },
             { label: "Avg Wind Speed", value: `${data.weather.avgWindSpeed} km/h`, maxValue: 80, color: colors.secondary, icon: "speedometer" },
-          ].map((stat, idx) => (
+          ].map((stat) => (
             <StatBar
               key={stat.label}
               label={stat.label}
@@ -116,11 +133,17 @@ export default function StatisticsScreen() {
             { icon: "water" as const, count: data.disasters.floods, label: "Floods", color: "#1D4ED8" },
             { icon: "flame" as const, count: data.disasters.wildfires, label: "Wildfires", color: "#DC2626" },
           ].map((d) => (
-            <View key={d.label} style={[styles.disasterCard, { backgroundColor: colors.surface, ...Shadows.sm }]}>
+            <LinearGradient
+              key={d.label}
+              colors={glassColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.disasterCard, Shadows.md]}
+            >
               <Ionicons name={d.icon} size={28} color={d.color} />
               <Text style={[styles.disasterCount, { color: colors.text }]}>{d.count}</Text>
               <Text style={[styles.disasterLabel, { color: colors.textMuted }]}>{d.label}</Text>
-            </View>
+            </LinearGradient>
           ))}
         </View>
 
@@ -128,7 +151,12 @@ export default function StatisticsScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           {period === "week" ? "Daily Overview" : period === "month" ? "Weekly Overview" : "Monthly Overview"}
         </Text>
-        <View style={[styles.chartCard, { backgroundColor: colors.surface, ...Shadows.sm }]}>
+        <LinearGradient
+          colors={glassColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.chartCard, Shadows.md]}
+        >
           <View style={styles.chartLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: colors.error }]} />
@@ -154,7 +182,7 @@ export default function StatisticsScreen() {
               );
             })}
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Severity Distribution */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Severity Distribution</Text>
@@ -173,34 +201,33 @@ export default function StatisticsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { padding: 20 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
   header: { marginTop: 48, marginBottom: 24 },
-  headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
-  headerSubtitle: { fontSize: 14 },
-  periodSelector: { flexDirection: "row", borderRadius: 16, padding: 4, marginBottom: 28 },
-  periodTab: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center" },
+  headerTitle: { fontSize: 28, fontWeight: "700", marginBottom: 6, letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 15, fontWeight: "500" },
+  periodSelector: { flexDirection: "row", borderRadius: 20, padding: 4, marginBottom: 28 },
+  periodTab: { flex: 1, paddingVertical: 12, borderRadius: 16, alignItems: "center" },
   periodTabText: { fontSize: 14, fontWeight: "700" },
-  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 14 },
-  statsGrid: { gap: 10, marginBottom: 28 },
-  disasterCards: { flexDirection: "row", gap: 10, marginBottom: 28 },
-  disasterCard: { flex: 1, borderRadius: 20, padding: 16, alignItems: "center", gap: 6 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 14, letterSpacing: -0.3 },
+  statsGrid: { gap: 12, marginBottom: 28 },
+  disasterCards: { flexDirection: "row", gap: 12, marginBottom: 28 },
+  disasterCard: { flex: 1, borderRadius: 24, padding: 18, alignItems: "center", gap: 6 },
   disasterCount: { fontSize: 24, fontWeight: "800" },
   disasterLabel: { fontSize: 12, fontWeight: "500", textAlign: "center" },
-  chartCard: { borderRadius: 20, padding: 16 },
+  chartCard: { borderRadius: 24, padding: 20 },
   chartLegend: { flexDirection: "row", gap: 20, marginBottom: 16 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 8 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { fontSize: 13 },
+  legendText: { fontSize: 13, fontWeight: "500" },
   chartBars: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", height: 140, paddingBottom: 12 },
   barGroup: { flex: 1, alignItems: "center" },
   barContainer: { flexDirection: "row", alignItems: "flex-end", gap: 2, height: 120 },
   bar: { width: 10, borderRadius: 4 },
-  barLabel: { fontSize: 10, marginTop: 6 },
-  severityList: { gap: 10 },
+  barLabel: { fontSize: 10, marginTop: 6, fontWeight: "500" },
+  severityList: { gap: 12 },
 });

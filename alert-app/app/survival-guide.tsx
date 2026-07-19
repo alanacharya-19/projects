@@ -5,13 +5,15 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/context/ThemeContext";
 import SearchBar from "@/components/SearchBar";
 import SurvivalStepCard from "@/components/SurvivalStepCard";
-import { Shadows } from "@/constants/theme";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients, Shadows } from "@/constants/theme";
 import { SURVIVAL_GUIDES } from "@/constants/survival";
 import type { SurvivalGuide, SurvivalStep } from "@/types";
 
@@ -30,7 +32,8 @@ const PHASE_COLORS: Record<Phase, string> = {
 };
 
 export default function SurvivalGuideScreen() {
-  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { colors, resolvedMode } = useTheme();
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [activePhase, setActivePhase] = useState<Phase>("before");
@@ -64,7 +67,7 @@ export default function SurvivalGuideScreen() {
     const phaseColor = PHASE_COLORS[activePhase];
 
     return (
-      <View key={guide.id} style={[styles.guideCard, { backgroundColor: colors.surface, ...Shadows.md }]}>
+      <View key={guide.id} style={[styles.guideCard, { backgroundColor: colors.surface }]}>
         <TouchableOpacity style={styles.guideHeader} onPress={() => toggleExpand(guide.id)} activeOpacity={0.7}>
           <Text style={styles.guideIcon}>{guide.icon}</Text>
           <View style={styles.guideHeaderText}>
@@ -83,6 +86,7 @@ export default function SurvivalGuideScreen() {
                   key={phase.key}
                   style={[styles.phaseTab, activePhase === phase.key && {
                     backgroundColor: phase.key === "before" ? "#DCFCE7" : phase.key === "during" ? "#FEF3C7" : "#E0F2FE",
+                    ...Shadows.sm,
                   }]}
                   onPress={() => setActivePhase(phase.key)}
                   activeOpacity={0.7}
@@ -153,14 +157,20 @@ export default function SurvivalGuideScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="default" />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <GradientBackground
+      colors={resolvedMode === 'dark' ? Gradients.forecastDark : Gradients.forecast}
+    >
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 20,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Survival Guide</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Essential knowledge for any disaster</Text>
-        </View>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Survival Guide</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Essential knowledge for any disaster</Text>
 
         {/* Search */}
         <View style={styles.searchContainer}>
@@ -169,55 +179,58 @@ export default function SurvivalGuideScreen() {
         </View>
 
         {/* Offline Indicator */}
-        <View style={[styles.offlineIndicator, { backgroundColor: colors.successLight }]}>
+        <LinearGradient
+          colors={resolvedMode === 'dark' ? Gradients.glassDark : Gradients.glass}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.offlineIndicator}
+        >
           <Ionicons name="cloud-offline" size={16} color={colors.success} />
           <Text style={[styles.offlineText, { color: colors.success }]}>Available offline</Text>
-        </View>
+        </LinearGradient>
 
         {/* Guide Cards */}
         <View style={styles.guidesList}>
           {guides.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="search" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No guides found</Text>
+              <View style={[styles.emptyIconWrap, { backgroundColor: colors.surfaceVariant }]}>
+                <Ionicons name="search" size={48} color={colors.textMuted} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No guides found</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>Try adjusting your search terms</Text>
             </View>
           ) : (
             guides.map(renderGuideCard)
           )}
         </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { padding: 20 },
-  header: { marginTop: 48, marginBottom: 24 },
-  headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
-  headerSubtitle: { fontSize: 14 },
+  headerTitle: { fontSize: 28, fontWeight: "700", marginBottom: 4 },
+  headerSubtitle: { fontSize: 15, fontWeight: "500", marginBottom: 16 },
   searchContainer: { marginBottom: 12 },
   offlineIndicator: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
     marginBottom: 24,
   },
   offlineText: { fontSize: 13, fontWeight: "600" },
-  guidesList: { gap: 16 },
-  guideCard: { borderRadius: 20, overflow: "hidden" },
+  guidesList: { gap: 14 },
+  guideCard: { borderRadius: 20, overflow: "hidden", ...Shadows.sm },
   guideHeader: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
   guideIcon: { fontSize: 36 },
   guideHeaderText: { flex: 1 },
   guideTitle: { fontSize: 16, fontWeight: "700", marginBottom: 2 },
   guideDesc: { fontSize: 13, lineHeight: 18 },
   guideContent: { paddingHorizontal: 16, paddingBottom: 20 },
-  phaseTabs: { flexDirection: "row", borderRadius: 14, padding: 4, marginBottom: 20 },
+  phaseTabs: { flexDirection: "row", borderRadius: 16, padding: 4, marginBottom: 20 },
   phaseTab: {
     flex: 1,
     flexDirection: "row",
@@ -225,7 +238,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
   },
   phaseTabText: { fontSize: 13, fontWeight: "600" },
   stepsList: { gap: 10, marginBottom: 20 },
@@ -234,8 +247,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 12,
-    borderRadius: 14,
+    padding: 14,
+    borderRadius: 16,
     marginBottom: 8,
   },
   kitItemText: { flex: 1 },
@@ -252,5 +265,14 @@ const styles = StyleSheet.create({
   dosDontsItem: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   dosDontsText: { fontSize: 13, flex: 1, lineHeight: 18 },
   emptyContainer: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 16 },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: "700" },
+  emptyText: { fontSize: 14 },
 });

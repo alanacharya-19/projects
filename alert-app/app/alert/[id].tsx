@@ -8,13 +8,14 @@ import {
   Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useAlertContext } from '@/context/AlertContext';
 import DisasterIcon from '@/components/DisasterIcon';
 import GradientBackground from '@/components/GradientBackground';
-import { Spacing, BorderRadius, FontSizes, Shadows, SeverityColors } from '@/constants/theme';
+import { Gradients, Spacing, SeverityColors } from '@/constants/theme';
 import { formatDate, formatDistance, capitalizeWords } from '@/utils/helpers';
 
 const SEVERITY_LABELS: Record<string, string> = {
@@ -145,24 +146,25 @@ export default function AlertDetailScreen() {
     ];
   }, [alert]);
 
+  const gradientColors = resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert;
+
   if (!alert) {
     return (
-      <GradientBackground
-        colors={resolvedMode === 'dark' ? ['#0F172A', '#1E293B'] as const : ['#F8FAFC', '#F1F5F9'] as const}
-      >
+      <GradientBackground colors={gradientColors}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: insets.top }}>
           <Ionicons name="alert-circle-outline" size={64} color={colors.textMuted} />
-          <Text style={{ color: colors.textMuted, fontSize: FontSizes.lg, marginTop: Spacing.lg }}>
+          <Text style={{ color: colors.textMuted, fontSize: 16, marginTop: 16 }}>
             Alert not found
           </Text>
           <TouchableOpacity
+            activeOpacity={0.7}
             onPress={() => router.back()}
             style={{
-              marginTop: Spacing.xl,
+              marginTop: 24,
               backgroundColor: colors.primary,
-              paddingHorizontal: Spacing.xxl,
-              paddingVertical: Spacing.md,
-              borderRadius: BorderRadius.lg,
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 9999,
             }}
           >
             <Text style={{ color: colors.white, fontWeight: '600' }}>Go Back</Text>
@@ -173,18 +175,17 @@ export default function AlertDetailScreen() {
   }
 
   return (
-    <GradientBackground
-      colors={resolvedMode === 'dark' ? ['#0F172A', '#1E293B'] as const : ['#FEF2F2', '#FFF7ED', '#F8FAFC'] as const}
-    >
+    <GradientBackground colors={gradientColors}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom + Spacing.xxxl,
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 20,
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with back and share */}
-        <View style={[styles.header, { paddingHorizontal: Spacing.lg }]}>
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => router.back()}
@@ -202,141 +203,137 @@ export default function AlertDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ paddingHorizontal: Spacing.lg }}>
-          {/* Severity Badge */}
-          <View style={[styles.severityBadge, { backgroundColor: severityColor + '20' }]}>
-            <View style={[styles.severityDot, { backgroundColor: severityColor }]} />
-            <Text style={[styles.severityLabel, { color: severityColor }]}>
-              {SEVERITY_LABELS[alert.severity] ?? capitalizeWords(alert.severity)}
+        {/* Severity Badge */}
+        <View style={[styles.severityBadge, { backgroundColor: severityColor + '20' }]}>
+          <View style={[styles.severityDot, { backgroundColor: severityColor }]} />
+          <Text style={[styles.severityLabel, { color: severityColor }]}>
+            {SEVERITY_LABELS[alert.severity] ?? capitalizeWords(alert.severity)}
+          </Text>
+        </View>
+
+        {/* Alert Type + Title - LinearGradient Hero Card */}
+        <LinearGradient
+          colors={resolvedMode === 'dark' ? Gradients.cardDark : Gradients.card}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={[styles.typeIconContainer, { backgroundColor: severityColor + '20' }]}>
+            <DisasterIcon type={alert.type} size={32} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.typeName, { color: colors.textMuted }]}>
+              {capitalizeWords(alert.type)}
             </Text>
+            <Text style={[styles.alertTitle, { color: colors.text }]}>{alert.title}</Text>
           </View>
+        </LinearGradient>
 
-          {/* Alert Type + Title */}
-          <View style={[styles.typeRow, { backgroundColor: colors.surface }]}>
-            <View style={[styles.typeIconContainer, { backgroundColor: colors.surfaceVariant }]}>
-              <DisasterIcon type={alert.type} size={32} />
+        {/* Description - Glassmorphism Card */}
+        <View style={[styles.section, styles.glassCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
+            {alert.message}
+          </Text>
+        </View>
+
+        {/* Info Grid */}
+        <View style={styles.infoGrid}>
+          {[
+            { icon: 'time-outline', label: 'Created', value: formatDate(alert.startTime, 'long') },
+            { icon: 'refresh-outline', label: 'Last Updated', value: alert.endTime ? formatDate(alert.endTime, 'long') : 'Ongoing' },
+            { icon: 'navigate-outline', label: 'Distance', value: formatDistance(alert.radius) },
+            { icon: 'globe-outline', label: 'Source', value: alert.source },
+          ].map((item, i) => (
+            <View
+              key={i}
+              style={[styles.infoCard, styles.glassCard, { backgroundColor: colors.surface }]}
+            >
+              <Ionicons name={item.icon as any} size={18} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{item.label}</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{item.value}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.typeName, { color: colors.textMuted }]}>
-                {capitalizeWords(alert.type)}
-              </Text>
-              <Text style={[styles.alertTitle, { color: colors.text }]}>{alert.title}</Text>
+          ))}
+        </View>
+
+        {/* Affected Area - Glassmorphism Card */}
+        <View style={[styles.section, styles.glassCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Affected Area</Text>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
+            Coordinates: {alert.coordinates.latitude.toFixed(4)}, {alert.coordinates.longitude.toFixed(4)}
+            {'\n'}Radius: {formatDistance(alert.radius)}
+          </Text>
+        </View>
+
+        {/* Map Preview - Glassmorphism Card */}
+        <View style={[styles.mapPlaceholder, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+          <Ionicons name="map-outline" size={48} color={colors.textMuted} />
+          <Text style={[styles.mapPlaceholderText, { color: colors.textMuted }]}>Map View</Text>
+          <Text style={[styles.mapPlaceholderSub, { color: colors.textMuted }]}>
+            {alert.coordinates.latitude.toFixed(4)}, {alert.coordinates.longitude.toFixed(4)}
+          </Text>
+        </View>
+
+        {/* Safety Instructions - Glassmorphism Card */}
+        <View style={[styles.section, styles.glassCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.instructionHeader}>
+            <View style={[styles.instructionIconWrap, { backgroundColor: colors.success + '15' }]}>
+              <Ionicons name="shield-checkmark" size={20} color={colors.success} />
             </View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Safety Instructions</Text>
           </View>
-
-          {/* Description */}
-          <View style={[styles.section, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
-            <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
-              {alert.message}
-            </Text>
-          </View>
-
-          {/* Info Grid */}
-          <View style={styles.infoGrid}>
-            <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-              <Ionicons name="time-outline" size={18} color={colors.primary} />
-              <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Created</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {formatDate(alert.startTime, 'long')}
-              </Text>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-              <Ionicons name="refresh-outline" size={18} color={colors.primary} />
-              <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Last Updated</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {alert.endTime ? formatDate(alert.endTime, 'long') : 'Ongoing'}
-              </Text>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-              <Ionicons name="navigate-outline" size={18} color={colors.primary} />
-              <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Distance</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>
-                {formatDistance(alert.radius)}
-              </Text>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-              <Ionicons name="globe-outline" size={18} color={colors.primary} />
-              <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Source</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{alert.source}</Text>
-            </View>
-          </View>
-
-          {/* Affected Area */}
-          <View style={[styles.section, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Affected Area</Text>
-            <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
-              Coordinates: {alert.coordinates.latitude.toFixed(4)}, {alert.coordinates.longitude.toFixed(4)}
-              {'\n'}Radius: {formatDistance(alert.radius)}
-            </Text>
-          </View>
-
-          {/* Map Preview */}
-          <View style={[styles.mapPlaceholder, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-            <Ionicons name="map-outline" size={48} color={colors.textMuted} />
-            <Text style={[styles.mapPlaceholderText, { color: colors.textMuted }]}>Map View</Text>
-            <Text style={[styles.mapPlaceholderSub, { color: colors.textMuted }]}>
-              {alert.coordinates.latitude.toFixed(4)}, {alert.coordinates.longitude.toFixed(4)}
-            </Text>
-          </View>
-
-          {/* Safety Instructions */}
-          <View style={[styles.section, { backgroundColor: colors.surface }]}>
-            <View style={styles.instructionHeader}>
-              <Ionicons name="shield-checkmark" size={22} color={colors.success} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Safety Instructions</Text>
-            </View>
-            <View style={{ marginTop: Spacing.md }}>
-              <Text style={[styles.instructionSubtitle, { color: colors.success }]}>DO:</Text>
-              {instructions.dos.map((item, i) => (
-                <View key={i} style={styles.instructionRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                  <Text style={[styles.instructionText, { color: colors.textSecondary }]}>{item}</Text>
-                </View>
-              ))}
-            </View>
-            <View style={{ marginTop: Spacing.md }}>
-              <Text style={[styles.instructionSubtitle, { color: colors.error }]}>{"DON'T:"}</Text>
-              {instructions.donts.map((item, i) => (
-                <View key={i} style={styles.instructionRow}>
-                  <Ionicons name="close-circle" size={16} color={colors.error} />
-                  <Text style={[styles.instructionText, { color: colors.textSecondary }]}>{item}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Live Updates */}
-          <View style={[styles.section, { backgroundColor: colors.surface }]}>
-            <View style={styles.instructionHeader}>
-              <Ionicons name="pulse" size={22} color={colors.info} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Live Updates</Text>
-            </View>
-            {liveUpdates.length > 0 ? (
-              <View style={{ marginTop: Spacing.md }}>
-                {liveUpdates.map((update, i) => (
-                  <View key={i} style={styles.updateRow}>
-                    <View style={styles.updateTimeline}>
-                      <View style={[styles.updateDot, { backgroundColor: colors.info }]} />
-                      {i < liveUpdates.length - 1 && (
-                        <View style={[styles.updateLine, { backgroundColor: colors.border }]} />
-                      )}
-                    </View>
-                    <View style={styles.updateContent}>
-                      <Text style={[styles.updateMessage, { color: colors.text }]}>{update.message}</Text>
-                      <Text style={[styles.updateTime, { color: colors.textMuted }]}>
-                        {formatDate(update.time, 'long')}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
+          <View style={{ marginTop: 14 }}>
+            <Text style={[styles.instructionSubtitle, { color: colors.success }]}>DO:</Text>
+            {instructions.dos.map((item, i) => (
+              <View key={i} style={styles.instructionRow}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                <Text style={[styles.instructionText, { color: colors.textSecondary }]}>{item}</Text>
               </View>
-            ) : (
-              <Text style={[styles.noUpdates, { color: colors.textMuted }]}>
-                No live updates available at this time.
-              </Text>
-            )}
+            ))}
           </View>
+          <View style={{ marginTop: 14 }}>
+            <Text style={[styles.instructionSubtitle, { color: colors.error }]}>{"DON'T:"}</Text>
+            {instructions.donts.map((item, i) => (
+              <View key={i} style={styles.instructionRow}>
+                <Ionicons name="close-circle" size={16} color={colors.error} />
+                <Text style={[styles.instructionText, { color: colors.textSecondary }]}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Live Updates - Glassmorphism Card */}
+        <View style={[styles.section, styles.glassCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.instructionHeader}>
+            <View style={[styles.instructionIconWrap, { backgroundColor: colors.info + '15' }]}>
+              <Ionicons name="pulse" size={20} color={colors.info} />
+            </View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Live Updates</Text>
+          </View>
+          {liveUpdates.length > 0 ? (
+            <View style={{ marginTop: 14 }}>
+              {liveUpdates.map((update, i) => (
+                <View key={i} style={styles.updateRow}>
+                  <View style={styles.updateTimeline}>
+                    <View style={[styles.updateDot, { backgroundColor: colors.info }]} />
+                    {i < liveUpdates.length - 1 && (
+                      <View style={[styles.updateLine, { backgroundColor: colors.border }]} />
+                    )}
+                  </View>
+                  <View style={styles.updateContent}>
+                    <Text style={[styles.updateMessage, { color: colors.text }]}>{update.message}</Text>
+                    <Text style={[styles.updateTime, { color: colors.textMuted }]}>
+                      {formatDate(update.time, 'long')}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={[styles.noUpdates, { color: colors.textMuted }]}>
+              No live updates available at this time.
+            </Text>
+          )}
         </View>
       </ScrollView>
     </GradientBackground>
@@ -349,29 +346,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: Spacing.md,
-    marginBottom: Spacing.sm,
+    marginBottom: 14,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: 18,
     fontWeight: '700',
   },
   severityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
     gap: 6,
-    marginBottom: Spacing.md,
+    marginBottom: 14,
   },
   severityDot: {
     width: 8,
@@ -379,115 +380,136 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   severityLabel: {
-    fontSize: FontSizes.sm,
+    fontSize: 13,
     fontWeight: '700',
   },
-  typeRow: {
+  heroCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.xl,
-    marginBottom: Spacing.md,
-    ...Shadows.sm,
+    gap: 14,
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   typeIconContainer: {
     width: 56,
     height: 56,
-    borderRadius: BorderRadius.lg,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   typeName: {
-    fontSize: FontSizes.sm,
+    fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   alertTitle: {
-    fontSize: FontSizes.xxl,
+    fontSize: 22,
     fontWeight: '800',
     lineHeight: 28,
   },
   section: {
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-    ...Shadows.sm,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 12,
+  },
+  glassCard: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   sectionTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: 18,
     fontWeight: '700',
   },
   descriptionText: {
-    fontSize: FontSizes.md,
-    lineHeight: 22,
-    marginTop: Spacing.sm,
+    fontSize: 15,
+    lineHeight: 24,
+    marginTop: 8,
   },
   infoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    gap: 10,
+    marginBottom: 14,
   },
   infoCard: {
     width: '48%',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    gap: 4,
-    ...Shadows.sm,
+    borderRadius: 20,
+    padding: 14,
+    gap: 6,
   },
   infoLabel: {
-    fontSize: FontSizes.xs,
+    fontSize: 11,
     fontWeight: '500',
   },
   infoValue: {
-    fontSize: FontSizes.md,
+    fontSize: 14,
     fontWeight: '700',
   },
   mapPlaceholder: {
-    borderRadius: BorderRadius.xl,
+    borderRadius: 20,
     borderWidth: 1,
     borderStyle: 'dashed',
-    padding: Spacing.xxxl,
+    padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
+    marginBottom: 14,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   mapPlaceholderText: {
-    fontSize: FontSizes.lg,
+    fontSize: 16,
     fontWeight: '600',
   },
   mapPlaceholderSub: {
-    fontSize: FontSizes.sm,
+    fontSize: 13,
   },
   instructionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 10,
+  },
+  instructionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   instructionSubtitle: {
-    fontSize: FontSizes.md,
+    fontSize: 14,
     fontWeight: '700',
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   instructionRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-    paddingRight: Spacing.md,
+    gap: 8,
+    marginBottom: 10,
+    paddingRight: 12,
   },
   instructionText: {
-    fontSize: FontSizes.md,
+    fontSize: 14,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   updateRow: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    gap: 12,
   },
   updateTimeline: {
     alignItems: 'center',
@@ -506,19 +528,19 @@ const styles = StyleSheet.create({
   },
   updateContent: {
     flex: 1,
-    paddingBottom: Spacing.lg,
+    paddingBottom: 16,
   },
   updateMessage: {
-    fontSize: FontSizes.md,
+    fontSize: 15,
     fontWeight: '600',
   },
   updateTime: {
-    fontSize: FontSizes.sm,
+    fontSize: 13,
     marginTop: 2,
   },
   noUpdates: {
-    fontSize: FontSizes.md,
-    marginTop: Spacing.sm,
+    fontSize: 15,
+    marginTop: 12,
     textAlign: 'center',
   },
 });

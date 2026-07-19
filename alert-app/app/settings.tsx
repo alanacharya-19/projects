@@ -7,12 +7,14 @@ import {
   Switch,
   StyleSheet,
   Alert,
-  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/context/ThemeContext";
 import { useAppContext } from "@/context/AppContext";
-import { Shadows } from "@/constants/theme";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients } from "@/constants/theme";
 import { APP_CONFIG } from "@/constants/config";
 import type { ThemeMode, EmergencyContact, SavedLocation } from "@/types";
 import { AlertSeverity } from "@/types";
@@ -42,9 +44,12 @@ const SEVERITY_OPTIONS = [
 ];
 
 export default function SettingsScreen() {
-  const { colors, mode, setTheme } = useTheme();
+  const { colors, mode, setTheme, resolvedMode } = useTheme();
   const { state, updateSettings, updateNotificationPrefs } = useAppContext();
+  const insets = useSafeAreaInsets();
   const { settings } = state;
+
+  const isDark = resolvedMode === "dark";
 
   const [contacts] = useState<EmergencyContact[]>([
     { id: "1", name: "Mom", phoneNumber: "+91 98765 43210", relationship: "Family", isPrimary: true },
@@ -65,35 +70,86 @@ export default function SettingsScreen() {
     [notificationPrefs, updateNotificationPrefs]
   );
 
+  const glassBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+
   const renderSection = (title: string, children: React.ReactNode) => (
-    <View style={styles.section}>
-      <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{title}</Text>
-      <View style={[styles.sectionCard, { backgroundColor: colors.surface, ...Shadows.sm }]}>
+    <View style={{ marginBottom: 24 }}>
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "600",
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          color: colors.textMuted,
+          marginBottom: 8,
+          paddingHorizontal: 4,
+        }}
+      >
+        {title}
+      </Text>
+      <LinearGradient
+        colors={isDark ? Gradients.glassDark : Gradients.glass}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          borderRadius: 20,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: glassBorder,
+        }}
+      >
         {children}
-      </View>
+      </LinearGradient>
     </View>
   );
 
   const renderToggleRow = (label: string, value: boolean, onToggle: () => void, subtitle?: string) => (
-    <View style={[styles.row, { borderBottomColor: colors.border }]}>
-      <View style={styles.rowText}>
-        <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
-        {subtitle && <Text style={[styles.rowSublabel, { color: colors.textMuted }]}>{subtitle}</Text>}
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: dividerColor,
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontWeight: "500", color: colors.text }}>{label}</Text>
+        {subtitle && (
+          <Text style={{ fontSize: 12, marginTop: 2, color: colors.textMuted }}>{subtitle}</Text>
+        )}
       </View>
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: colors.surfaceVariant, true: colors.primary + "40" }}
+        trackColor={{ false: isDark ? "rgba(255,255,255,0.1)" : colors.surfaceVariant, true: colors.primary + "40" }}
         thumbColor={value ? colors.primary : colors.textMuted}
       />
     </View>
   );
 
   const renderArrowRow = (label: string, subtitle?: string, onPress?: () => void) => (
-    <TouchableOpacity style={[styles.row, { borderBottomColor: colors.border }]} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.rowText}>
-        <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
-        {subtitle && <Text style={[styles.rowSublabel, { color: colors.textMuted }]}>{subtitle}</Text>}
+    <TouchableOpacity
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: dividerColor,
+      }}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontWeight: "500", color: colors.text }}>{label}</Text>
+        {subtitle && (
+          <Text style={{ fontSize: 12, marginTop: 2, color: colors.textMuted }}>{subtitle}</Text>
+        )}
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </TouchableOpacity>
@@ -104,15 +160,34 @@ export default function SettingsScreen() {
     selected: T,
     onSelect: (key: T) => void
   ) => (
-    <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceVariant }]}>
+    <View
+      style={{
+        flexDirection: "row",
+        borderRadius: 12,
+        padding: 3,
+        backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+      }}
+    >
       {options.map((opt) => (
         <TouchableOpacity
           key={opt.key}
-          style={[styles.segmentOption, selected === opt.key && { backgroundColor: colors.primary }]}
+          style={{
+            flex: 1,
+            paddingVertical: 8,
+            borderRadius: 10,
+            alignItems: "center",
+            backgroundColor: selected === opt.key ? colors.primary : "transparent",
+          }}
           onPress={() => onSelect(opt.key)}
           activeOpacity={0.7}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: selected === opt.key ? "#FFFFFF" : colors.textMuted }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: selected === opt.key ? "#FFFFFF" : colors.textMuted,
+            }}
+          >
             {opt.label}
           </Text>
         </TouchableOpacity>
@@ -121,30 +196,55 @@ export default function SettingsScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="default" />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <GradientBackground colors={isDark ? Gradients.homeDark : Gradients.home}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 20,
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 20,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
-        </View>
+        <Text style={{ fontSize: 28, fontWeight: "700", color: colors.text, marginBottom: 24 }}>
+          Settings
+        </Text>
 
         {/* Profile Section */}
-        {renderSection("PROFILE",
-          <View style={[styles.profileRow, { borderBottomColor: colors.border }]}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>JD</Text>
+        {renderSection(
+          "PROFILE",
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: 16,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: dividerColor,
+            }}
+          >
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: colors.primary,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: "700", color: "#FFFFFF" }}>JD</Text>
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={[styles.profileName, { color: colors.text }]}>John Doe</Text>
-              <Text style={[styles.profileEmail, { color: colors.textMuted }]}>john.doe@email.com</Text>
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>John Doe</Text>
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>john.doe@email.com</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </View>
         )}
 
         {/* Notifications */}
-        {renderSection("NOTIFICATIONS",
+        {renderSection(
+          "NOTIFICATIONS",
           <>
             {renderToggleRow("Weather Alerts", settings.notificationPrefs.weatherAlerts, () => toggleNotification("weatherAlerts"))}
             {renderToggleRow("Earthquake Alerts", settings.notificationPrefs.earthquakes, () => toggleNotification("earthquakes"))}
@@ -156,32 +256,54 @@ export default function SettingsScreen() {
         )}
 
         {/* Alert Distance */}
-        {renderSection("ALERT DISTANCE",
-          <View style={[styles.row, { borderBottomColor: colors.border }]}>
-            <View style={styles.rowText}>
-              <Text style={[styles.rowLabel, { color: colors.text }]}>
+        {renderSection(
+          "ALERT DISTANCE",
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 14,
+              paddingHorizontal: 16,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.text }}>
                 Alert Radius: {Math.round(settings.alertDistance / 1000)}km
               </Text>
-              <Text style={[styles.rowSublabel, { color: colors.textMuted }]}>Receive alerts within this distance</Text>
+              <Text style={{ fontSize: 12, marginTop: 2, color: colors.textMuted }}>
+                Receive alerts within this distance
+              </Text>
             </View>
           </View>
         )}
 
         {/* Severity Threshold */}
-        {renderSection("SEVERITY THRESHOLD",
-          <View style={styles.severityGrid}>
+        {renderSection(
+          "SEVERITY THRESHOLD",
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 8,
+              paddingHorizontal: 16,
+              paddingBottom: 16,
+              paddingTop: 12,
+            }}
+          >
             {SEVERITY_OPTIONS.map((opt) => {
               const isSelected = settings.severityFilter.includes(opt.key);
               return (
                 <TouchableOpacity
                   key={opt.key}
-                  style={[
-                    styles.severityChip,
-                    {
-                      backgroundColor: isSelected ? colors.primary : colors.surfaceVariant,
-                      borderColor: isSelected ? colors.primary : "transparent",
-                    },
-                  ]}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 9999,
+                    borderWidth: 1.5,
+                    backgroundColor: isSelected ? colors.primary : "transparent",
+                    borderColor: isSelected ? colors.primary : isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
+                  }}
                   onPress={() => {
                     const updated = isSelected
                       ? settings.severityFilter.filter((s) => s !== opt.key)
@@ -190,7 +312,13 @@ export default function SettingsScreen() {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: isSelected ? "#FFFFFF" : colors.textMuted }}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: isSelected ? "#FFFFFF" : colors.textMuted,
+                    }}
+                  >
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -200,24 +328,47 @@ export default function SettingsScreen() {
         )}
 
         {/* Appearance */}
-        {renderSection("APPEARANCE",
+        {renderSection(
+          "APPEARANCE",
           <>
-            <View style={[styles.row, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.rowLabel, { color: colors.text }]}>Theme</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: dividerColor,
+              }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.text }}>Theme</Text>
             </View>
-            <View style={styles.themeRow}>
+            <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingBottom: 16, paddingTop: 12 }}>
               {THEME_OPTIONS.map((opt) => (
                 <TouchableOpacity
                   key={opt.key}
-                  style={[
-                    styles.themeBtn,
-                    { backgroundColor: mode === opt.key ? colors.primary : colors.surfaceVariant },
-                  ]}
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    paddingVertical: 12,
+                    borderRadius: 14,
+                    backgroundColor: mode === opt.key ? colors.primary : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"),
+                  }}
                   onPress={() => setTheme(opt.key)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name={opt.icon} size={20} color={mode === opt.key ? "#FFFFFF" : colors.textMuted} />
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: mode === opt.key ? "#FFFFFF" : colors.textMuted }}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: mode === opt.key ? "#FFFFFF" : colors.textMuted,
+                    }}
+                  >
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -227,72 +378,152 @@ export default function SettingsScreen() {
         )}
 
         {/* Units */}
-        {renderSection("UNITS",
+        {renderSection(
+          "UNITS",
           <>
-            <View style={[styles.row, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.rowLabel, { color: colors.text }]}>Temperature</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: dividerColor,
+              }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.text }}>Temperature</Text>
               {renderSegmentedControl(TEMP_UNITS, settings.temperatureUnit, (unit) => updateSettings({ temperatureUnit: unit }))}
             </View>
-            <View style={styles.row}>
-              <Text style={[styles.rowLabel, { color: colors.text }]}>Wind Speed</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+              }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: "500", color: colors.text }}>Wind Speed</Text>
               {renderSegmentedControl(WIND_UNITS, settings.windSpeedUnit, (unit) => updateSettings({ windSpeedUnit: unit }))}
             </View>
           </>
         )}
 
         {/* Saved Locations */}
-        {renderSection("SAVED LOCATIONS",
+        {renderSection(
+          "SAVED LOCATIONS",
           <>
             {savedLocations.map((loc) => (
-              <TouchableOpacity key={loc.id} style={[styles.locationRow, { borderBottomColor: colors.border }]} activeOpacity={0.7}>
-                <View style={[styles.locationIcon, { backgroundColor: colors.primary + "15" }]}>
+              <TouchableOpacity
+                key={loc.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: dividerColor,
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 14,
+                    backgroundColor: colors.primary + "15",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <Ionicons name={loc.isDefault ? "home" : "briefcase"} size={18} color={colors.primary} />
                 </View>
-                <View style={styles.locationInfo}>
-                  <Text style={[styles.locationName, { color: colors.text }]}>{loc.name}</Text>
-                  <Text style={[styles.locationAddress, { color: colors.textMuted }]}>{loc.address}</Text>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.text }}>{loc.name}</Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted }}>{loc.address}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.addBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                paddingVertical: 14,
+              }}
+              activeOpacity={0.7}
+            >
               <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-              <Text style={[styles.addBtnText, { color: colors.primary }]}>Add Location</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>Add Location</Text>
             </TouchableOpacity>
           </>
         )}
 
         {/* Emergency Contacts */}
-        {renderSection("EMERGENCY CONTACTS",
+        {renderSection(
+          "EMERGENCY CONTACTS",
           <>
             {contacts.map((contact) => (
-              <View key={contact.id} style={[styles.contactRow, { borderBottomColor: colors.border }]}>
-                <View style={[styles.contactAvatar, { backgroundColor: colors.secondary + "15" }]}>
-                  <Text style={[styles.contactInitials, { color: colors.secondary }]}>
+              <View
+                key={contact.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: dividerColor,
+                }}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: colors.secondary + "15",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.secondary }}>
                     {contact.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
                   </Text>
                 </View>
-                <View style={styles.contactInfo}>
-                  <Text style={[styles.contactName, { color: colors.text }]}>{contact.name}</Text>
-                  <Text style={[styles.contactPhone, { color: colors.textMuted }]}>{contact.phoneNumber}</Text>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.text }}>{contact.name}</Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted }}>{contact.phoneNumber}</Text>
                 </View>
-                <Text style={[styles.contactRelationship, { color: colors.textMuted }]}>{contact.relationship}</Text>
+                <Text style={{ fontSize: 12, color: colors.textMuted }}>{contact.relationship}</Text>
               </View>
             ))}
-            <TouchableOpacity style={styles.addBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                paddingVertical: 14,
+              }}
+              activeOpacity={0.7}
+            >
               <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-              <Text style={[styles.addBtnText, { color: colors.primary }]}>Add Contact</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>Add Contact</Text>
             </TouchableOpacity>
           </>
         )}
 
         {/* Language */}
-        {renderSection("LANGUAGE",
+        {renderSection(
+          "LANGUAGE",
           renderArrowRow("Language", "English (US)", () => Alert.alert("Language", "Language selection coming soon!"))
         )}
 
         {/* About */}
-        {renderSection("ABOUT",
+        {renderSection(
+          "ABOUT",
           <>
             {renderArrowRow("App Version", APP_CONFIG.VERSION)}
             {renderArrowRow("Privacy Policy", undefined, () => {})}
@@ -304,133 +535,6 @@ export default function SettingsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </GradientBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { padding: 20 },
-  header: { marginTop: 48, marginBottom: 24 },
-  headerTitle: { fontSize: 28, fontWeight: "800" },
-  section: { marginBottom: 24 },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-  sectionCard: { borderRadius: 20, overflow: "hidden" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowText: { flex: 1 },
-  rowLabel: { fontSize: 15, fontWeight: "500" },
-  rowSublabel: { fontSize: 12, marginTop: 2 },
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
-  profileInfo: { flex: 1, marginLeft: 14 },
-  profileName: { fontSize: 16, fontWeight: "700" },
-  profileEmail: { fontSize: 13 },
-  themeRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  themeBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    borderRadius: 14,
-  },
-  segmentedControl: {
-    flexDirection: "row",
-    borderRadius: 10,
-    padding: 2,
-  },
-  segmentOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  severityGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  severityChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  locationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  locationInfo: { flex: 1, marginLeft: 12 },
-  locationName: { fontSize: 15, fontWeight: "600" },
-  locationAddress: { fontSize: 12 },
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  contactAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  contactInitials: { fontSize: 13, fontWeight: "700" },
-  contactInfo: { flex: 1, marginLeft: 12 },
-  contactName: { fontSize: 15, fontWeight: "600" },
-  contactPhone: { fontSize: 12 },
-  contactRelationship: { fontSize: 12 },
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-  },
-  addBtnText: { fontSize: 14, fontWeight: "600" },
-});

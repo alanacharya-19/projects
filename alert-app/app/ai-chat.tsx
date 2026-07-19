@@ -11,8 +11,11 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
 import ChatBubble from "@/components/ChatBubble";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients } from "@/constants/theme";
 import { generateId, formatDate } from "@/utils/helpers";
 import type { ChatMessage } from "@/types";
 
@@ -46,7 +49,7 @@ function getAIResponse(message: string): string {
 }
 
 export default function AIChatScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -58,6 +61,8 @@ export default function AIChatScreen() {
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  const isDark = resolvedMode === "dark";
 
   const sendMessage = useCallback((text: string) => {
     if (!text.trim()) return;
@@ -76,104 +81,146 @@ export default function AIChatScreen() {
   const handleSuggestion = useCallback((suggestion: string) => sendMessage(suggestion), [sendMessage]);
 
   const chatColors = {
-    card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary,
-    textMuted: colors.textMuted, accent: colors.primary, userBubble: colors.primary, aiBubble: colors.surfaceVariant,
+    card: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)",
+    cardAlt: isDark ? "rgba(31,41,55,0.6)" : "rgba(255,255,255,0.6)",
+    text: colors.text,
+    textSecondary: colors.textSecondary,
+    textMuted: colors.textMuted,
+    accent: colors.primary,
+    userBubble: colors.primary,
+    aiBubble: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)",
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={0}
+    <GradientBackground
+      colors={isDark ? Gradients.homeDark : Gradients.home}
     >
-      <StatusBar barStyle="default" />
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.aiAvatar, { backgroundColor: colors.primary }]}>
-            <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
-          </View>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>AI Assistant</Text>
-            <Text style={[styles.headerStatus, { color: colors.success }]}>Online</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={({ item }) => (
-          <ChatBubble message={item.content} isUser={item.role === "user"} timestamp={formatDate(item.timestamp, "time")} colors={chatColors} />
-        )}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesList}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        ListFooterComponent={
-          isTyping ? (
-            <View style={styles.typingContainer}>
-              <View style={[styles.typingBubble, { backgroundColor: colors.surfaceVariant }]}>
-                <View style={styles.typingDots}>
-                  <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.4 }]} />
-                  <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.6 }]} />
-                  <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.8 }]} />
-                </View>
+        {/* Header */}
+        <LinearGradient
+          colors={isDark ? Gradients.glassDark : Gradients.glass}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.header}
+        >
+          <View style={styles.headerLeft}>
+            <LinearGradient
+              colors={isDark ? Gradients.primaryDark : Gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.aiAvatar}
+            >
+              <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
+            </LinearGradient>
+            <View>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>AI Assistant</Text>
+              <View style={styles.statusRow}>
+                <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
+                <Text style={[styles.headerStatus, { color: colors.success }]}>Online</Text>
               </View>
             </View>
-          ) : null
-        }
-      />
-
-      {/* Quick Suggestions */}
-      {messages.length <= 2 && (
-        <View style={styles.suggestionsContainer}>
-          <Text style={[styles.suggestionsTitle, { color: colors.textMuted }]}>Quick Questions</Text>
-          <View style={styles.suggestionsGrid}>
-            {QUICK_SUGGESTIONS.map((suggestion, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.suggestionChip, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
-                onPress={() => handleSuggestion(suggestion)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.suggestionText, { color: colors.text }]}>{suggestion}</Text>
-              </TouchableOpacity>
-            ))}
           </View>
-        </View>
-      )}
+        </LinearGradient>
 
-      {/* Input Bar */}
-      <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        <TextInput
-          style={[styles.textInput, { color: colors.text, backgroundColor: colors.surfaceVariant }]}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Ask me anything..."
-          placeholderTextColor={colors.textMuted}
-          multiline
-          maxLength={500}
-          returnKeyType="send"
-          onSubmitEditing={handleSend}
+        {/* Messages */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={({ item }) => (
+            <ChatBubble message={item.content} isUser={item.role === "user"} timestamp={formatDate(item.timestamp, "time")} colors={chatColors} />
+          )}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.messagesList}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          ListFooterComponent={
+            isTyping ? (
+              <View style={styles.typingContainer}>
+                <View style={[styles.typingBubble, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)" }]}>
+                  <View style={styles.typingDots}>
+                    <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.4 }]} />
+                    <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.6 }]} />
+                    <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.8 }]} />
+                  </View>
+                </View>
+              </View>
+            ) : null
+          }
         />
-        <TouchableOpacity
-          style={[styles.sendButton, { backgroundColor: inputText.trim() ? colors.primary : colors.surfaceVariant }]}
-          onPress={handleSend}
-          activeOpacity={0.7}
-          disabled={!inputText.trim()}
+
+        {/* Quick Suggestions */}
+        {messages.length <= 2 && (
+          <View style={styles.suggestionsContainer}>
+            <Text style={[styles.suggestionsTitle, { color: colors.textMuted }]}>Quick Questions</Text>
+            <View style={styles.suggestionsGrid}>
+              {QUICK_SUGGESTIONS.map((suggestion, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.suggestionChip, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)", borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
+                  onPress={() => handleSuggestion(suggestion)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.suggestionText, { color: colors.text }]}>{suggestion}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Input Bar */}
+        <LinearGradient
+          colors={isDark ? Gradients.glassDark : Gradients.glass}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.inputBar}
         >
-          <Ionicons name="send" size={20} color={inputText.trim() ? "#FFFFFF" : colors.textMuted} />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          <TextInput
+            style={[styles.textInput, { color: colors.text, backgroundColor: isDark ? "rgba(31,41,55,0.6)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Ask me anything..."
+            placeholderTextColor={colors.textMuted}
+            multiline
+            maxLength={500}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+          />
+          {inputText.trim() ? (
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={handleSend}
+              activeOpacity={0.7}
+            >
+              <LinearGradient
+                colors={isDark ? Gradients.primaryDark : Gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.sendButtonGradient}
+              >
+                <Ionicons name="send" size={20} color="#FFFFFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <View style={[styles.sendButton, { opacity: 0.4 }]}>
+              <View style={[styles.sendButtonGradient, { backgroundColor: colors.surfaceVariant }]}>
+                <Ionicons name="send" size={20} color={colors.textMuted} />
+              </View>
+            </View>
+          )}
+        </LinearGradient>
+      </KeyboardAvoidingView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  keyboardView: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -181,14 +228,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 56,
     paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  aiAvatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 16, fontWeight: "700" },
+  aiAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 17, fontWeight: "700" },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
   headerStatus: { fontSize: 13, fontWeight: "500" },
-  messagesList: { paddingVertical: 16, flexGrow: 1 },
-  typingContainer: { paddingHorizontal: 20, paddingVertical: 8 },
+  messagesList: { paddingVertical: 16, paddingHorizontal: 20, flexGrow: 1 },
+  typingContainer: { paddingVertical: 8 },
   typingBubble: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 6, alignSelf: "flex-start", maxWidth: "30%" },
   typingDots: { flexDirection: "row", gap: 4, alignItems: "center", height: 16 },
   typingDot: { width: 8, height: 8, borderRadius: 4 },
@@ -200,12 +248,12 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: 20,
-    gap: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 10,
   },
-  textInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 22, fontSize: 15, maxHeight: 100 },
-  sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  textInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 22, fontSize: 15, maxHeight: 100, borderWidth: 1 },
+  sendButton: { width: 44, height: 44, borderRadius: 22 },
+  sendButtonGradient: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
 });

@@ -10,9 +10,11 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
 import SearchBar from "@/components/SearchBar";
-import { Shadows } from "@/constants/theme";
+import GradientBackground from "@/components/GradientBackground";
+import { Gradients } from "@/constants/theme";
 import { getSeverityColor, getDisasterEmoji, formatDate } from "@/utils/helpers";
 import { AlertSeverity, DisasterType } from "@/types";
 
@@ -67,13 +69,15 @@ const TYPE_OPTIONS = [
 ];
 
 export default function GlobalFeedScreen() {
-  const { colors } = useTheme();
+  const { colors, resolvedMode } = useTheme();
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType | null>(null);
   const [selectedSeverity, setSelectedSeverity] = useState<AlertSeverity | null>(null);
   const [selectedType, setSelectedType] = useState<DisasterType | null>(null);
   const [showFilterOptions, setShowFilterOptions] = useState(false);
+
+  const isDark = resolvedMode === "dark";
 
   const filteredFeed = useMemo(() => {
     let items = MOCK_FEED;
@@ -101,7 +105,7 @@ export default function GlobalFeedScreen() {
     const options = activeFilter === "severity" ? SEVERITY_OPTIONS : activeFilter === "type" ? TYPE_OPTIONS : [];
     const selected = activeFilter === "severity" ? selectedSeverity : selectedType;
     return (
-      <View style={[styles.filterOptionsContainer, { backgroundColor: colors.surfaceVariant }]}>
+      <View style={[styles.filterOptionsContainer, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)" }]}>
         <View style={styles.filterOptionsHeader}>
           <Text style={[styles.filterOptionsTitle, { color: colors.text }]}>Filter by {activeFilter}</Text>
           <TouchableOpacity onPress={() => setShowFilterOptions(false)}>
@@ -112,7 +116,7 @@ export default function GlobalFeedScreen() {
           {options.map((opt) => (
             <TouchableOpacity
               key={opt.key}
-              style={[styles.filterOptionChip, { backgroundColor: selected === opt.key ? colors.primary : colors.surface, borderColor: selected === opt.key ? colors.primary : colors.border }]}
+              style={[styles.filterOptionChip, { backgroundColor: selected === opt.key ? colors.primary : isDark ? "rgba(31,41,55,0.6)" : "rgba(255,255,255,0.6)", borderColor: selected === opt.key ? colors.primary : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
               onPress={() => {
                 if (activeFilter === "severity") setSelectedSeverity(selectedSeverity === opt.key ? null : (opt.key as AlertSeverity));
                 else setSelectedType(selectedType === opt.key ? null : (opt.key as DisasterType));
@@ -128,39 +132,51 @@ export default function GlobalFeedScreen() {
   };
 
   const renderFeedItem = ({ item }: { item: FeedItem }) => (
-    <TouchableOpacity style={[styles.feedCard, { backgroundColor: colors.surface, ...Shadows.sm }]} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[
+        styles.feedCard,
+        { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)" },
+      ]}
+      activeOpacity={0.7}
+    >
       <View style={styles.feedCardTop}>
-        <Text style={styles.feedIcon}>{getDisasterEmoji(item.type)}</Text>
+        <View style={[styles.feedIconContainer, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)" }]}>
+          <Text style={styles.feedIcon}>{getDisasterEmoji(item.type)}</Text>
+        </View>
         <View style={styles.feedInfo}>
           <Text style={[styles.feedTitle, { color: colors.text }]}>{item.title}</Text>
           <Text style={[styles.feedLocation, { color: colors.textMuted }]}>{item.location}</Text>
         </View>
-        <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) + "20" }]}>
+        <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) + "18" }]}>
           <Text style={{ fontSize: 11, fontWeight: "700", color: getSeverityColor(item.severity), textTransform: "capitalize" }}>{item.severity}</Text>
         </View>
       </View>
       <Text style={[styles.feedDescription, { color: colors.textSecondary }]} numberOfLines={2}>{item.description}</Text>
-      <View style={[styles.feedFooter, { borderTopColor: colors.border }]}>
+      <View style={[styles.feedFooter, { borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}>
         <View style={styles.feedTime}>
           <Ionicons name="time-outline" size={14} color={colors.textMuted} />
           <Text style={[styles.feedTimeText, { color: colors.textMuted }]}>{formatDate(item.timestamp, "relative")}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        <View style={[styles.chevronContainer, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }]}>
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+        </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="default" />
+    <GradientBackground
+      colors={isDark ? Gradients.homeDark : Gradients.home}
+    >
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Global Feed</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>Real-time disaster events worldwide</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Real-time disaster events worldwide</Text>
       </View>
 
       <View style={styles.searchContainer}>
         <SearchBar value={search} onChangeText={setSearch} placeholder="Search disasters..."
-          colors={{ card: colors.surface, text: colors.text, textMuted: colors.textMuted, cardAlt: colors.surfaceVariant, accent: colors.primary }} />
+          colors={{ card: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)", text: colors.text, textMuted: colors.textMuted, cardAlt: isDark ? "rgba(31,41,55,0.6)" : "rgba(255,255,255,0.6)", accent: colors.primary }} />
       </View>
 
       <View style={styles.filtersRow}>
@@ -168,7 +184,17 @@ export default function GlobalFeedScreen() {
           {FILTER_OPTIONS.map((filter) => (
             <TouchableOpacity
               key={filter.key}
-              style={[styles.filterChip, { backgroundColor: activeFilter === filter.key ? colors.primary + "20" : colors.surfaceVariant, borderColor: activeFilter === filter.key ? colors.primary : "transparent" }]}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor: activeFilter === filter.key
+                    ? (isDark ? "rgba(129,140,248,0.2)" : "rgba(99,102,241,0.12)")
+                    : isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)",
+                  borderColor: activeFilter === filter.key
+                    ? colors.primary
+                    : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                },
+              ]}
               onPress={() => handleFilterPress(filter.key)}
               activeOpacity={0.7}
             >
@@ -177,7 +203,7 @@ export default function GlobalFeedScreen() {
             </TouchableOpacity>
           ))}
           {(selectedSeverity || selectedType) && (
-            <TouchableOpacity style={[styles.clearFilterChip, { borderColor: colors.error }]} onPress={clearFilters} activeOpacity={0.7}>
+            <TouchableOpacity style={[styles.clearFilterChip, { backgroundColor: isDark ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.08)", borderColor: colors.error }]} onPress={clearFilters} activeOpacity={0.7}>
               <Ionicons name="close-circle" size={14} color={colors.error} />
               <Text style={[styles.clearFilterText, { color: colors.error }]}>Clear</Text>
             </TouchableOpacity>
@@ -196,20 +222,22 @@ export default function GlobalFeedScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="globe-outline" size={48} color={colors.textMuted} />
+            <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)" }]}>
+              <Ionicons name="globe-outline" size={48} color={colors.textMuted} />
+            </View>
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>No disasters found</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>Try adjusting your search or filters</Text>
           </View>
         }
       />
-    </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16 },
   headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
-  headerSubtitle: { fontSize: 14 },
+  headerSubtitle: { fontSize: 14, fontWeight: "500" },
   searchContainer: { paddingHorizontal: 20, marginBottom: 12 },
   filtersRow: { marginBottom: 12 },
   filtersContent: { paddingHorizontal: 20, gap: 8 },
@@ -222,25 +250,29 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
   },
-  clearFilterChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5, backgroundColor: "#FEE2E2" },
+  clearFilterChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5 },
   clearFilterText: { fontSize: 13, fontWeight: "600" },
   filterOptionsContainer: { marginHorizontal: 20, marginBottom: 12, borderRadius: 20, padding: 16 },
   filterOptionsHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   filterOptionsTitle: { fontSize: 16, fontWeight: "700" },
   filterOptionsList: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   filterOptionChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5 },
-  listContent: { padding: 20, paddingTop: 8, gap: 10, paddingBottom: 60 },
+  listContent: { padding: 20, paddingTop: 8, gap: 12, paddingBottom: 60 },
   feedCard: { borderRadius: 20, padding: 16 },
   feedCardTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 12 },
-  feedIcon: { fontSize: 32 },
+  feedIconContainer: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  feedIcon: { fontSize: 26 },
   feedInfo: { flex: 1 },
-  feedTitle: { fontSize: 16, fontWeight: "700", marginBottom: 2 },
-  feedLocation: { fontSize: 13 },
+  feedTitle: { fontSize: 16, fontWeight: "700", marginBottom: 2, lineHeight: 22 },
+  feedLocation: { fontSize: 13, fontWeight: "500" },
   severityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   feedDescription: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
   feedFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
   feedTime: { flexDirection: "row", alignItems: "center", gap: 6 },
-  feedTimeText: { fontSize: 13 },
+  feedTimeText: { fontSize: 13, fontWeight: "500" },
+  chevronContainer: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   emptyContainer: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 16 },
+  emptyIconContainer: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
+  emptyText: { fontSize: 16, fontWeight: "600" },
+  emptySubtext: { fontSize: 13, fontWeight: "500" },
 });
