@@ -12,10 +12,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
-import { Shadows } from "@/constants/theme";
+import { Shadows, Gradients } from "@/constants/theme";
 import { APP_CONFIG } from "@/constants/config";
 import GradientBackground from "@/components/GradientBackground";
-import { Gradients } from "@/constants/theme";
 
 interface MenuItem {
   id: string;
@@ -45,7 +44,7 @@ export default function MoreScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
-    return resolvedMode === "dark" ? Gradients.profileDark : Gradients.profile;
+    return resolvedMode === "dark" ? Gradients.homeDark : Gradients.home;
   }, [resolvedMode]);
 
   const handleNavigate = useCallback(

@@ -10,7 +10,6 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
 import SearchBar from "@/components/SearchBar";
 import GradientBackground from "@/components/GradientBackground";

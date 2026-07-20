@@ -10,9 +10,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
-import { Shadows } from "@/constants/theme";
+import { Shadows, Gradients } from "@/constants/theme";
 import GradientBackground from "@/components/GradientBackground";
-import { Gradients } from "@/constants/theme";
 
 const LAYERS = [
   { key: "earthquake", label: "Earthquakes", color: "#EA580C" },
