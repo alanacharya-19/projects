@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AppProvider } from '@/context/AppContext';
 import { AlertProvider } from '@/context/AlertContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -55,12 +56,14 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AppProvider>
-        <AlertProvider>
-          <RootLayoutNav />
-        </AlertProvider>
-      </AppProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppProvider>
+          <AlertProvider>
+            <RootLayoutNav />
+          </AlertProvider>
+        </AppProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
