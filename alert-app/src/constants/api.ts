@@ -65,25 +65,6 @@ export const API_CONFIG = {
     },
   },
 
-  // Backend API
-  BACKEND: {
-    BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api',
-    TIMEOUT: 15000,
-    ENDPOINTS: {
-      AUTH: '/auth',
-      ALERTS: '/alerts',
-      USERS: '/users',
-      LOCATIONS: '/locations',
-      WEATHER: '/weather',
-      DISASTERS: '/disasters',
-      AI_CHAT: '/ai/chat',
-      AI_ASSESSMENT: '/ai/assessment',
-      NOTIFICATIONS: '/notifications',
-      SURVIVAL_GUIDES: '/survival-guides',
-      EMERGENCY_CONTACTS: '/emergency-contacts',
-      STATS: '/statistics',
-    },
-  },
 } as const;
 
 export const CACHE_DURATIONS = {

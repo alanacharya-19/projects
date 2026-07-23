@@ -40,6 +40,10 @@ function RootLayoutNav() {
           name="ai-chat"
           options={{ animation: 'slide_from_bottom' }}
         />
+        <Stack.Screen name="earthquake-monitor" />
+        <Stack.Screen name="flood-monitor" />
+        <Stack.Screen name="wildfire-monitor" />
+        <Stack.Screen name="alert/[id]" />
         <Stack.Screen
           name="+not-found"
           options={{

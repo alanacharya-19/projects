@@ -2,15 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
 
 interface SkeletonLoaderProps {
-  width?: number | string;
-  height?: number | string;
+  width?: number;
+  height?: number;
   borderRadius?: number;
   color?: string;
   style?: ViewStyle;
 }
 
 export default function SkeletonLoader({
-  width = '100%',
+  width = 100,
   height = 16,
   borderRadius = 8,
   color = '#334155',
