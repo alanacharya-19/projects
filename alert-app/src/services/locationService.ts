@@ -13,8 +13,7 @@ export async function getCurrentLocation(): Promise<UserLocation> {
   }
 
   const location = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-    timeInterval: 10_000,
+    accuracy: Location.Accuracy.High,
   });
 
   const coords: UserLocation = {
@@ -46,9 +45,9 @@ export function watchPosition(
 ): { remove: () => void } {
   const subscription = Location.watchPositionAsync(
     {
-      accuracy: Location.Accuracy.Balanced,
-      distanceInterval: 500,
-      timeInterval: 60_000,
+      accuracy: Location.Accuracy.High,
+      distanceInterval: 100,
+      timeInterval: 30_000,
     },
     async (location) => {
       const coords: UserLocation = {

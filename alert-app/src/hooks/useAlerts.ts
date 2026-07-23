@@ -18,7 +18,7 @@ interface UseAlertsReturn {
 
 export function useAlerts(): UseAlertsReturn {
   const { state, setAlerts } = useAppContext();
-  const { filteredAlerts, unreadCount } = useAlertContext();
+  const { filteredAlerts, unreadCount, setAlerts: setAlertContextAlerts } = useAlertContext();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAll = useCallback(async () => {
@@ -27,10 +27,10 @@ export function useAlerts(): UseAlertsReturn {
 
     try {
       const bbox = {
-        minLat: loc.latitude - 2,
-        minLon: loc.longitude - 2,
-        maxLat: loc.latitude + 2,
-        maxLon: loc.longitude + 2,
+        minLat: loc.latitude - 10,
+        minLon: loc.longitude - 10,
+        maxLat: loc.latitude + 10,
+        maxLon: loc.longitude + 10,
       };
 
       const results = await Promise.allSettled([
@@ -58,10 +58,11 @@ export function useAlerts(): UseAlertsReturn {
       withDistance.sort((a, b) => a.radius - b.radius);
 
       setAlerts(withDistance);
+      setAlertContextAlerts(withDistance);
     } catch {
       // Non-fatal; keep existing alerts
     }
-  }, [state.location, setAlerts]);
+  }, [state.location, setAlerts, setAlertContextAlerts]);
 
   const refresh = useCallback(async () => {
     await fetchAll();
