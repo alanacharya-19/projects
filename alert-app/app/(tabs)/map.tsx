@@ -7,7 +7,7 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
-import MapView, { Marker, PROVIDER_DEFAULT, type Region } from "react-native-maps";
+import MapView, { Marker, UrlTile, type Region } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/context/ThemeContext";
@@ -82,14 +82,17 @@ export default function MapScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <MapView
         style={styles.map}
-        provider={PROVIDER_DEFAULT}
         region={region}
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
         toolbarEnabled={false}
-        mapType={resolvedMode === "dark" ? "mutedStandard" : "standard"}
+        mapType="none"
       >
+        <UrlTile
+          urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png"
+          maximumZ={20}
+        />
         {filteredMarkers.map((marker) => (
           <Marker
             key={marker.id}
