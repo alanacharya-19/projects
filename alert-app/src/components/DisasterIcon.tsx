@@ -20,16 +20,16 @@ interface DisasterConfig {
 }
 
 const DISASTER_CONFIG: Record<DisasterType, DisasterConfig> = {
-  earthquake: { icon: "earth", color: "#92400E" },
-  flood: { icon: "water", color: "#1D4ED8" },
-  wildfire: { icon: "flame", color: "#DC2626" },
-  storm: { icon: "thunderstorm", color: "#7C3AED" },
-  tornado: { icon: "funnel", color: "#6B21A8" },
-  tsunami: { icon: "alert-circle", color: "#0369A1" },
-  heatwave: { icon: "sunny", color: "#EA580C" },
-  coldwave: { icon: "snow", color: "#0EA5E9" },
-  landslide: { icon: "triangle", color: "#78350F" },
-  volcano: { icon: "flash", color: "#B91C1C" },
+  earthquake: { icon: "earth", color: "#FF3B30" },
+  flood: { icon: "water", color: "#2EA8FF" },
+  wildfire: { icon: "flame", color: "#FF9800" },
+  storm: { icon: "thunderstorm", color: "#B000FF" },
+  tornado: { icon: "funnel", color: "#FF6B9D" },
+  tsunami: { icon: "alert-circle", color: "#0052CC" },
+  heatwave: { icon: "sunny", color: "#E65100" },
+  coldwave: { icon: "snow", color: "#00D4FF" },
+  landslide: { icon: "triangle", color: "#8D6E63" },
+  volcano: { icon: "flash", color: "#FF3B30" },
 };
 
 interface DisasterIconProps {

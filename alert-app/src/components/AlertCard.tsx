@@ -51,11 +51,13 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, onPress, colors }) => {
         borderRadius: 20,
         flexDirection: "row",
         overflow: "hidden",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.06)",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 10,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
       }}
     >
       <View

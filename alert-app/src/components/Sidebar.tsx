@@ -96,7 +96,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
     setTimeout(() => onNavigate(route), 150);
   };
 
-  const sidebarBg = isDark ? '#0F172A' : '#FFFFFF';
+  const sidebarBg = isDark ? '#0A1830' : '#FFFFFF';
   const dividerColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
 
   return (
@@ -125,7 +125,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
       >
         <View style={styles.sidebarHeader}>
           <LinearGradient
-            colors={isDark ? ['#818CF8', '#6366F1'] : ['#6366F1', '#4F46E5']}
+            colors={isDark ? ['#2EA8FF', '#00D4FF'] : ['#2EA8FF', '#1A8FEE']}
             style={styles.logoCircle}
           >
             <Ionicons name="shield-checkmark" size={28} color="#FFFFFF" />
@@ -153,8 +153,8 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                   styles.menuItem,
                   isActive && {
                     backgroundColor: isDark
-                      ? 'rgba(99, 102, 241, 0.15)'
-                      : 'rgba(99, 102, 241, 0.08)',
+                      ? 'rgba(46, 168, 255, 0.12)'
+                      : 'rgba(46, 168, 255, 0.08)',
                   },
                 ]}
                 activeOpacity={0.6}

@@ -36,9 +36,11 @@ const WeatherMetric: React.FC<WeatherMetricProps> = ({
         padding: 18,
         alignItems: "center",
         gap: 12,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.06)",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.08,
         shadowRadius: 8,
         elevation: 3,
       }}

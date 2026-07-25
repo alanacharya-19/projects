@@ -56,7 +56,7 @@ export default function FloatingMapButton({ onPress, bottom }: FloatingMapButton
     >
       <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={styles.button}>
         <LinearGradient
-          colors={['#6366F1', '#4F46E5']}
+          colors={['#2EA8FF', '#1A8FEE']}
           style={styles.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}

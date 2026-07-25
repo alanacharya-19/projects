@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+﻿import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   RefreshControl,
   FlatList,
   TouchableOpacity,
+  Linking,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -17,7 +19,6 @@ import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
 import { useWeather } from '@/hooks/useWeather';
 
-import WeatherMetric from '@/components/WeatherMetric';
 import AlertCard, { type AlertData, type AlertSeverity as AlertCardSeverity } from '@/components/AlertCard';
 import ForecastItem from '@/components/ForecastItem';
 import SectionHeader from '@/components/SectionHeader';
@@ -26,9 +27,8 @@ import GradientBackground from '@/components/GradientBackground';
 import Sidebar from '@/components/Sidebar';
 import FloatingMapButton from '@/components/FloatingMapButton';
 
-import { formatDate, capitalizeWords, getWindDirection } from '@/utils/helpers';
+import { formatDate, capitalizeWords } from '@/utils/helpers';
 import { Gradients } from '@/constants/theme';
-
 
 function getWeatherIonicon(iconCode: string): keyof typeof Ionicons.glyphMap {
   const isNight = iconCode.endsWith('n');
@@ -63,19 +63,46 @@ function getAQIColor(aqi: number): string {
   return '#7C2D12';
 }
 
-function formatSunTime(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
 }
+
+const DISASTER_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+  earthquake: 'pulse',
+  wildfire: 'flame',
+  flood: 'water',
+  hurricane: 'cloudy',
+  tornado: 'thunderstorm',
+  tsunami: 'water',
+  landslide: 'triangle',
+  lightning: 'flash',
+  snowstorm: 'snow',
+  heatwave: 'thermometer',
+  cyclone: 'cloudy',
+  cold_wave: 'snow',
+  weather: 'cloud',
+  air_quality: 'leaf',
+  custom: 'alert-circle',
+};
+
+function glassCardStyle(isDark: boolean) {
+  return {
+    backgroundColor: isDark ? 'rgba(16,33,59,0.7)' : 'rgba(255,255,255,0.85)',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+    borderRadius: 20,
+  };
+}
+
+const EMERGENCY_SERVICES = [
+  { key: 'hospital', label: 'Hospital', icon: 'medkit' as const, color: '#FF3B30', route: '/nearby-services' },
+  { key: 'police', label: 'Police', icon: 'shield' as const, color: '#2EA8FF', route: '/nearby-services' },
+  { key: 'fire', label: 'Fire Station', icon: 'flame' as const, color: '#FF9800', route: '/nearby-services' },
+  { key: 'shelter', label: 'Shelter', icon: 'home' as const, color: '#00C853', route: '/nearby-services' },
+];
 
 export default function HomeScreen() {
   const { colors, resolvedMode } = useTheme();
@@ -88,8 +115,42 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
   const weather = state.weather;
   const location = state.location;
+  const isDark = resolvedMode === 'dark';
+  const userName = 'Alan';
+
+  const activeAlerts = useMemo(() => {
+    return filteredAlerts.filter((a) => !a.isDismissed);
+  }, [filteredAlerts]);
+
+  const alertCards = useMemo((): AlertData[] => {
+    return activeAlerts.slice(0, 5).map((alert) => ({
+      id: alert.id,
+      title: alert.title,
+      description: alert.message,
+      severity: alert.severity as AlertCardSeverity,
+      type: alert.type,
+      timeAgo: formatDate(alert.startTime, 'relative'),
+      distance: '',
+    }));
+  }, [activeAlerts]);
+
+  const alertCount = activeAlerts.length;
+  const hasSevereAlerts = alertCount > 0;
+
+  useEffect(() => {
+    if (hasSevereAlerts) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.06, duration: 1200, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        ])
+      ).start();
+    }
+  }, [hasSevereAlerts]);
 
   const locationName = useMemo(() => {
     if (!location) return 'Locating...';
@@ -111,6 +172,10 @@ export default function HomeScreen() {
     router.push('/alerts' as any);
   }, [router]);
 
+  const goToMap = useCallback(() => {
+    router.push('/map' as any);
+  }, [router]);
+
   const handleNavigate = useCallback(
     (route: string) => {
       if (route === '/') return;
@@ -118,60 +183,6 @@ export default function HomeScreen() {
     },
     [router],
   );
-
-  const alertCards = useMemo((): AlertData[] => {
-    return filteredAlerts
-      .filter((a) => !a.isDismissed)
-      .slice(0, 5)
-      .map((alert) => ({
-        id: alert.id,
-        title: alert.title,
-        description: alert.message,
-        severity: alert.severity as AlertCardSeverity,
-        type: alert.type,
-        timeAgo: formatDate(alert.startTime, 'relative'),
-        distance: '',
-      }));
-  }, [filteredAlerts]);
-
-  const nextRainChance = useMemo(() => {
-    if (hourlyForecast.length === 0) return null;
-    for (const h of hourlyForecast.slice(0, 12)) {
-      if (h.precipitationProbability > 0) return h.precipitationProbability;
-    }
-    return hourlyForecast[0]?.precipitationProbability ?? 0;
-  }, [hourlyForecast]);
-
-  const aiSummary = useMemo(() => {
-    if (!weather) return null;
-    const { current } = weather;
-    const highlights: string[] = [];
-    const warnings: string[] = [];
-
-    if (current.temperature > 35) warnings.push('Extreme heat conditions. Stay hydrated.');
-    else if (current.temperature > 30) highlights.push('Warm temperatures expected today.');
-    else if (current.temperature < 5) warnings.push('Cold conditions. Dress warmly.');
-    else if (current.temperature < 15) highlights.push('Cool and comfortable temperatures.');
-
-    if (current.humidity > 80) highlights.push('High humidity levels throughout the day.');
-    if (current.windSpeed > 40) warnings.push('Strong winds may cause disruptions.');
-    if (uvIndex && uvIndex > 7) warnings.push('Very high UV index. Limit sun exposure.');
-    else if (uvIndex && uvIndex > 5) highlights.push('Moderate to high UV. Use sunscreen.');
-    if (airQuality && airQuality.aqi > 150) warnings.push('Poor air quality. Avoid outdoor activities.');
-    else if (airQuality && airQuality.aqi > 100) highlights.push('Moderate air quality.');
-
-    if (filteredAlerts.filter((a) => !a.isDismissed).length > 0) {
-      warnings.push(`${filteredAlerts.filter((a) => !a.isDismissed).length} active alerts in your area.`);
-    }
-
-    if (highlights.length === 0) highlights.push('Generally calm weather conditions expected.');
-
-    return {
-      summary: `${capitalizeWords(current.description)} with a high of ${Math.round(current.temperature)}° and low of ${Math.round(dailyForecast[0]?.tempLow ?? current.temperature - 5)}°. ${capitalizeWords(current.description)} conditions will persist.`,
-      highlights,
-      warnings,
-    };
-  }, [weather, uvIndex, airQuality, filteredAlerts, dailyForecast]);
 
   const renderHourlyItem = useCallback(
     ({ item, index }: { item: typeof hourlyForecast[number]; index: number }) => (
@@ -192,12 +203,12 @@ export default function HomeScreen() {
         }}
       />
     ),
-    [colors]
+    [colors],
   );
 
   const hourlyKeyExtractor = useCallback(
     (item: typeof hourlyForecast[number], index: number) => `${item.time}-${index}`,
-    []
+    [],
   );
 
   if (isLoading && !weather) {
@@ -240,13 +251,13 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Header with hamburger menu */}
+        {/* === SECTION 1: Header Bar === */}
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 16,
+            marginBottom: 20,
           }}
         >
           <TouchableOpacity
@@ -255,8 +266,8 @@ export default function HomeScreen() {
             style={{
               width: 44,
               height: 44,
+              ...glassCardStyle(isDark),
               borderRadius: 14,
-              backgroundColor: colors.surface,
               alignItems: 'center',
               justifyContent: 'center',
               shadowColor: '#000',
@@ -277,7 +288,7 @@ export default function HomeScreen() {
               letterSpacing: -0.3,
             }}
           >
-            Home
+            Disaster Alert
           </Text>
 
           <TouchableOpacity
@@ -286,8 +297,8 @@ export default function HomeScreen() {
             style={{
               width: 44,
               height: 44,
+              ...glassCardStyle(isDark),
               borderRadius: 14,
-              backgroundColor: colors.surface,
               alignItems: 'center',
               justifyContent: 'center',
               shadowColor: '#000',
@@ -298,571 +309,499 @@ export default function HomeScreen() {
             }}
           >
             <Ionicons name="notifications-outline" size={22} color={colors.text} />
-            {alertCards.length > 0 && (
+            {alertCount > 0 && (
               <View
                 style={{
                   position: 'absolute',
                   top: 8,
                   right: 8,
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: colors.error,
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  backgroundColor: '#FF3B30',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 4,
                   borderWidth: 2,
-                  borderColor: colors.surface,
+                  borderColor: isDark ? '#081426' : '#F0F2F5',
                 }}
-              />
+              >
+                <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFF' }}>
+                  {alertCount > 99 ? '99+' : alertCount}
+                </Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Greeting + location */}
+        {/* === SECTION 2: Greeting + Safety Status === */}
         <Text
           style={{
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: '700',
             color: colors.text,
-            marginBottom: 4,
+            marginBottom: 12,
+            letterSpacing: -0.5,
           }}
         >
-          {getGreeting()} 👋
+          {getGreeting()}, {userName}
         </Text>
-        <Text
+
+        <Animated.View
           style={{
-            fontSize: 15,
-            color: colors.textSecondary,
-            marginBottom: 16,
-            fontWeight: '500',
+            transform: [{ scale: pulseAnim }],
+            alignSelf: 'flex-start',
+            marginBottom: 20,
           }}
         >
-          {locationName}
-        </Text>
-
-        {weather && (
-          <>
-            <LinearGradient
-              colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              paddingHorizontal: 18,
+              paddingVertical: 10,
+              borderRadius: 30,
+              backgroundColor: hasSevereAlerts
+                ? isDark ? 'rgba(255,59,48,0.2)' : 'rgba(255,59,48,0.1)'
+                : isDark ? 'rgba(0,200,83,0.2)' : 'rgba(0,200,83,0.1)',
+              borderWidth: 1,
+              borderColor: hasSevereAlerts
+                ? 'rgba(255,59,48,0.4)'
+                : 'rgba(0,200,83,0.4)',
+            }}
+          >
+            <View
               style={{
-                borderRadius: 24,
-                padding: 28,
-                alignItems: 'center',
-                marginTop: 8,
-                marginBottom: 24,
-                shadowColor: '#2563EB',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.3,
-                shadowRadius: 24,
-                elevation: 12,
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: hasSevereAlerts ? '#FF3B30' : '#00C853',
+                shadowColor: hasSevereAlerts ? '#FF3B30' : '#00C853',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 6,
+                elevation: 4,
+              }}
+            />
+            <Ionicons
+              name={hasSevereAlerts ? 'warning' : 'shield-checkmark'}
+              size={16}
+              color={hasSevereAlerts ? '#FF3B30' : '#00C853'}
+            />
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '700',
+                color: hasSevereAlerts ? '#FF3B30' : '#00C853',
+                letterSpacing: 1,
               }}
             >
-              <Ionicons
-                name={getWeatherIonicon(weather.current.icon)}
-                size={72}
-                color="#FFFFFF"
-                style={{ marginBottom: 12 }}
-              />
-              <Text
-                style={{
-                  fontSize: 80,
-                  fontWeight: '200',
-                  color: '#FFFFFF',
-                  letterSpacing: -4,
-                  lineHeight: 88,
-                }}
-              >
-                {Math.round(weather.current.temperature)}°
-              </Text>
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: '600',
-                  color: 'rgba(255,255,255,0.95)',
-                  marginTop: 4,
-                  textTransform: 'capitalize',
-                }}
-              >
-                {capitalizeWords(weather.current.description)}
-              </Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginTop: 8,
-                  gap: 6,
-                }}
-              >
-                <Ionicons name="location" size={16} color="rgba(255,255,255,0.7)" />
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: 'rgba(255,255,255,0.7)',
-                    fontWeight: '500',
-                  }}
-                >
-                  {locationName}
-                </Text>
-              </View>
-              <View
-                style={{
-                  marginTop: 14,
-                  paddingHorizontal: 18,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: 'rgba(255,255,255,0.85)',
-                    fontWeight: '500',
-                  }}
-                >
-                  Feels like {Math.round(weather.current.feelsLike)}°
-                </Text>
-              </View>
-            </LinearGradient>
+              {hasSevereAlerts ? `${alertCount} ALERT${alertCount > 1 ? 'S' : ''}` : 'SAFE'}
+            </Text>
+          </View>
+        </Animated.View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                gap: 10,
-                paddingBottom: 8,
-                marginBottom: 24,
+        {/* === SECTION 3: Current Weather Hero Card === */}
+        {weather && (
+          <LinearGradient
+            colors={resolvedMode === 'dark' ? Gradients.heroCardDark : Gradients.heroCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 24,
+              padding: 24,
+              alignItems: 'center',
+              marginBottom: 20,
+              shadowColor: '#2563EB',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 24,
+              elevation: 12,
+            }}
+          >
+            <Ionicons
+              name={getWeatherIonicon(weather.current.icon)}
+              size={64}
+              color="#FFFFFF"
+              style={{ marginBottom: 8 }}
+            />
+            <Text
+              style={{
+                fontSize: 56,
+                fontWeight: '200',
+                color: '#FFFFFF',
+                letterSpacing: -3,
+                lineHeight: 62,
               }}
             >
-              <View style={{ width: 150 }}>
-                <WeatherMetric
-                  icon="leaf"
-                  label="Air Quality"
-                  value={airQuality ? `AQI ${airQuality.aqi}` : '--'}
-                  color={airQuality ? getAQIColor(airQuality.aqi) : colors.textMuted}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
-                    icon: colors.primary,
-                    accent: colors.primary,
-                    barTrack: colors.border,
-                  }}
-                />
-              </View>
-              <View style={{ width: 150 }}>
-                <WeatherMetric
-                  icon="sunny"
-                  label="UV Index"
-                  value={uvIndex !== null ? `${uvIndex}` : '--'}
-                  color={uvIndex !== null ? getUVColor(uvIndex) : colors.textMuted}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
-                    icon: colors.primary,
-                    accent: colors.primary,
-                    barTrack: colors.border,
-                  }}
-                />
-              </View>
-              <View style={{ width: 150 }}>
-                <WeatherMetric
-                  icon="water"
-                  label="Humidity"
-                  value={`${weather.current.humidity}%`}
-                  color={colors.info}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
-                    icon: colors.primary,
-                    accent: colors.primary,
-                    barTrack: colors.border,
-                  }}
-                />
-              </View>
-              <View style={{ width: 150 }}>
-                <WeatherMetric
-                  icon="navigate"
-                  label="Wind Speed"
-                  value={`${Math.round(weather.current.windSpeed)} km/h ${getWindDirection(weather.current.windDirection)}`}
-                  color={colors.primary}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
-                    icon: colors.primary,
-                    accent: colors.primary,
-                    barTrack: colors.border,
-                  }}
-                />
-              </View>
-            </ScrollView>
-
+              {Math.round(weather.current.temperature)}°
+            </Text>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: '600',
+                color: 'rgba(255,255,255,0.95)',
+                marginTop: 2,
+                textTransform: 'capitalize',
+              }}
+            >
+              {capitalizeWords(weather.current.description)}
+            </Text>
             <View
               style={{
                 flexDirection: 'row',
-                gap: 12,
-                marginBottom: 24,
+                alignItems: 'center',
+                marginTop: 6,
+                gap: 6,
               }}
             >
-              <View style={{ flex: 1 }}>
-                <WeatherMetric
-                  icon="rainy"
-                  label="Rain Chance"
-                  value={nextRainChance !== null ? `${nextRainChance}%` : '0%'}
-                  color={colors.info}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
-                    icon: colors.primary,
-                    accent: colors.primary,
-                    barTrack: colors.border,
-                  }}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <WeatherMetric
-                  icon="sunny"
-                  label="Sunrise / Sunset"
-                  value={`${formatSunTime(weather.current.sunrise)} / ${formatSunTime(weather.current.sunset)}`}
-                  color={colors.warning}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
-                    icon: colors.primary,
-                    accent: colors.primary,
-                    barTrack: colors.border,
-                  }}
-                />
-              </View>
+              <Ionicons name="location" size={14} color="rgba(255,255,255,0.7)" />
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: 'rgba(255,255,255,0.7)',
+                  fontWeight: '500',
+                }}
+              >
+                {locationName}
+              </Text>
             </View>
+            <View
+              style={{
+                marginTop: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 6,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: 'rgba(255,255,255,0.85)',
+                  fontWeight: '500',
+                }}
+              >
+                Feels like {Math.round(weather.current.feelsLike)}°
+              </Text>
+            </View>
+          </LinearGradient>
+        )}
 
+        {/* === SECTION 4: Quick Stats Row === */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+          <View style={{ flex: 1 }}>
+            <View style={[glassCardStyle(isDark), { padding: 14, alignItems: 'center' }]}>
+              <Ionicons name="leaf" size={20} color={airQuality ? getAQIColor(airQuality.aqi) : colors.textMuted} />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: colors.text,
+                  marginTop: 6,
+                }}
+              >
+                {airQuality ? airQuality.aqi : '--'}
+              </Text>
+              <Text style={{ fontSize: 10, color: colors.textMuted, fontWeight: '500', marginTop: 2 }}>AQI</Text>
+              <View
+                style={{
+                  width: 28,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: airQuality ? getAQIColor(airQuality.aqi) : colors.border,
+                  marginTop: 6,
+                }}
+              />
+            </View>
+          </View>
+          <View style={{ flex: 1 }}>
+            <View style={[glassCardStyle(isDark), { padding: 14, alignItems: 'center' }]}>
+              <Ionicons name="sunny" size={20} color={uvIndex !== null ? getUVColor(uvIndex) : colors.textMuted} />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: colors.text,
+                  marginTop: 6,
+                }}
+              >
+                {uvIndex !== null ? uvIndex : '--'}
+              </Text>
+              <Text style={{ fontSize: 10, color: colors.textMuted, fontWeight: '500', marginTop: 2 }}>UV</Text>
+              <View
+                style={{
+                  width: 28,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: uvIndex !== null ? getUVColor(uvIndex) : colors.border,
+                  marginTop: 6,
+                }}
+              />
+            </View>
+          </View>
+          <View style={{ flex: 1 }}>
+            <View style={[glassCardStyle(isDark), { padding: 14, alignItems: 'center' }]}>
+              <Ionicons name="water" size={20} color={colors.info} />
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: '700',
+                  color: colors.text,
+                  marginTop: 6,
+                }}
+              >
+                {weather ? `${weather.current.humidity}%` : '--'}
+              </Text>
+              <Text style={{ fontSize: 10, color: colors.textMuted, fontWeight: '500', marginTop: 2 }}>Humidity</Text>
+              <View
+                style={{
+                  width: 28,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: colors.info,
+                  marginTop: 6,
+                }}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* === SECTION 5: Live Map CTA === */}
+        <TouchableOpacity activeOpacity={0.85} onPress={goToMap}>
+          <LinearGradient
+            colors={isDark ? ['#0D2F4F', '#1A5276'] : ['#1A5276', '#2EA8FF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 20,
+              padding: 18,
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: 20,
+              shadowColor: '#2EA8FF',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 12,
+              elevation: 6,
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 14,
+              }}
+            >
+              <Ionicons name="map" size={24} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Open Live Map</Text>
+              <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                View disaster zones, shelters & more
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* === SECTION 6: Nearby Disasters === */}
+        <SectionHeader
+          title={`Nearby Disasters${alertCount > 0 ? ` (${alertCount})` : ''}`}
+          actionText="See All"
+          onAction={goToAlerts}
+          colors={{
+            text: colors.text,
+            accent: colors.primary,
+            textMuted: colors.textMuted,
+          }}
+        />
+
+        {alertCards.length > 0 ? (
+          <View style={{ gap: 10, marginBottom: 20 }}>
+            {alertCards.map((alert) => (
+              <AlertCard
+                key={alert.id}
+                alert={alert}
+                onPress={() => goToAlerts()}
+                colors={{
+                  card: colors.surface,
+                  cardAlt: colors.surfaceVariant,
+                  text: colors.text,
+                  textSecondary: colors.textSecondary,
+                  textMuted: colors.textMuted,
+                  severityExtreme: colors.error,
+                  severitySevere: '#F97316',
+                  severityModerate: colors.warning,
+                  severityMinor: colors.info,
+                  divider: colors.divider,
+                }}
+              />
+            ))}
+          </View>
+        ) : (
+          <View
+            style={[
+              glassCardStyle(isDark),
+              {
+                padding: 24,
+                alignItems: 'center',
+                marginBottom: 20,
+                gap: 8,
+              },
+            ]}
+          >
+            <Ionicons name="checkmark-circle" size={32} color={colors.success} />
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.textSecondary,
+                fontWeight: '500',
+              }}
+            >
+              No active alerts in your area
+            </Text>
+          </View>
+        )}
+
+        {/* === SECTION 7: Emergency Services Row === */}
+        <SectionHeader
+          title="Emergency Services"
+          colors={{
+            text: colors.text,
+            accent: colors.primary,
+            textMuted: colors.textMuted,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 10,
+            marginBottom: 20,
+          }}
+        >
+          {EMERGENCY_SERVICES.map((svc) => (
+            <TouchableOpacity
+              key={svc.key}
+              activeOpacity={0.7}
+              onPress={() => router.push(svc.route as any)}
+              style={{
+                width: '48%',
+                flexGrow: 1,
+                minWidth: '47%',
+              }}
+            >
+              <View
+                style={[
+                  glassCardStyle(isDark),
+                  {
+                    padding: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: isDark
+                      ? `${svc.color}22`
+                      : `${svc.color}18`,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name={svc.icon} size={20} color={svc.color} />
+                </View>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '600',
+                    color: colors.text,
+                    flex: 1,
+                  }}
+                >
+                  {svc.label}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* === Hourly Forecast === */}
+        {hourlyForecast.length > 0 && (
+          <>
             <SectionHeader
-              title="Active Alerts"
-              actionText="See All"
-              onAction={goToAlerts}
+              title="Hourly Forecast"
               colors={{
                 text: colors.text,
                 accent: colors.primary,
                 textMuted: colors.textMuted,
               }}
             />
-
-            {alertCards.length > 0 ? (
-              <View style={{ gap: 10, marginBottom: 24 }}>
-                {alertCards.map((alert) => (
-                  <AlertCard
-                    key={alert.id}
-                    alert={alert}
-                    onPress={() => goToAlerts()}
-                    colors={{
-                      card: colors.surface,
-                      cardAlt: colors.surfaceVariant,
-                      text: colors.text,
-                      textSecondary: colors.textSecondary,
-                      textMuted: colors.textMuted,
-                      severityExtreme: colors.error,
-                      severitySevere: '#F97316',
-                      severityModerate: colors.warning,
-                      severityMinor: colors.info,
-                      divider: colors.divider,
-                    }}
-                  />
-                ))}
-              </View>
-            ) : (
-              <View
-                style={{
-                  backgroundColor: colors.surface,
-                  borderRadius: 16,
-                  padding: 24,
-                  alignItems: 'center',
-                  marginBottom: 24,
-                  gap: 8,
-                }}
-              >
-                <Ionicons name="checkmark-circle" size={32} color={colors.success} />
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.textSecondary,
-                    fontWeight: '500',
-                  }}
-                >
-                  No active alerts in your area
-                </Text>
-              </View>
-            )}
-
-            {hourlyForecast.length > 0 && (
-              <>
-                <SectionHeader
-                  title="Hourly Forecast"
-                  colors={{
-                    text: colors.text,
-                    accent: colors.primary,
-                    textMuted: colors.textMuted,
-                  }}
-                />
-                <FlatList
-                  data={hourlyForecast.slice(0, 24)}
-                  renderItem={renderHourlyItem}
-                  keyExtractor={hourlyKeyExtractor}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 10, paddingBottom: 8 }}
-                  style={{ marginBottom: 24 }}
-                />
-              </>
-            )}
-
-            {dailyForecast.length > 0 && (
-              <>
-                <SectionHeader
-                  title="7-Day Forecast"
-                  colors={{
-                    text: colors.text,
-                    accent: colors.primary,
-                    textMuted: colors.textMuted,
-                  }}
-                />
-                <View
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 20,
-                    padding: 4,
-                    marginBottom: 24,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 8,
-                    elevation: 3,
-                  }}
-                >
-                  {dailyForecast.slice(0, 7).map((day, index) => (
-                    <View
-                      key={day.date}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        paddingVertical: 14,
-                        paddingHorizontal: 14,
-                        borderBottomWidth: index < 6 ? 1 : 0,
-                        borderBottomColor: colors.border,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          fontWeight: index === 0 ? '700' : '500',
-                          color: index === 0 ? colors.primary : colors.text,
-                          width: 52,
-                        }}
-                      >
-                        {index === 0 ? 'Today' : day.dayName}
-                      </Text>
-                      <Ionicons
-                        name={getWeatherIonicon(day.icon)}
-                        size={22}
-                        color={colors.text}
-                        style={{ width: 30 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: colors.textMuted,
-                          width: 32,
-                          textAlign: 'right',
-                        }}
-                      >
-                        {Math.round(day.tempLow)}°
-                      </Text>
-                      <View
-                        style={{
-                          flex: 1,
-                          marginHorizontal: 12,
-                          height: 5,
-                          borderRadius: 3,
-                          backgroundColor: colors.border,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <View
-                          style={{
-                            height: '100%',
-                            borderRadius: 3,
-                            backgroundColor: colors.primary,
-                            width: `${Math.min(((day.tempHigh - day.tempLow) / 20) * 100, 100)}%`,
-                          }}
-                        />
-                      </View>
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          fontWeight: '600',
-                          color: colors.text,
-                          width: 32,
-                          textAlign: 'right',
-                        }}
-                      >
-                        {Math.round(day.tempHigh)}°
-                      </Text>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 3,
-                          width: 40,
-                          justifyContent: 'flex-end',
-                        }}
-                      >
-                        {day.precipitationProbability > 0 ? (
-                          <>
-                            <Ionicons name="water" size={12} color={colors.info} />
-                            <Text
-                              style={{
-                                fontSize: 13,
-                                color: colors.textMuted,
-                                fontWeight: '500',
-                              }}
-                            >
-                              {day.precipitationProbability}%
-                            </Text>
-                          </>
-                        ) : null}
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-
-            {aiSummary && (
-              <LinearGradient
-                colors={resolvedMode === 'dark' ? Gradients.aiSummaryDark : Gradients.aiSummary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  borderRadius: 20,
-                  padding: 20,
-                  marginBottom: 24,
-                  shadowColor: '#4F46E5',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 12,
-                  elevation: 6,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10,
-                    marginBottom: 14,
-                  }}
-                >
-                  <Ionicons name="sparkles" size={20} color="#FFFFFF" />
-                  <Text
-                    style={{
-                      fontSize: 17,
-                      fontWeight: '700',
-                      color: '#FFFFFF',
-                    }}
-                  >
-                    AI Weather Summary
-                  </Text>
-                </View>
-
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: 'rgba(255,255,255,0.9)',
-                    lineHeight: 22,
-                    marginBottom: 14,
-                  }}
-                >
-                  {aiSummary.summary}
-                </Text>
-
-                {aiSummary.highlights.length > 0 && (
-                  <View style={{ gap: 8, marginBottom: 12 }}>
-                    {aiSummary.highlights.map((highlight, i) => (
-                      <View
-                        key={`hl-${i}`}
-                        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}
-                      >
-                        <Ionicons
-                          name="information-circle"
-                          size={16}
-                          color="rgba(255,255,255,0.8)"
-                          style={{ marginTop: 1 }}
-                        />
-                        <Text
-                          style={{
-                            flex: 1,
-                            fontSize: 13,
-                            color: 'rgba(255,255,255,0.85)',
-                            lineHeight: 19,
-                          }}
-                        >
-                          {highlight}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {aiSummary.warnings.length > 0 && (
-                  <View style={{ gap: 8 }}>
-                    {aiSummary.warnings.map((warning, i) => (
-                      <View
-                        key={`wr-${i}`}
-                        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}
-                      >
-                        <Ionicons
-                          name="alert-circle"
-                          size={16}
-                          color="#FBBF24"
-                          style={{ marginTop: 1 }}
-                        />
-                        <Text
-                          style={{
-                            flex: 1,
-                            fontSize: 13,
-                            color: '#FBBF24',
-                            fontWeight: '500',
-                            lineHeight: 19,
-                          }}
-                        >
-                          {warning}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </LinearGradient>
-            )}
+            <FlatList
+              data={hourlyForecast.slice(0, 24)}
+              renderItem={renderHourlyItem}
+              keyExtractor={hourlyKeyExtractor}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingBottom: 8 }}
+              style={{ marginBottom: 20 }}
+            />
           </>
         )}
+
+        {/* === SECTION 8: Emergency SOS Button === */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => Linking.openURL('tel:911')}
+          style={{ marginBottom: 24 }}
+        >
+          <LinearGradient
+            colors={['#FF3B30', '#D32F2F', '#B71C1C']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              borderRadius: 20,
+              paddingVertical: 18,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              shadowColor: '#FF3B30',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.4,
+              shadowRadius: 16,
+              elevation: 8,
+            }}
+          >
+            <Ionicons name="call" size={22} color="#FFFFFF" />
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: '800',
+                color: '#FFFFFF',
+                letterSpacing: 2,
+              }}
+            >
+              EMERGENCY SOS
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
 
-      <FloatingMapButton onPress={() => router.push('/map')} />
+      <FloatingMapButton onPress={goToMap} />
     </GradientBackground>
   );
 }
