@@ -28,19 +28,19 @@ interface SidebarItem {
 }
 
 const MENU_ITEMS: SidebarItem[] = [
-  { id: 'home', title: 'Home', icon: 'home', iconColor: '#6366F1', route: '/' },
-  { id: 'alerts', title: 'Alerts', icon: 'notifications', iconColor: '#EF4444', route: '/alerts' },
-  { id: 'forecast', title: 'Forecast', icon: 'cloud', iconColor: '#3B82F6', route: '/forecast' },
-  { id: 'emergency', title: 'Emergency SOS', icon: 'alert-circle', iconColor: '#DC2626', route: '/emergency' },
-  { id: 'earthquake', title: 'Earthquake Monitor', icon: 'earth', iconColor: '#EA580C', route: '/earthquake-monitor' },
-  { id: 'flood', title: 'Flood Monitor', icon: 'water', iconColor: '#2563EB', route: '/flood-monitor' },
-  { id: 'wildfire', title: 'Wildfire Monitor', icon: 'flame', iconColor: '#DC2626', route: '/wildfire-monitor' },
-  { id: 'survival', title: 'Survival Guide', icon: 'book', iconColor: '#16A34A', route: '/survival-guide' },
-  { id: 'services', title: 'Nearby Services', icon: 'location', iconColor: '#4F46E5', route: '/nearby-services' },
-  { id: 'statistics', title: 'Statistics', icon: 'bar-chart', iconColor: '#7C3AED', route: '/statistics' },
-  { id: 'feed', title: 'Global Feed', icon: 'globe', iconColor: '#0D9488', route: '/global-feed' },
-  { id: 'ai', title: 'AI Assistant', icon: 'chatbubble-ellipses', iconColor: '#7C3AED', route: '/ai-chat' },
-  { id: 'settings', title: 'Settings', icon: 'settings', iconColor: '#64748B', route: '/settings' },
+  { id: 'home', title: 'Home', icon: 'home', iconColor: '#2E7DFF', route: '/' },
+  { id: 'alerts', title: 'Alerts', icon: 'notifications', iconColor: '#FF3B30', route: '/alerts' },
+  { id: 'forecast', title: 'Forecast', icon: 'cloud', iconColor: '#2E7DFF', route: '/forecast' },
+  { id: 'emergency', title: 'Emergency SOS', icon: 'alert-circle', iconColor: '#D32F2F', route: '/emergency' },
+  { id: 'earthquake', title: 'Earthquake Monitor', icon: 'earth', iconColor: '#FF3B30', route: '/earthquake-monitor' },
+  { id: 'flood', title: 'Flood Monitor', icon: 'water', iconColor: '#2E7DFF', route: '/flood-monitor' },
+  { id: 'wildfire', title: 'Wildfire Monitor', icon: 'flame', iconColor: '#FF9500', route: '/wildfire-monitor' },
+  { id: 'survival', title: 'Survival Guide', icon: 'book', iconColor: '#34C759', route: '/survival-guide' },
+  { id: 'services', title: 'Nearby Services', icon: 'location', iconColor: '#2E7DFF', route: '/nearby-services' },
+  { id: 'statistics', title: 'Statistics', icon: 'bar-chart', iconColor: '#AF52DE', route: '/statistics' },
+  { id: 'feed', title: 'Global Feed', icon: 'globe', iconColor: '#00C2FF', route: '/global-feed' },
+  { id: 'ai', title: 'AI Assistant', icon: 'chatbubble-ellipses', iconColor: '#AF52DE', route: '/ai-chat' },
+  { id: 'settings', title: 'Settings', icon: 'settings', iconColor: '#94A3B8', route: '/settings' },
 ];
 
 interface SidebarProps {
@@ -125,7 +125,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
       >
         <View style={styles.sidebarHeader}>
           <LinearGradient
-            colors={isDark ? ['#2EA8FF', '#00D4FF'] : ['#2EA8FF', '#1A8FEE']}
+            colors={isDark ? ['#2EA8FF', '#00D4FF'] : ['#2E7DFF', '#00C2FF']}
             style={styles.logoCircle}
           >
             <Ionicons name="shield-checkmark" size={28} color="#FFFFFF" />
@@ -153,8 +153,8 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                   styles.menuItem,
                   isActive && {
                     backgroundColor: isDark
-                      ? 'rgba(46, 168, 255, 0.12)'
-                      : 'rgba(46, 168, 255, 0.08)',
+                      ? 'rgba(46, 125, 255, 0.12)'
+                      : 'rgba(46, 125, 255, 0.08)',
                   },
                 ]}
                 activeOpacity={0.6}
