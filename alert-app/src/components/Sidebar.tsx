@@ -8,13 +8,12 @@ import {
   Dimensions,
   Pressable,
   StatusBar,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import { Gradients, Shadows } from '@/constants/theme';
+import { Shadows } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
