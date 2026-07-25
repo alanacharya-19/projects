@@ -26,7 +26,13 @@ function RootLayoutNav() {
           animation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="forecast" />
+        <Stack.Screen name="alerts" />
+        <Stack.Screen
+          name="map"
+          options={{ animation: 'slide_from_bottom' }}
+        />
         <Stack.Screen
           name="emergency"
           options={{ animation: 'slide_from_bottom' }}
