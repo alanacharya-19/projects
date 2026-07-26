@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,13 @@ import {
   Linking,
   Animated,
   StyleSheet,
+  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { useTheme } from '@/context/ThemeContext';
 import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
 import { useWeather } from '@/hooks/useWeather';
@@ -22,7 +22,6 @@ import { useWeather } from '@/hooks/useWeather';
 import Sidebar from '@/components/Sidebar';
 
 import { formatDate, capitalizeWords } from '@/utils/helpers';
-import { Gradients } from '@/constants/theme';
 
 const QUICK_ACTIONS = [
   { key: 'sos', label: 'SOS', icon: 'call' as const, color: '#FF3B30', bgColor: '#FF3B3015', route: '/emergency' },
@@ -122,13 +121,22 @@ function getSeverityColor(severity: string): string {
   }
 }
 
+function getBannerImage(): number {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 8) return require('../assets/banner/5am-8am.png');
+  if (hour >= 8 && hour < 12) return require('../assets/banner/8am-12pm.jpg');
+  if (hour >= 12 && hour < 16) return require('../assets/banner/12pm-4pm.jpg');
+  if (hour >= 16 && hour < 18.5) return require('../assets/banner/4pm-6.30pm.jpg');
+  if (hour >= 18.5 && hour < 22) return require('../assets/banner/6.30pm-10pm.jpg');
+  return require('../assets/banner/10pm-5am.jpg');
+}
+
 function formatTimeFromTimestamp(ts: number): string {
   const d = new Date(ts * 1000);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 export default function HomeScreen() {
-  const { resolvedMode } = useTheme();
   const { state } = useAppContext();
   const { filteredAlerts } = useAlertContext();
   const { isLoading, refresh, dailyForecast, airQuality, uvIndex } = useWeather();
@@ -141,7 +149,6 @@ export default function HomeScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const weather = state.weather;
-  const location = state.location;
   const userName = 'Alan';
 
   const activeAlerts = useMemo(() => {
@@ -161,16 +168,6 @@ export default function HomeScreen() {
       ).start();
     }
   }, [hasAlerts, pulseAnim]);
-
-  const locationName = useMemo(() => {
-    if (!location) return 'Locating...';
-    const parts = [location.city, location.region, location.country].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : `${location.latitude.toFixed(2)}, ${location.longitude.toFixed(2)}`;
-  }, [location]);
-
-  const gradientColors = useMemo((): readonly [string, string, ...string[]] => {
-    return resolvedMode === 'dark' ? Gradients.homeDark : Gradients.home;
-  }, [resolvedMode]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -216,9 +213,7 @@ export default function HomeScreen() {
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 12,
           paddingBottom: insets.bottom + 100,
-          paddingHorizontal: 20,
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -230,64 +225,71 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* === SECTION 1: Header Bar === */}
-        <View style={styles.headerBar}>
-          <TouchableOpacity
-            activeOpacity={0.6}
-            onPress={() => setSidebarVisible(true)}
-            style={styles.headerButton}
-          >
-            <Ionicons name="menu" size={22} color="#1A2332" />
-          </TouchableOpacity>
+        {/* === HEADER BANNER (Sections 1-3) === */}
+        <ImageBackground
+          source={getBannerImage()}
+          style={[styles.bannerImage, { paddingTop: insets.top + 12 }]}
+          imageStyle={styles.bannerImageInner}
+        >
+          {/* === SECTION 1: Header Bar === */}
+          <View style={styles.headerBar}>
+            <TouchableOpacity
+              activeOpacity={0.6}
+              onPress={() => setSidebarVisible(true)}
+              style={styles.headerButton}
+            >
+              <Ionicons name="menu" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.7} style={styles.locationSelector}>
-            <Text style={styles.locationText}>📍 Kathmandu, Nepal</Text>
-            <Ionicons name="chevron-down" size={16} color="#5A6B7F" />
-          </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.7} style={styles.locationSelector}>
+              <Text style={styles.locationTextBanner}>📍 Kathmandu, Nepal</Text>
+              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.6}
-            onPress={goToAlerts}
-            style={styles.headerButton}
-          >
-            <Ionicons name="notifications-outline" size={22} color="#1A2332" />
-            {alertCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifBadgeText}>
-                  {alertCount > 99 ? '99+' : alertCount}
+            <TouchableOpacity
+              activeOpacity={0.6}
+              onPress={goToAlerts}
+              style={styles.headerButton}
+            >
+              <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+              {alertCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>
+                    {alertCount > 99 ? '99+' : alertCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* === SECTION 2: Hero Greeting === */}
+          <View style={styles.greetingSection}>
+            <Text style={styles.greetingTextBanner}>{getGreeting()}</Text>
+            <Text style={styles.userNameBanner}>{userName} 👋</Text>
+            <Text style={styles.greetingSubtitleBanner}>Stay safe, stay informed.</Text>
+          </View>
+
+          {/* === SECTION 3: Safe Zone Card === */}
+          <Animated.View style={{ transform: [{ scale: pulseAnim }], marginBottom: 20 }}>
+            <TouchableOpacity activeOpacity={0.85}>
+              <View style={hasAlerts ? styles.alertPillBanner : styles.safePillBanner}>
+                <Ionicons
+                  name={hasAlerts ? 'warning' : 'shield-checkmark'}
+                  size={18}
+                  color="#FFFFFF"
+                />
+                <Text style={hasAlerts ? styles.alertPillTextBanner : styles.safePillTextBanner}>
+                  {hasAlerts
+                    ? `${alertCount} Alert${alertCount > 1 ? 's' : ''} Active`
+                    : 'You are in Safe Zone'}
                 </Text>
+                <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
               </View>
-            )}
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </Animated.View>
+        </ImageBackground>
 
-        {/* === SECTION 2: Hero Greeting === */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingText}>{getGreeting()}</Text>
-          <Text style={styles.userName}>{userName} 👋</Text>
-          <Text style={styles.greetingSubtitle}>Stay safe, stay informed.</Text>
-        </View>
-
-        {/* === SECTION 3: Safe Zone Card === */}
-        <Animated.View style={{ transform: [{ scale: pulseAnim }], marginBottom: 20 }}>
-          <TouchableOpacity activeOpacity={0.85}>
-            <View style={hasAlerts ? styles.alertPill : styles.safePill}>
-              <Ionicons
-                name={hasAlerts ? 'warning' : 'shield-checkmark'}
-                size={18}
-                color={hasAlerts ? '#FF3B30' : '#34C759'}
-              />
-              <Text style={hasAlerts ? styles.alertPillText : styles.safePillText}>
-                {hasAlerts
-                  ? `${alertCount} Alert${alertCount > 1 ? 's' : ''} Active`
-                  : 'You are in Safe Zone'}
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={hasAlerts ? '#FF3B30' : '#34C759'} />
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* === SECTION 4: Weather Card (Large Premium) === */}
+        <View style={{ paddingHorizontal: 20 }}>
         {weather && (
           <View style={[glassCardStyle(), { padding: 24, marginBottom: 20 }]}>
             <Text style={styles.weatherTitle}>Today&apos;s Weather</Text>
@@ -520,6 +522,7 @@ export default function HomeScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
+        </View>
       </ScrollView>
 
       {/* === Floating Buttons (Right Side) === */}
@@ -547,6 +550,19 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  bannerImage: {
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 4,
+    paddingTop: 4,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: 'hidden',
+  },
+  bannerImageInner: {
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
   loadingContainer: {
     flex: 1,
@@ -611,6 +627,72 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+
+  // Banner text overrides
+  locationTextBanner: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  greetingTextBanner: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    lineHeight: 34,
+  },
+  userNameBanner: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.8,
+    lineHeight: 42,
+  },
+  greetingSubtitleBanner: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+    marginTop: 4,
+  },
+
+  // Banner safe/alert pill
+  safePillBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  safePillTextBanner: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  alertPillBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 59, 48, 0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  alertPillTextBanner: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 
   // Greeting
