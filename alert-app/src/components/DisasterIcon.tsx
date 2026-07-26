@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, Image, ImageStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 type DisasterType =
@@ -14,22 +14,27 @@ type DisasterType =
   | "landslide"
   | "volcano";
 
-interface DisasterConfig {
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-}
+const CUSTOM_ICON_MAP: Record<string, ReturnType<typeof require>> = {
+  earthquake: require("../../assets/icons/earthquake.png"),
+  flood: require("../../assets/icons/flood.png"),
+  wildfire: require("../../assets/icons/wildfire.png"),
+  storm: require("../../assets/icons/storms.png"),
+  tornado: require("../../assets/icons/storms.png"),
+  heatwave: require("../../assets/icons/heatwaves.png"),
+};
 
-const DISASTER_CONFIG: Record<DisasterType, DisasterConfig> = {
-  earthquake: { icon: "earth", color: "#FF3B30" },
-  flood: { icon: "water", color: "#2EA8FF" },
-  wildfire: { icon: "flame", color: "#FF9800" },
-  storm: { icon: "thunderstorm", color: "#B000FF" },
-  tornado: { icon: "funnel", color: "#FF6B9D" },
-  tsunami: { icon: "alert-circle", color: "#0052CC" },
-  heatwave: { icon: "sunny", color: "#E65100" },
-  coldwave: { icon: "snow", color: "#00D4FF" },
-  landslide: { icon: "triangle", color: "#8D6E63" },
-  volcano: { icon: "flash", color: "#FF3B30" },
+const FALLBACK_IONICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  tsunami: "alert-circle",
+  coldwave: "snow",
+  landslide: "triangle",
+  volcano: "flash",
+};
+
+const FALLBACK_COLOR: Record<string, string> = {
+  tsunami: "#0052CC",
+  coldwave: "#00D4FF",
+  landslide: "#8D6E63",
+  volcano: "#FF3B30",
 };
 
 interface DisasterIconProps {
@@ -45,16 +50,25 @@ const DisasterIcon: React.FC<DisasterIconProps> = ({
   size = 28,
   colors,
 }) => {
-  const config = DISASTER_CONFIG[type as DisasterType] || {
-    icon: "warning",
-    color: "#6B7280",
-  };
+  const customIcon = CUSTOM_ICON_MAP[type];
 
-  const iconColor = colors?.icon || config.color;
+  if (customIcon) {
+    return (
+      <View style={{ alignItems: "center", justifyContent: "center" }}>
+        <Image
+          source={customIcon}
+          style={{ width: size, height: size, resizeMode: "contain" } as ImageStyle}
+        />
+      </View>
+    );
+  }
+
+  const iconName = FALLBACK_IONICON[type] || "warning";
+  const iconColor = colors?.icon || FALLBACK_COLOR[type] || "#6B7280";
 
   return (
     <View style={{ alignItems: "center", justifyContent: "center" }}>
-      <Ionicons name={config.icon} size={size} color={iconColor} />
+      <Ionicons name={iconName} size={size} color={iconColor} />
     </View>
   );
 };

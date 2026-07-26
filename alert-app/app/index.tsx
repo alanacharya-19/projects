@@ -9,6 +9,7 @@ import {
   Animated,
   StyleSheet,
   ImageBackground,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -18,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
 import { useWeather } from '@/hooks/useWeather';
+import { useTheme } from '@/context/ThemeContext';
 
 import Sidebar from '@/components/Sidebar';
 
@@ -140,6 +142,7 @@ export default function HomeScreen() {
   const { state } = useAppContext();
   const { filteredAlerts } = useAlertContext();
   const { isLoading, refresh, dailyForecast, airQuality, uvIndex } = useWeather();
+  const { resolvedMode } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -150,6 +153,8 @@ export default function HomeScreen() {
 
   const weather = state.weather;
   const userName = 'Alan';
+  const bannerFadeColor = resolvedMode === 'dark' ? '#081426' : '#F7F9FC';
+  const bannerFadeRgba = resolvedMode === 'dark' ? [8, 20, 38] : [247, 249, 252];
 
   const activeAlerts = useMemo(() => {
     return filteredAlerts.filter((a) => !a.isDismissed);
@@ -193,7 +198,7 @@ export default function HomeScreen() {
 
   if (isLoading && !weather) {
     return (
-      <View style={[styles.container, { backgroundColor: '#F7F9FC' }]}>
+      <View style={[styles.container, { backgroundColor: bannerFadeColor }]}>
         <View style={styles.loadingContainer}>
           <Ionicons name="cloudy" size={48} color="#2E7DFF" />
           <Text style={styles.loadingText}>Loading weather data...</Text>
@@ -203,7 +208,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: '#F7F9FC' }]}>
+    <View style={[styles.container, { backgroundColor: bannerFadeColor }]}>
       <Sidebar
         visible={sidebarVisible}
         onClose={() => setSidebarVisible(false)}
@@ -231,6 +236,8 @@ export default function HomeScreen() {
           style={[styles.bannerImage, { paddingTop: insets.top + 12 }]}
           imageStyle={styles.bannerImageInner}
         >
+          <View style={styles.bannerBlueTint} />
+          <View style={styles.bannerContent}>
           {/* === SECTION 1: Header Bar === */}
           <View style={styles.headerBar}>
             <TouchableOpacity
@@ -238,11 +245,12 @@ export default function HomeScreen() {
               onPress={() => setSidebarVisible(true)}
               style={styles.headerButton}
             >
-              <Ionicons name="menu" size={22} color="#FFFFFF" />
+              <Image source={require('../assets/icons/menu.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
             </TouchableOpacity>
 
             <TouchableOpacity activeOpacity={0.7} style={styles.locationSelector}>
-              <Text style={styles.locationTextBanner}>📍 Kathmandu, Nepal</Text>
+              <Image source={require('../assets/icons/your-locations.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
+              <Text style={styles.locationTextBanner}>Kathmandu, Nepal</Text>
               <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.8)" />
             </TouchableOpacity>
 
@@ -251,7 +259,7 @@ export default function HomeScreen() {
               onPress={goToAlerts}
               style={styles.headerButton}
             >
-              <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+              <Image source={require('../assets/icons/notifications.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
               {alertCount > 0 && (
                 <View style={styles.notifBadge}>
                   <Text style={styles.notifBadgeText}>
@@ -287,6 +295,20 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           </Animated.View>
+          </View>
+
+          <LinearGradient
+            colors={[
+              'transparent',
+              'transparent',
+              `rgba(${bannerFadeRgba[0]},${bannerFadeRgba[1]},${bannerFadeRgba[2]},0)`,
+              `rgba(${bannerFadeRgba[0]},${bannerFadeRgba[1]},${bannerFadeRgba[2]},0.2)`,
+              `rgba(${bannerFadeRgba[0]},${bannerFadeRgba[1]},${bannerFadeRgba[2]},0.5)`,
+              `rgba(${bannerFadeRgba[0]},${bannerFadeRgba[1]},${bannerFadeRgba[2]},0.8)`,
+              bannerFadeColor,
+            ]}
+            style={styles.bannerBottomFade}
+          />
         </ImageBackground>
 
         <View style={{ paddingHorizontal: 20 }}>
@@ -532,7 +554,7 @@ export default function HomeScreen() {
           onPress={goToMap}
           style={styles.floatingMapButton}
         >
-          <Ionicons name="map" size={22} color="#FFFFFF" />
+          <Image source={require('../assets/icons/map.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -540,7 +562,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/ai-chat' as any)}
           style={styles.floatingAIButton}
         >
-          <Ionicons name="sparkles" size={22} color="#FFFFFF" />
+          <Image source={require('../assets/icons/ai-message.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
         </TouchableOpacity>
       </View>
     </View>
@@ -552,17 +574,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bannerImage: {
-    marginBottom: 20,
+    marginBottom: 0,
     paddingHorizontal: 20,
-    paddingBottom: 4,
     paddingTop: 4,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    overflow: 'hidden',
+    paddingBottom: 8,
+    overflow: 'visible',
   },
   bannerImageInner: {
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    resizeMode: 'cover',
+  },
+  bannerContent: {
+    zIndex: 3,
+  },
+  bannerBlueTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(30, 90, 200, 0.3)',
+    zIndex: 1,
+  },
+  bannerBottomFade: {
+    position: 'absolute',
+    bottom: -20,
+    left: 0,
+    right: 0,
+    height: 80,
+    zIndex: 2,
   },
   loadingContainer: {
     flex: 1,

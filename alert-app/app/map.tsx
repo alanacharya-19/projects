@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  Image,
+  ImageSourcePropType,
+  type ImageStyle,
 } from "react-native";
 import MapView, { Marker, UrlTile, type Region } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,11 +19,11 @@ import { Shadows } from "@/constants/theme";
 
 
 const LAYERS = [
-  { key: "earthquake", label: "Earthquakes", color: "#EA580C", icon: "earth" as const },
-  { key: "flood", label: "Floods", color: "#2563EB", icon: "water" as const },
-  { key: "wildfire", label: "Wildfires", color: "#DC2626", icon: "flame" as const },
-  { key: "storm", label: "Storms", color: "#7C3AED", icon: "thunderstorm" as const },
-  { key: "heatwave", label: "Heatwaves", color: "#F59E0B", icon: "sunny" as const },
+  { key: "earthquake", label: "Earthquakes", color: "#EA580C", iconSource: require("../assets/icons/earthquake.png") },
+  { key: "flood", label: "Floods", color: "#2563EB", iconSource: require("../assets/icons/flood.png") },
+  { key: "wildfire", label: "Wildfires", color: "#DC2626", iconSource: require("../assets/icons/wildfire.png") },
+  { key: "storm", label: "Storms", color: "#7C3AED", iconSource: require("../assets/icons/storms.png") },
+  { key: "heatwave", label: "Heatwaves", color: "#F59E0B", iconSource: require("../assets/icons/heatwaves.png") },
 ];
 
 const MOCK_MARKERS = [
@@ -70,12 +73,12 @@ export default function MapScreen() {
     setActiveLayers((prev) => prev.includes(key) ? prev.filter((l) => l !== key) : [...prev, key]);
   }, []);
 
-  const getMarkerIcon = useCallback((color: string): keyof typeof Ionicons.glyphMap => {
-    if (color === "#EA580C") return "earth";
-    if (color === "#2563EB") return "water";
-    if (color === "#DC2626") return "flame";
-    if (color === "#7C3AED") return "thunderstorm";
-    return "sunny";
+  const getMarkerIconSource = useCallback((color: string): ImageSourcePropType => {
+    if (color === "#EA580C") return require("../assets/icons/earthquake.png");
+    if (color === "#2563EB") return require("../assets/icons/flood.png");
+    if (color === "#DC2626") return require("../assets/icons/wildfire.png");
+    if (color === "#7C3AED") return require("../assets/icons/storms.png");
+    return require("../assets/icons/heatwaves.png");
   }, []);
 
   return (
@@ -100,7 +103,7 @@ export default function MapScreen() {
             onPress={() => setSelectedMarker(selectedMarker === marker.id ? null : marker.id)}
           >
             <View style={[styles.markerPin, { backgroundColor: marker.color, borderColor: selectedMarker === marker.id ? "#FFFFFF" : marker.color }]}>
-              <Ionicons name={getMarkerIcon(marker.color)} size={14} color="#FFFFFF" />
+              <Image source={getMarkerIconSource(marker.color)} style={{ width: 14, height: 14, resizeMode: "contain" } as ImageStyle} />
             </View>
           </Marker>
         ))}
@@ -130,7 +133,7 @@ export default function MapScreen() {
                 onPress={() => toggleLayer(layer.key)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.layerDot, { backgroundColor: layer.color, opacity: isActive ? 1 : 0.4 }]} />
+                <Image source={layer.iconSource} style={{ width: 16, height: 16, resizeMode: "contain", opacity: isActive ? 1 : 0.4 } as ImageStyle} />
                 <Text style={[styles.layerText, { color: isActive ? layer.color : colors.textMuted }]}>
                   {layer.label}
                 </Text>
@@ -184,7 +187,7 @@ export default function MapScreen() {
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetContent}>
             <View style={[styles.sheetIcon, { backgroundColor: selected.color + "15" }]}>
-              <Ionicons name={getMarkerIcon(selected.color)} size={24} color={selected.color} />
+              <Image source={getMarkerIconSource(selected.color)} style={{ width: 24, height: 24, resizeMode: "contain" } as ImageStyle} />
             </View>
             <View style={styles.sheetInfo}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>{selected.title}</Text>
