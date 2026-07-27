@@ -15,8 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useAppContext } from '@/context/AppContext';
+import { useAlertContext } from '@/context/AlertContext';
 import { useWeather } from '@/hooks/useWeather';
 import { useLocation } from '@/hooks/useLocation';
+import { calculateDistance } from '@/services/locationService';
+import { DISASTER_COLORS } from '@/constants/theme';
 
 import Sidebar from '@/components/Sidebar';
 
@@ -57,8 +60,36 @@ function formatTime(timestamp: number): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function getAlertIconSource(type: string): ReturnType<typeof require> | null {
+  const iconMap: Record<string, ReturnType<typeof require>> = {
+    earthquake: require('../assets/icons/earthquake.png'),
+    flood: require('../assets/icons/flood.png'),
+    wildfire: require('../assets/icons/wildfire.png'),
+    cyclone: require('../assets/icons/storms.png'),
+    heatwave: require('../assets/icons/heatwaves.png'),
+    tornado: require('../assets/icons/storms.png'),
+  };
+  return iconMap[type] || null;
+}
+
+function getSeverityLabel(severity: string): string {
+  switch (severity) {
+    case 'minor': return 'Low';
+    case 'moderate': return 'Moderate';
+    case 'severe': return 'High';
+    case 'extreme': return 'Extreme';
+    case 'emergency': return 'Emergency';
+    default: return severity;
+  }
+}
+
+function capitalizeType(type: string): string {
+  return type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ');
+}
+
 export default function HomeScreen() {
   const { state } = useAppContext();
+  const { alerts } = useAlertContext();
   const { isLoading, refresh } = useWeather();
   const { isLoading: locationLoading } = useLocation();
   const router = useRouter();
@@ -136,6 +167,15 @@ export default function HomeScreen() {
 
       <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} onNavigate={handleNavigate} currentRoute="/" />
 
+      <View style={[styles.floatingBtns, { bottom: insets.bottom + 34 }]}>
+        <TouchableOpacity style={styles.floatingBtn} activeOpacity={0.7} onPress={() => router.push('/map')}>
+          <Image source={require('../assets/icons/map.png')} style={styles.floatingBtnIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.floatingBtn, styles.floatingBtnPurple]} activeOpacity={0.7} onPress={() => router.push('/ai-chat')}>
+          <Image source={require('../assets/icons/ai-message.png')} style={styles.floatingBtnIcon} />
+        </TouchableOpacity>
+      </View>
+
       <View style={[styles.weatherCardOuter, { top: SCREEN_H * 0.4 - 60 }]}>
         <View style={styles.weatherCard}>
           <View style={styles.weatherTop}>
@@ -200,6 +240,7 @@ export default function HomeScreen() {
                 <Text style={styles.sunValue}>{weather ? formatTime(weather.current.sunrise) : '--'}</Text>
               </View>
             </View>
+            <View style={styles.sunDivider} />
             <View style={styles.sunItem}>
               <Image source={require('../assets/icons/sunset.png')} style={styles.sunIcon} />
               <View>
@@ -212,10 +253,83 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 34 }}
+        contentContainerStyle={{ paddingTop: SCREEN_H * 0.4 + 160, paddingBottom: insets.bottom + 34, paddingHorizontal: 20 }}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#3B82F6" colors={['#3B82F6']} />}
       >
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Active Alerts</Text>
+          <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/alerts')} activeOpacity={0.7}>
+            <Text style={styles.viewAllText}>View All</Text>
+            <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.alertsScroll} contentContainerStyle={styles.alertsScrollContent}>
+          {alerts.filter(a => !a.isDismissed).length === 0 ? (
+            <View style={styles.emptyAlertCard}>
+              <Ionicons name="checkmark-circle" size={24} color="#22C55E" />
+              <Text style={styles.emptyAlertText}>No active alerts</Text>
+            </View>
+          ) : (
+            alerts.filter(a => !a.isDismissed).map((alert) => {
+              const iconSource = getAlertIconSource(alert.type);
+              const color = DISASTER_COLORS[alert.type as keyof typeof DISASTER_COLORS] || '#6B7280';
+              const dist = state.location
+                ? calculateDistance(state.location.latitude, state.location.longitude, alert.coordinates.latitude, alert.coordinates.longitude)
+                : null;
+              const distKm = dist !== null ? (dist / 1000).toFixed(0) : null;
+
+              return (
+                <TouchableOpacity
+                  key={alert.id}
+                  style={styles.alertMiniCard}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/alert/${alert.id}`)}
+                >
+                  <View style={[styles.alertIconWrap, { backgroundColor: `${color}15` }]}>
+                    {iconSource ? (
+                      <Image source={iconSource} style={[styles.alertIconImg, { tintColor: color }]} />
+                    ) : (
+                      <Ionicons name="warning" size={22} color={color} />
+                    )}
+                  </View>
+                  <View style={styles.alertInfo}>
+                    <Text style={styles.alertName}>{capitalizeType(alert.type)}</Text>
+                    <Text style={[styles.alertSeverity, { color }]}>{getSeverityLabel(alert.severity)}</Text>
+                    {distKm && <Text style={styles.alertDistance}>{distKm} km away</Text>}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        </View>
+
+        <View style={styles.quickActionsGrid}>
+          {[
+            { icon: 'alert-circle' as const, label: 'SOS', color: '#EF4444', route: '/emergency' },
+            { icon: 'business' as const, label: 'Nearby Shelters', color: '#3B82F6', route: '/nearby-services' },
+            { icon: 'medkit' as const, label: 'Medical Services', color: '#22C55E', route: '/nearby-services' },
+            { icon: 'call' as const, label: 'Emergency Contact', color: '#F97316', route: '/emergency' },
+          ].map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.quickActionCard}
+              activeOpacity={0.7}
+              onPress={() => router.push(item.route as any)}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: `${item.color}15` }]}>
+                <Ionicons name={item.icon} size={24} color={item.color} />
+              </View>
+              <Text style={styles.quickActionLabel} numberOfLines={2}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -332,14 +446,14 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     zIndex: 20,
-    shadowColor: '#A0B0C0',
-    shadowOffset: { width: 6, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+    shadowColor: '#1A2332',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
     elevation: 8,
   },
   weatherCard: {
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -387,7 +501,7 @@ const styles = StyleSheet.create({
   },
   weatherDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#D1D8E0',
     marginVertical: 14,
   },
   weatherStats: {
@@ -422,23 +536,31 @@ const styles = StyleSheet.create({
   weatherStatDivider: {
     width: 1,
     height: '60%',
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#D1D8E0',
     marginHorizontal: 4,
   },
   weatherBottomDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#D1D8E0',
     marginTop: 14,
   },
   sunRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
     marginTop: 14,
   },
   sunItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  sunDivider: {
+    width: 1,
+    height: '60%',
+    backgroundColor: '#D1D8E0',
   },
   sunIcon: {
     width: 22,
@@ -454,9 +576,140 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A2332',
   },
-  weatherStatDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: '#E5E7EB',
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A2332',
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  alertsScroll: {
+    marginTop: 14,
+  },
+  alertsScrollContent: {
+    gap: 12,
+  },
+  alertMiniCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    width: 220,
+    gap: 10,
+    shadowColor: '#1A2332',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  alertIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertIconImg: {
+    width: 22,
+    height: 22,
+  },
+  alertInfo: {
+    flex: 1,
+  },
+  alertName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A2332',
+  },
+  alertSeverity: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  alertDistance: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  emptyAlertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  emptyAlertText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 14,
+    width: '55%',
+  },
+  quickActionCard: {
+    width: '44%',
+    alignItems: 'center',
+    gap: 8,
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1A2332',
+    textAlign: 'center',
+  },
+  floatingBtns: {
+    position: 'absolute',
+    right: 20,
+    flexDirection: 'column',
+    gap: 14,
+    zIndex: 30,
+  },
+  floatingBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(59,130,246,0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingBtnPurple: {
+    backgroundColor: 'rgba(139,92,246,0.25)',
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  floatingBtnIcon: {
+    width: 56,
+    height: 56,
   },
 });
