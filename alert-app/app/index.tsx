@@ -167,15 +167,6 @@ export default function HomeScreen() {
 
       <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} onNavigate={handleNavigate} currentRoute="/" />
 
-      <View style={[styles.floatingBtns, { bottom: insets.bottom + 34 }]}>
-        <TouchableOpacity style={styles.floatingBtn} activeOpacity={0.7} onPress={() => router.push('/map')}>
-          <Image source={require('../assets/icons/map.png')} style={styles.floatingBtnIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.floatingBtn, styles.floatingBtnPurple]} activeOpacity={0.7} onPress={() => router.push('/ai-chat')}>
-          <Image source={require('../assets/icons/ai-message.png')} style={styles.floatingBtnIcon} />
-        </TouchableOpacity>
-      </View>
-
       <View style={[styles.weatherCardOuter, { top: SCREEN_H * 0.4 - 60 }]}>
         <View style={styles.weatherCard}>
           <View style={styles.weatherTop}>
@@ -258,6 +249,35 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#3B82F6" colors={['#3B82F6']} />}
       >
         <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        </View>
+
+        <View style={styles.quickActionsGrid}>
+          {[
+            { icon: 'alert-circle' as const, label: 'SOS', color: '#EF4444', route: '/emergency' },
+            { icon: 'map' as const, label: 'Live Map', color: '#3B82F6', route: '/map' },
+            { icon: 'business' as const, label: 'Nearby Shelters', color: '#22C55E', route: '/nearby-services' },
+            { icon: 'partly-sunny' as const, label: 'Weather', color: '#F97316', route: '/forecast' },
+            { icon: 'medkit' as const, label: 'Medical Services', color: '#3B82F6', route: '/nearby-services' },
+            { icon: 'call' as const, label: 'Emergency Contacts', color: '#22C55E', route: '/emergency' },
+            { icon: 'notifications' as const, label: 'Alerts', color: '#EF4444', route: '/alerts' },
+            { icon: 'chatbubble-ellipses' as const, label: 'AI Assistant', color: '#8B5CF6', route: '/ai-chat' },
+          ].map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.quickActionCard}
+              activeOpacity={0.7}
+              onPress={() => router.push(item.route as any)}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: `${item.color}15` }]}>
+                <Ionicons name={item.icon} size={22} color={item.color} />
+              </View>
+              <Text style={styles.quickActionLabel} numberOfLines={2}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Active Alerts</Text>
           <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/alerts')} activeOpacity={0.7}>
             <Text style={styles.viewAllText}>View All</Text>
@@ -305,31 +325,6 @@ export default function HomeScreen() {
             })
           )}
         </ScrollView>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-        </View>
-
-        <View style={styles.quickActionsGrid}>
-          {[
-            { icon: 'alert-circle' as const, label: 'SOS', color: '#EF4444', route: '/emergency' },
-            { icon: 'business' as const, label: 'Nearby Shelters', color: '#3B82F6', route: '/nearby-services' },
-            { icon: 'medkit' as const, label: 'Medical Services', color: '#22C55E', route: '/nearby-services' },
-            { icon: 'call' as const, label: 'Emergency Contact', color: '#F97316', route: '/emergency' },
-          ].map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.quickActionCard}
-              activeOpacity={0.7}
-              onPress={() => router.push(item.route as any)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: `${item.color}15` }]}>
-                <Ionicons name={item.icon} size={24} color={item.color} />
-              </View>
-              <Text style={styles.quickActionLabel} numberOfLines={2}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
       </ScrollView>
     </View>
   );
@@ -665,14 +660,14 @@ const styles = StyleSheet.create({
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
     marginTop: 14,
-    width: '55%',
+    gap: 8,
   },
   quickActionCard: {
-    width: '44%',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    width: '23%',
   },
   quickActionIcon: {
     width: 56,
@@ -686,30 +681,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1A2332',
     textAlign: 'center',
-  },
-  floatingBtns: {
-    position: 'absolute',
-    right: 20,
-    flexDirection: 'column',
-    gap: 14,
-    zIndex: 30,
-  },
-  floatingBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(59,130,246,0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatingBtnPurple: {
-    backgroundColor: 'rgba(139,92,246,0.25)',
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
-  floatingBtnIcon: {
-    width: 56,
-    height: 56,
   },
 });
