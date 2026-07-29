@@ -197,10 +197,8 @@ export default function HomeScreen() {
             {[
               { source: require('../assets/icons/sos.png'), label: 'SOS', color: '#EF4444', route: '/emergency' },
               { source: require('../assets/icons/map.png'), label: 'Live Map', color: '#3B82F6', route: '/map' },
-              { source: require('../assets/icons/NearbyShelter.png'), label: 'Nearby Shelters', color: '#22C55E', route: '/nearby-services' },
               { source: require('../assets/icons/weather.png'), label: 'Weather', color: '#F97316', route: '/forecast' },
               { source: require('../assets/icons/medicalServices.png'), label: 'Medical Services', color: '#3B82F6', route: '/nearby-services' },
-              { source: require('../assets/icons/emergencyCall.png'), label: 'Emergency Contacts', color: '#22C55E', route: '/emergency' },
               { source: require('../assets/icons/alerts.png'), label: 'Alerts', color: '#EF4444', route: '/alerts' },
               { source: require('../assets/icons/aiAssistant.png'), label: 'AI Assistant', color: '#8B5CF6', route: '/ai-chat' },
             ].map((item, index) => (
@@ -217,55 +215,6 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </View>
-
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Alerts</Text>
-            <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/alerts')} activeOpacity={0.7}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.alertsRow}>
-            {alerts.filter(a => !a.isDismissed).length === 0 ? (
-              <View style={styles.emptyAlertCard}>
-                <Ionicons name="checkmark-circle" size={24} color="#22C55E" />
-                <Text style={styles.emptyAlertText}>No active alerts</Text>
-              </View>
-            ) : (
-              alerts.filter(a => !a.isDismissed).map((alert) => {
-              const iconSource = getAlertIconSource(alert.type);
-              const color = DISASTER_COLORS[alert.type as keyof typeof DISASTER_COLORS] || '#6B7280';
-              const dist = state.location
-                ? calculateDistance(state.location.latitude, state.location.longitude, alert.coordinates.latitude, alert.coordinates.longitude)
-                : null;
-              const distKm = dist !== null ? (dist / 1000).toFixed(0) : null;
-
-              return (
-                <TouchableOpacity
-                  key={alert.id}
-                  style={styles.alertMiniCard}
-                  activeOpacity={0.7}
-                  onPress={() => router.push(`/alert/${alert.id}`)}
-                >
-                  <View style={[styles.alertIconWrap, { backgroundColor: `${color}15` }]}>
-                    {iconSource ? (
-                      <Image source={iconSource} style={[styles.alertIconImg, { tintColor: color }]} />
-                    ) : (
-                      <Ionicons name="warning" size={22} color={color} />
-                    )}
-                  </View>
-                  <View style={styles.alertInfo}>
-                    <Text style={styles.alertName}>{capitalizeType(alert.type)}</Text>
-                    <Text style={[styles.alertSeverity, { color }]}>{getSeverityLabel(alert.severity)}</Text>
-                    {distKm && <Text style={styles.alertDistance}>{distKm} km away</Text>}
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>More Insights</Text>
@@ -561,7 +510,7 @@ const styles = StyleSheet.create({
   quickActionCard: {
     alignItems: 'center',
     gap: 6,
-    width: '23%',
+    width: '30%',
   },
   quickActionIcon: {
     width: 56,

@@ -7,14 +7,12 @@ import {
   Animated,
   Dimensions,
   Pressable,
+  Image,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/context/ThemeContext';
-import { Shadows } from '@/constants/theme';
-import { APP_CONFIG } from '@/constants/config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.78;
@@ -23,23 +21,25 @@ interface SidebarItem {
   id: string;
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
+  pngIcon?: number;
   iconColor: string;
   route: string;
 }
 
 const MENU_ITEMS: SidebarItem[] = [
-  { id: 'home', title: 'Home', icon: 'home', iconColor: '#2E7DFF', route: '/' },
-  { id: 'alerts', title: 'Alerts', icon: 'notifications', iconColor: '#FF3B30', route: '/alerts' },
-  { id: 'forecast', title: 'Forecast', icon: 'cloud', iconColor: '#2E7DFF', route: '/forecast' },
-  { id: 'emergency', title: 'Emergency SOS', icon: 'alert-circle', iconColor: '#D32F2F', route: '/emergency' },
-  { id: 'earthquake', title: 'Earthquake Monitor', icon: 'earth', iconColor: '#FF3B30', route: '/earthquake-monitor' },
-  { id: 'flood', title: 'Flood Monitor', icon: 'water', iconColor: '#2E7DFF', route: '/flood-monitor' },
-  { id: 'wildfire', title: 'Wildfire Monitor', icon: 'flame', iconColor: '#FF9500', route: '/wildfire-monitor' },
+  { id: 'home', title: 'Home', icon: 'home', iconColor: '#3B82F6', route: '/' },
+  { id: 'alerts', title: 'Alerts', icon: 'notifications', pngIcon: require('../../assets/icons/alerts.png'), iconColor: '#EF4444', route: '/alerts' },
+  { id: 'forecast', title: 'Forecast', icon: 'cloud', pngIcon: require('../../assets/icons/weather.png'), iconColor: '#3B82F6', route: '/forecast' },
+  { id: 'emergency', title: 'Emergency SOS', icon: 'alert-circle', pngIcon: require('../../assets/icons/sos.png'), iconColor: '#EF4444', route: '/emergency' },
+  { id: 'earthquake', title: 'Earthquake Monitor', icon: 'earth', pngIcon: require('../../assets/icons/earthquake.png'), iconColor: '#FF3B30', route: '/earthquake-monitor' },
+  { id: 'flood', title: 'Flood Monitor', icon: 'water', pngIcon: require('../../assets/icons/flood.png'), iconColor: '#2E7DFF', route: '/flood-monitor' },
+  { id: 'wildfire', title: 'Wildfire Monitor', icon: 'flame', pngIcon: require('../../assets/icons/wildfire.png'), iconColor: '#FF9500', route: '/wildfire-monitor' },
+  { id: 'map', title: 'Live Map', icon: 'map', pngIcon: require('../../assets/icons/map.png'), iconColor: '#22C55E', route: '/map' },
   { id: 'survival', title: 'Survival Guide', icon: 'book', iconColor: '#34C759', route: '/survival-guide' },
-  { id: 'services', title: 'Nearby Services', icon: 'location', iconColor: '#2E7DFF', route: '/nearby-services' },
-  { id: 'statistics', title: 'Statistics', icon: 'bar-chart', iconColor: '#AF52DE', route: '/statistics' },
+  { id: 'services', title: 'Nearby Services', icon: 'location', pngIcon: require('../../assets/icons/NearbyShelter.png'), iconColor: '#3B82F6', route: '/nearby-services' },
+  { id: 'statistics', title: 'Statistics', icon: 'bar-chart', iconColor: '#8B5CF6', route: '/statistics' },
   { id: 'feed', title: 'Global Feed', icon: 'globe', iconColor: '#00C2FF', route: '/global-feed' },
-  { id: 'ai', title: 'AI Assistant', icon: 'chatbubble-ellipses', iconColor: '#AF52DE', route: '/ai-chat' },
+  { id: 'ai', title: 'AI Assistant', icon: 'chatbubble-ellipses', pngIcon: require('../../assets/icons/aiAssistant.png'), iconColor: '#8B5CF6', route: '/ai-chat' },
   { id: 'settings', title: 'Settings', icon: 'settings', iconColor: '#94A3B8', route: '/settings' },
 ];
 
@@ -51,11 +51,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: SidebarProps) {
-  const { colors, resolvedMode } = useTheme();
   const insets = useSafeAreaInsets();
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const isDark = resolvedMode === 'dark';
 
   useEffect(() => {
     if (visible) {
@@ -63,8 +61,8 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: true,
-          damping: 28,
-          stiffness: 300,
+          damping: 26,
+          stiffness: 280,
           mass: 0.8,
         }),
         Animated.timing(overlayOpacity, {
@@ -78,8 +76,8 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
         Animated.spring(translateX, {
           toValue: -SIDEBAR_WIDTH,
           useNativeDriver: true,
-          damping: 28,
-          stiffness: 300,
+          damping: 26,
+          stiffness: 280,
           mass: 0.8,
         }),
         Animated.timing(overlayOpacity, {
@@ -95,9 +93,6 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
     onClose();
     setTimeout(() => onNavigate(route), 150);
   };
-
-  const sidebarBg = isDark ? '#0A1830' : '#FFFFFF';
-  const dividerColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
 
   return (
     <>
@@ -117,28 +112,24 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
             width: SIDEBAR_WIDTH,
             paddingTop: insets.top + 16,
             paddingBottom: insets.bottom + 16,
-            backgroundColor: sidebarBg,
             transform: [{ translateX }],
-            ...Shadows.xl,
           },
         ]}
       >
         <View style={styles.sidebarHeader}>
           <LinearGradient
-            colors={isDark ? ['#2EA8FF', '#00D4FF'] : ['#2E7DFF', '#00C2FF']}
+            colors={['#3B82F6', '#2563EB']}
             style={styles.logoCircle}
           >
             <Ionicons name="shield-checkmark" size={28} color="#FFFFFF" />
           </LinearGradient>
           <View style={styles.headerTextContainer}>
-            <Text style={[styles.appName, { color: colors.text }]}>{APP_CONFIG.NAME}</Text>
-            <Text style={[styles.appVersion, { color: colors.textMuted }]}>
-              v{APP_CONFIG.VERSION}
-            </Text>
+            <Text style={styles.appName}>AlertGuard</Text>
+            <Text style={styles.appVersion}>v1.0.0</Text>
           </View>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+        <View style={styles.divider} />
 
         <Animated.ScrollView
           showsVerticalScrollIndicator={false}
@@ -151,11 +142,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                 key={item.id}
                 style={[
                   styles.menuItem,
-                  isActive && {
-                    backgroundColor: isDark
-                      ? 'rgba(46, 125, 255, 0.12)'
-                      : 'rgba(46, 125, 255, 0.08)',
-                  },
+                  isActive && styles.menuItemActive,
                 ]}
                 activeOpacity={0.6}
                 onPress={() => handleItemPress(item.route)}
@@ -163,46 +150,37 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                 <View
                   style={[
                     styles.iconContainer,
-                    {
-                      backgroundColor: isActive
-                        ? item.iconColor + '18'
-                        : isDark
-                          ? 'rgba(255,255,255,0.06)'
-                          : 'rgba(0,0,0,0.04)',
-                    },
+                    { backgroundColor: isActive ? `${item.iconColor}18` : '#F1F5F9' },
                   ]}
                 >
-                  <Ionicons
-                    name={item.icon}
-                    size={20}
-                    color={isActive ? item.iconColor : colors.textSecondary}
-                  />
+                  {item.pngIcon ? (
+                    <Image source={item.pngIcon} style={[styles.menuPngIcon, isActive && { tintColor: item.iconColor }]} />
+                  ) : (
+                    <Ionicons
+                      name={item.icon}
+                      size={20}
+                      color={isActive ? item.iconColor : '#94A3B8'}
+                    />
+                  )}
                 </View>
                 <Text
                   style={[
                     styles.menuLabel,
-                    {
-                      color: isActive ? colors.text : colors.textSecondary,
-                      fontWeight: isActive ? '700' : '500',
-                    },
+                    { color: isActive ? '#1E293B' : '#64748B', fontWeight: isActive ? '700' : '500' },
                   ]}
                 >
                   {item.title}
                 </Text>
-                {isActive && (
-                  <View style={[styles.activeDot, { backgroundColor: item.iconColor }]} />
-                )}
+                {isActive && <View style={[styles.activeDot, { backgroundColor: item.iconColor }]} />}
               </TouchableOpacity>
             );
           })}
         </Animated.ScrollView>
 
-        <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+        <View style={styles.divider} />
 
         <View style={styles.sidebarFooter}>
-          <Text style={[styles.footerTagline, { color: colors.textMuted }]}>
-            Stay safe. Stay informed.
-          </Text>
+          <Text style={styles.footerTagline}>Stay safe. Stay informed.</Text>
         </View>
       </Animated.View>
     </>
@@ -224,8 +202,14 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     zIndex: 101,
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderTopRightRadius: 28,
+    borderBottomRightRadius: 28,
+    shadowColor: '#1A2332',
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 16,
   },
   sidebarHeader: {
     flexDirection: 'row',
@@ -240,22 +224,30 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   headerTextContainer: {
     flex: 1,
   },
   appName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
+    color: '#1E293B',
     letterSpacing: -0.3,
   },
   appVersion: {
     fontSize: 12,
     fontWeight: '500',
+    color: '#94A3B8',
     marginTop: 2,
   },
   divider: {
     height: 1,
+    backgroundColor: '#F1F5F9',
     marginHorizontal: 20,
     marginBottom: 4,
   },
@@ -263,10 +255,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 11,
     marginHorizontal: 12,
     borderRadius: 14,
     gap: 14,
+  },
+  menuItemActive: {
+    backgroundColor: '#F8FAFC',
   },
   iconContainer: {
     width: 38,
@@ -274,6 +269,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  menuPngIcon: {
+    width: 22,
+    height: 22,
   },
   menuLabel: {
     fontSize: 15,
@@ -291,6 +290,7 @@ const styles = StyleSheet.create({
   footerTagline: {
     fontSize: 12,
     fontWeight: '500',
+    color: '#94A3B8',
     textAlign: 'center',
   },
 });
