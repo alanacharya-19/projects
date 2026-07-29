@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "alert-app",
-    "slug": "alert-app",
+    "name": "GeoAlert",
+    "slug": "geoalert",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/appIcon.png",
     "scheme": "alertapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

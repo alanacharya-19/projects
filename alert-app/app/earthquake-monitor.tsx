@@ -130,7 +130,7 @@ export default function EarthquakeMonitorScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: 'rgba(255,255,255,0.6)' }]}>
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Earthquake Monitor</Text>

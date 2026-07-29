@@ -126,7 +126,7 @@ export default function WildfireMonitorScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.surface }]}>
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>Wildfire Monitor</Text>

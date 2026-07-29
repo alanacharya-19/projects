@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
+import React, { useState, useMemo, useCallback, useRef } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Animated, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "expo-router";
+
+const { height: SCREEN_H } = Dimensions.get("window");
 import StatBar from "@/components/StatBar";
 import GradientBackground from "@/components/GradientBackground";
 import { Gradients, Shadows } from "@/constants/theme";
@@ -53,6 +56,8 @@ const MOCK_DATA = {
 
 export default function StatisticsScreen() {
   const { colors, resolvedMode } = useTheme();
+  const router = useRouter();
+  const slideAnim = useRef(new Animated.Value(0)).current;
   const [period, setPeriod] = useState<TimePeriod>("month");
   const data = useMemo(() => MOCK_DATA[period], [period]);
 
@@ -74,17 +79,31 @@ export default function StatisticsScreen() {
     { label: "Emergency", value: data.severity.emergency, color: "#7C2D12", max: 5 },
   ];
 
+  const handleBack = useCallback(() => {
+    Animated.timing(slideAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start(() => router.back());
+  }, [slideAnim, router]);
+
   const maxRain = Math.max(...data.monthlyBars.map((b) => b.rain), 1);
 
   return (
     <GradientBackground colors={gradientColors}>
       <StatusBar barStyle={resolvedMode === "dark" ? "light-content" : "dark-content"} />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Statistics</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Weather & disaster analytics</Text>
+      <Animated.View style={{ flex: 1, transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, SCREEN_H] }) }] }}>
+      <LinearGradient
+        colors={resolvedMode === "dark" ? (["rgba(16,33,59,0.9)", "rgba(16,33,59,0.4)"] as const) : (["rgba(255,255,255,0.9)", "rgba(255,255,255,0.4)"] as const)}
+        style={styles.headerBar}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleBack} activeOpacity={0.7}>
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Statistics</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Weather & disaster analytics</Text>
+          </View>
         </View>
+      </LinearGradient>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* Time Period Selector */}
         <LinearGradient
@@ -133,17 +152,13 @@ export default function StatisticsScreen() {
             { icon: "water" as const, count: data.disasters.floods, label: "Floods", color: "#1D4ED8" },
             { icon: "flame" as const, count: data.disasters.wildfires, label: "Wildfires", color: "#DC2626" },
           ].map((d) => (
-            <LinearGradient
-              key={d.label}
-              colors={glassColors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.disasterCard, Shadows.md]}
-            >
-              <Ionicons name={d.icon} size={28} color={d.color} />
+            <View key={d.label} style={[styles.disasterCard, { backgroundColor: colors.surface }, Shadows.md]}>
+              <View style={[styles.disasterIconWrap, { backgroundColor: `${d.color}15` }]}>
+                <Ionicons name={d.icon} size={24} color={d.color} />
+              </View>
               <Text style={[styles.disasterCount, { color: colors.text }]}>{d.count}</Text>
               <Text style={[styles.disasterLabel, { color: colors.textMuted }]}>{d.label}</Text>
-            </LinearGradient>
+            </View>
           ))}
         </View>
 
@@ -151,20 +166,15 @@ export default function StatisticsScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           {period === "week" ? "Daily Overview" : period === "month" ? "Weekly Overview" : "Monthly Overview"}
         </Text>
-        <LinearGradient
-          colors={glassColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.chartCard, Shadows.md]}
-        >
+        <View style={[styles.chartCard, { backgroundColor: colors.surface }, Shadows.md]}>
           <View style={styles.chartLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: colors.error }]} />
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>Temperature</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Temperature</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: colors.info }]} />
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>Rainfall</Text>
+              <Text style={[styles.legendText, { color: colors.textSecondary }]}>Rainfall</Text>
             </View>
           </View>
           <View style={styles.chartBars}>
@@ -174,15 +184,15 @@ export default function StatisticsScreen() {
               return (
                 <View key={idx} style={styles.barGroup}>
                   <View style={styles.barContainer}>
-                    <View style={[styles.bar, { height: tempHeight, backgroundColor: colors.error, opacity: 0.8 }]} />
-                    <View style={[styles.bar, { height: barHeight, backgroundColor: colors.info, opacity: 0.8 }]} />
+                    <View style={[styles.bar, { height: tempHeight, backgroundColor: colors.error }]} />
+                    <View style={[styles.bar, { height: barHeight, backgroundColor: colors.info }]} />
                   </View>
                   <Text style={[styles.barLabel, { color: colors.textMuted }]}>{bar.label}</Text>
                 </View>
               );
             })}
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Severity Distribution */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Severity Distribution</Text>
@@ -201,25 +211,30 @@ export default function StatisticsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      </Animated.View>
     </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
-  header: { marginTop: 48, marginBottom: 24 },
-  headerTitle: { fontSize: 28, fontWeight: "700", marginBottom: 6, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 15, fontWeight: "500" },
-  periodSelector: { flexDirection: "row", borderRadius: 20, padding: 4, marginBottom: 28 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
+  headerBar: { paddingTop: 52, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(0,0,0,0.04)" },
+  headerRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, gap: 12 },
+  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1, ...Shadows.sm },
+  header: { flex: 1 },
+  headerTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.3 },
+  headerSubtitle: { fontSize: 13, fontWeight: "500", marginTop: 1 },
+  periodSelector: { flexDirection: "row", borderRadius: 20, padding: 4, marginBottom: 24 },
   periodTab: { flex: 1, paddingVertical: 12, borderRadius: 16, alignItems: "center" },
   periodTabText: { fontSize: 14, fontWeight: "700" },
-  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 14, letterSpacing: -0.3 },
-  statsGrid: { gap: 12, marginBottom: 28 },
-  disasterCards: { flexDirection: "row", gap: 12, marginBottom: 28 },
-  disasterCard: { flex: 1, borderRadius: 24, padding: 18, alignItems: "center", gap: 6 },
-  disasterCount: { fontSize: 24, fontWeight: "800" },
-  disasterLabel: { fontSize: 12, fontWeight: "500", textAlign: "center" },
-  chartCard: { borderRadius: 24, padding: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12, letterSpacing: -0.3 },
+  statsGrid: { gap: 10, marginBottom: 24 },
+  disasterCards: { flexDirection: "row", gap: 10, marginBottom: 24 },
+  disasterCard: { flex: 1, borderRadius: 24, padding: 16, alignItems: "center", gap: 8 },
+  disasterIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  disasterCount: { fontSize: 22, fontWeight: "800" },
+  disasterLabel: { fontSize: 11, fontWeight: "600", textAlign: "center" },
+  chartCard: { borderRadius: 24, padding: 20, marginBottom: 24 },
   chartLegend: { flexDirection: "row", gap: 20, marginBottom: 16 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 8 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
@@ -229,5 +244,5 @@ const styles = StyleSheet.create({
   barContainer: { flexDirection: "row", alignItems: "flex-end", gap: 2, height: 120 },
   bar: { width: 10, borderRadius: 4 },
   barLabel: { fontSize: 10, marginTop: 6, fontWeight: "500" },
-  severityList: { gap: 12 },
+  severityList: { gap: 10 },
 });

@@ -12,10 +12,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import ChatBubble from "@/components/ChatBubble";
 import GradientBackground from "@/components/GradientBackground";
-import { Gradients } from "@/constants/theme";
+import { Gradients, Shadows } from "@/constants/theme";
 import { generateId, formatDate } from "@/utils/helpers";
 import type { ChatMessage } from "@/types";
 
@@ -34,7 +35,7 @@ const AI_RESPONSES: Record<string, string> = {
   earthquake: "During an earthquake, remember: DROP, COVER, and HOLD ON. Get under a sturdy table or desk, protect your head and neck, and hold on until the shaking stops. Do NOT run outside during the quake. If outdoors, move to an open area away from buildings. After the shaking stops, be prepared for aftershocks.",
   weather: "Current conditions: 31°C, partly cloudy, humidity 65%, wind 12 km/h from the southwest. Air quality index is moderate (AQI: 85). UV index is high (7) - use sunscreen if going outside. Sunset is at 6:45 PM.",
   disaster: "Currently there are 2 active alerts in your area:\n\n1. Heat Advisory (Moderate) - Expected temperatures above 40°C today and tomorrow\n2. Air Quality Warning (Minor) - AQI elevated due to dust particles\n\nNo severe weather or disaster warnings at this time. Stay safe!",
-  kit: "Essential emergency kit items:\n\n🎒 Water: 4L per person per day (3-day supply)\n🍞 Non-perishable food (3-day supply)\n🔦 Flashlight + extra batteries\n🩹 First aid kit\n📻 Battery-powered radio\n📱 Phone charger (power bank)\n📄 Important documents (waterproof bag)\n💊 Medications (7-day supply)\n\nKeep your kit near an exit and check it every 6 months.",
+  kit: "Essential emergency kit items:\n\n💧 Water: 4L per person per day (3-day supply)\n🍞 Non-perishable food (3-day supply)\n🔦 Flashlight + extra batteries\n🩹 First aid kit\n📻 Battery-powered radio\n📱 Phone charger (power bank)\n📄 Important documents (waterproof bag)\n💊 Medications (7-day supply)\n\nKeep your kit near an exit and check it every 6 months.",
 };
 
 function getAIResponse(message: string): string {
@@ -50,6 +51,7 @@ function getAIResponse(message: string): string {
 
 export default function AIChatScreen() {
   const { colors, resolvedMode } = useTheme();
+  const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -92,9 +94,7 @@ export default function AIChatScreen() {
   };
 
   return (
-    <GradientBackground
-      colors={isDark ? Gradients.homeDark : Gradients.home}
-    >
+    <GradientBackground colors={isDark ? Gradients.homeDark : Gradients.home}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -102,23 +102,29 @@ export default function AIChatScreen() {
       >
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-        {/* Header */}
         <LinearGradient
-          colors={isDark ? Gradients.glassDark : Gradients.glass}
+          colors={isDark ? (["#0D1F33", "#10213B"] as const) : (["#F0F5FF", "#F7F9FC"] as const)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
         >
-          <View style={styles.headerLeft}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              style={[styles.headerBackBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)" }]}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-down" size={20} color={colors.text} />
+            </TouchableOpacity>
             <LinearGradient
               colors={isDark ? Gradients.primaryDark : Gradients.primary}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.aiAvatar}
+              style={styles.avatar}
             >
-              <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
+              <Ionicons name="chatbubble-ellipses" size={18} color="#FFFFFF" />
             </LinearGradient>
-            <View>
+            <View style={styles.headerInfo}>
               <Text style={[styles.headerTitle, { color: colors.text }]}>AI Assistant</Text>
               <View style={styles.statusRow}>
                 <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
@@ -128,12 +134,16 @@ export default function AIChatScreen() {
           </View>
         </LinearGradient>
 
-        {/* Messages */}
         <FlatList
           ref={flatListRef}
           data={messages}
           renderItem={({ item }) => (
-            <ChatBubble message={item.content} isUser={item.role === "user"} timestamp={formatDate(item.timestamp, "time")} colors={chatColors} />
+            <ChatBubble
+              message={item.content}
+              isUser={item.role === "user"}
+              timestamp={formatDate(item.timestamp, "time")}
+              colors={chatColors}
+            />
           )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
@@ -142,7 +152,7 @@ export default function AIChatScreen() {
           ListFooterComponent={
             isTyping ? (
               <View style={styles.typingContainer}>
-                <View style={[styles.typingBubble, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)" }]}>
+                <View style={[styles.typingBubble, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)", ...Shadows.sm }]}>
                   <View style={styles.typingDots}>
                     <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.4 }]} />
                     <View style={[styles.typingDot, { backgroundColor: colors.textMuted, opacity: 0.6 }]} />
@@ -154,18 +164,19 @@ export default function AIChatScreen() {
           }
         />
 
-        {/* Quick Suggestions */}
         {messages.length <= 2 && (
           <View style={styles.suggestionsContainer}>
-            <Text style={[styles.suggestionsTitle, { color: colors.textMuted }]}>Quick Questions</Text>
+            <Text style={[styles.suggestionsLabel, { color: colors.textMuted }]}>Quick Questions</Text>
             <View style={styles.suggestionsGrid}>
               {QUICK_SUGGESTIONS.map((suggestion, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.suggestionChip, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)", borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
+                  style={[styles.suggestionChip, { backgroundColor: isDark ? "rgba(31,41,55,0.85)" : "#FFFFFF", borderColor: isDark ? "rgba(255,255,255,0.08)" : colors.primary + "20", ...Shadows.md }]}
                   onPress={() => handleSuggestion(suggestion)}
                   activeOpacity={0.7}
                 >
+                  <View style={[styles.suggestionAccent, { backgroundColor: colors.primary }]} />
+                  <Ionicons name="help-circle-outline" size={14} color={colors.primary} style={{ marginRight: 2 }} />
                   <Text style={[styles.suggestionText, { color: colors.text }]}>{suggestion}</Text>
                 </TouchableOpacity>
               ))}
@@ -173,44 +184,34 @@ export default function AIChatScreen() {
           </View>
         )}
 
-        {/* Input Bar */}
         <LinearGradient
-          colors={isDark ? Gradients.glassDark : Gradients.glass}
+          colors={isDark ? (["rgba(16,33,59,0.95)", "rgba(8,20,38,0.95)"] as const) : (["rgba(255,255,255,0.95)", "rgba(255,255,255,0.9)"] as const)}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.inputBar}
         >
-          <TextInput
-            style={[styles.textInput, { color: colors.text, backgroundColor: isDark ? "rgba(31,41,55,0.6)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Ask me anything..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            maxLength={500}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-          />
+          <View style={[styles.inputField, { backgroundColor: isDark ? "rgba(31,41,55,0.6)" : "#F1F5F9", borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0" }]}>
+            <TextInput
+              style={[styles.textInput, { color: colors.text }]}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask me anything..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              maxLength={500}
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+            />
+          </View>
           {inputText.trim() ? (
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={handleSend}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={isDark ? Gradients.primaryDark : Gradients.primary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.sendButtonGradient}
-              >
-                <Ionicons name="send" size={20} color="#FFFFFF" />
+            <TouchableOpacity onPress={handleSend} activeOpacity={0.7}>
+              <LinearGradient colors={Gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sendBtn}>
+                <Ionicons name="send" size={18} color="#FFFFFF" />
               </LinearGradient>
             </TouchableOpacity>
           ) : (
-            <View style={[styles.sendButton, { opacity: 0.4 }]}>
-              <View style={[styles.sendButtonGradient, { backgroundColor: colors.surfaceVariant }]}>
-                <Ionicons name="send" size={20} color={colors.textMuted} />
-              </View>
+            <View style={[styles.sendBtn, { backgroundColor: colors.surfaceVariant, opacity: 0.5 }]}>
+              <Ionicons name="send" size={18} color={colors.textMuted} />
             </View>
           )}
         </LinearGradient>
@@ -222,38 +223,72 @@ export default function AIChatScreen() {
 const styles = StyleSheet.create({
   keyboardView: { flex: 1 },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 56,
-    paddingBottom: 16,
+    paddingBottom: 14,
   },
-  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  aiAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  headerBackBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerInfo: { flex: 1 },
   headerTitle: { fontSize: 17, fontWeight: "700" },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  headerStatus: { fontSize: 13, fontWeight: "500" },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 1 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  headerStatus: { fontSize: 12, fontWeight: "500" },
   messagesList: { paddingVertical: 16, paddingHorizontal: 20, flexGrow: 1 },
   typingContainer: { paddingVertical: 8 },
-  typingBubble: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 6, alignSelf: "flex-start", maxWidth: "30%" },
+  typingBubble: { paddingHorizontal: 20, paddingVertical: 14, borderRadius: 24, borderBottomLeftRadius: 8, alignSelf: "flex-start" },
   typingDots: { flexDirection: "row", gap: 4, alignItems: "center", height: 16 },
   typingDot: { width: 8, height: 8, borderRadius: 4 },
-  suggestionsContainer: { paddingHorizontal: 20, paddingBottom: 12 },
-  suggestionsTitle: { fontSize: 13, fontWeight: "600", marginBottom: 8 },
+  suggestionsContainer: { paddingHorizontal: 20, paddingBottom: 8 },
+  suggestionsLabel: { fontSize: 12, fontWeight: "600", marginBottom: 8, letterSpacing: 0.3, textTransform: "uppercase" },
   suggestionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  suggestionChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1 },
-  suggestionText: { fontSize: 13, fontWeight: "500" },
+  suggestionChip: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, overflow: "hidden", position: "relative" },
+  suggestionAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: 20, borderBottomLeftRadius: 20 },
+  suggestionText: { fontSize: 12, fontWeight: "500" },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingBottom: 20,
+    paddingBottom: 24,
     gap: 10,
   },
-  textInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 22, fontSize: 15, maxHeight: 100, borderWidth: 1 },
-  sendButton: { width: 44, height: 44, borderRadius: 22 },
-  sendButtonGradient: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  inputField: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  textInput: { fontSize: 15, fontWeight: "500", maxHeight: 100, paddingVertical: 0 },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadows.md,
+  },
 });

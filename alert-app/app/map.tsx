@@ -13,17 +13,17 @@ import {
 import MapView, { Marker, UrlTile, type Region } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocation } from "@/hooks/useLocation";
 import { Shadows } from "@/constants/theme";
 
-
 const LAYERS = [
-  { key: "earthquake", label: "Earthquakes", color: "#EA580C", iconSource: require("../assets/icons/earthquake.png") },
-  { key: "flood", label: "Floods", color: "#2563EB", iconSource: require("../assets/icons/flood.png") },
-  { key: "wildfire", label: "Wildfires", color: "#DC2626", iconSource: require("../assets/icons/wildfire.png") },
-  { key: "storm", label: "Storms", color: "#7C3AED", iconSource: require("../assets/icons/storms.png") },
-  { key: "heatwave", label: "Heatwaves", color: "#F59E0B", iconSource: require("../assets/icons/heatwaves.png") },
+  { key: "earthquake", label: "EQ", color: "#EA580C", iconSource: require("../assets/icons/earthquake.png") },
+  { key: "flood", label: "Flood", color: "#2563EB", iconSource: require("../assets/icons/flood.png") },
+  { key: "wildfire", label: "Fire", color: "#DC2626", iconSource: require("../assets/icons/wildfire.png") },
+  { key: "storm", label: "Storm", color: "#7C3AED", iconSource: require("../assets/icons/storms.png") },
+  { key: "heatwave", label: "Heat", color: "#F59E0B", iconSource: require("../assets/icons/heatwaves.png") },
 ];
 
 const MOCK_MARKERS = [
@@ -37,21 +37,20 @@ const MOCK_MARKERS = [
 ];
 
 const DEFAULT_REGION: Region = {
-  latitude: 28.6139,
-  longitude: 77.209,
-  latitudeDelta: 0.15,
-  longitudeDelta: 0.15,
+  latitude: 28.6139, longitude: 77.209, latitudeDelta: 0.12, longitudeDelta: 0.12,
 };
 
 export default function MapScreen() {
   const { colors, resolvedMode } = useTheme();
   const { location } = useLocation();
+  const router = useRouter();
   const [activeLayers, setActiveLayers] = useState<string[]>(["earthquake", "flood", "wildfire"]);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+  const [showLayers, setShowLayers] = useState(true);
 
   const region = useMemo((): Region => {
     if (location) {
-      return { latitude: location.latitude, longitude: location.longitude, latitudeDelta: 0.15, longitudeDelta: 0.15 };
+      return { latitude: location.latitude, longitude: location.longitude, latitudeDelta: 0.12, longitudeDelta: 0.12 };
     }
     return DEFAULT_REGION;
   }, [location]);
@@ -82,7 +81,7 @@ export default function MapScreen() {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       <MapView
         style={styles.map}
         region={region}
@@ -92,10 +91,7 @@ export default function MapScreen() {
         toolbarEnabled={false}
         mapType="none"
       >
-        <UrlTile
-          urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png"
-          maximumZ={20}
-        />
+        <UrlTile urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png" maximumZ={20} />
         {filteredMarkers.map((marker) => (
           <Marker
             key={marker.id}
@@ -109,107 +105,84 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Floating Layer Chips */}
-      <View style={styles.layersContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.layersScroll}
-        >
-          {LAYERS.map((layer) => {
-            const isActive = activeLayers.includes(layer.key);
-            return (
-              <TouchableOpacity
-                key={layer.key}
-                style={[
-                  styles.layerChip,
-                  {
-                    backgroundColor: isActive
-                      ? (resolvedMode === "dark" ? layer.color + "25" : layer.color + "18")
-                      : (resolvedMode === "dark" ? "rgba(31,41,55,0.85)" : "rgba(255,255,255,0.85)"),
-                    borderColor: isActive ? layer.color : (resolvedMode === "dark" ? "rgba(55,65,81,0.5)" : colors.border),
-                  },
-                ]}
-                onPress={() => toggleLayer(layer.key)}
-                activeOpacity={0.7}
-              >
-                <Image source={layer.iconSource} style={{ width: 16, height: 16, resizeMode: "contain", opacity: isActive ? 1 : 0.4 } as ImageStyle} />
-                <Text style={[styles.layerText, { color: isActive ? layer.color : colors.textMuted }]}>
-                  {layer.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Floating Search Bar */}
       <LinearGradient
-        colors={
-          resolvedMode === "dark"
-            ? (["rgba(31,41,55,0.9)", "rgba(17,24,39,0.8)"] as const)
-            : (["rgba(255,255,255,0.9)", "rgba(255,255,255,0.6)"] as const)
-        }
-        style={styles.searchBar}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
+        colors={resolvedMode === "dark"
+          ? (["rgba(15,23,42,0.92)", "rgba(15,23,42,0.6)", "transparent"] as const)
+          : (["rgba(255,255,255,0.92)", "rgba(255,255,255,0.5)", "transparent"] as const)}
+        style={styles.topBar}
       >
-        <Ionicons name="search" size={20} color={colors.textMuted} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search location..."
-          placeholderTextColor={colors.textMuted}
-        />
-        <TouchableOpacity style={[styles.searchMic, { backgroundColor: colors.surfaceVariant }]}>
-          <Ionicons name="mic" size={18} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.topRow}>
+          <TouchableOpacity style={styles.circleBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={[styles.searchField, { backgroundColor: resolvedMode === "dark" ? "rgba(30,41,59,0.8)" : "rgba(255,255,255,0.85)", borderColor: colors.border }]}>
+            <Ionicons name="search" size={18} color={colors.textMuted} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Search location..."
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+          <TouchableOpacity style={styles.circleBtn} onPress={() => setShowLayers((p) => !p)} activeOpacity={0.7}>
+            <Ionicons name="layers" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
-      {/* Alert Count Badge */}
-      <View style={[styles.alertBadge, { backgroundColor: resolvedMode === "dark" ? "rgba(17,24,39,0.85)" : "rgba(255,255,255,0.9)" }]}>
-        <Ionicons name="warning" size={14} color="#F59E0B" />
+      {showLayers && (
+        <View style={styles.layersWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.layersScroll}>
+            {LAYERS.map((layer) => {
+              const isActive = activeLayers.includes(layer.key);
+              return (
+                <TouchableOpacity
+                  key={layer.key}
+                  style={[styles.layerPill, {
+                    backgroundColor: isActive ? layer.color : (resolvedMode === "dark" ? "rgba(30,41,59,0.8)" : "rgba(255,255,255,0.85)"),
+                    borderColor: isActive ? layer.color : colors.border,
+                  }]}
+                  onPress={() => toggleLayer(layer.key)}
+                  activeOpacity={0.7}
+                >
+                  <Image source={layer.iconSource} style={{ width: 14, height: 14, resizeMode: "contain", tintColor: isActive ? "#FFF" : undefined } as ImageStyle} />
+                  <Text style={[styles.layerLabel, { color: isActive ? "#FFF" : colors.textSecondary }]}>{layer.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      <View style={[styles.alertBadge, { backgroundColor: resolvedMode === "dark" ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.9)" }]}>
+        <Ionicons name="pulse" size={14} color="#F59E0B" />
         <Text style={[styles.alertBadgeText, { color: colors.text }]}>{filteredMarkers.length} active</Text>
       </View>
 
-      {/* Legend */}
-      <View style={[styles.legend, { backgroundColor: resolvedMode === "dark" ? "rgba(17,24,39,0.85)" : "rgba(255,255,255,0.9)" }]}>
-        {LAYERS.filter((l) => activeLayers.includes(l.key)).map((item) => (
-          <View key={item.key} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-            <Text style={[styles.legendLabel, { color: colors.text }]}>{item.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Bottom Sheet for Selected Marker */}
       {selected && (
-        <View style={[styles.bottomSheet, { backgroundColor: colors.surface, ...Shadows.xl }]}>
+        <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-          <View style={styles.sheetContent}>
-            <View style={[styles.sheetIcon, { backgroundColor: selected.color + "15" }]}>
-              <Image source={getMarkerIconSource(selected.color)} style={{ width: 24, height: 24, resizeMode: "contain" } as ImageStyle} />
+          <View style={styles.sheetRow}>
+            <View style={[styles.sheetIconBox, { backgroundColor: selected.color + "15" }]}>
+              <Image source={getMarkerIconSource(selected.color)} style={{ width: 26, height: 26, resizeMode: "contain" } as ImageStyle} />
             </View>
             <View style={styles.sheetInfo}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>{selected.title}</Text>
-              <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>{selected.subtitle}</Text>
+              <Text style={[styles.sheetSub, { color: colors.textSecondary }]}>{selected.subtitle}</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.sheetClose, { backgroundColor: colors.surfaceVariant }]}
-              onPress={() => setSelectedMarker(null)}
-            >
+            <TouchableOpacity style={[styles.sheetCloseBtn, { backgroundColor: colors.surfaceVariant }]} onPress={() => setSelectedMarker(null)}>
               <Ionicons name="close" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
           <View style={styles.sheetActions}>
-            <TouchableOpacity style={[styles.sheetActionBtn, { backgroundColor: colors.primary + "15" }]}>
+            <TouchableOpacity style={[styles.sheetAction, { backgroundColor: colors.primary + "12" }]}>
               <Ionicons name="navigate" size={16} color={colors.primary} />
               <Text style={[styles.sheetActionText, { color: colors.primary }]}>Directions</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.sheetActionBtn, { backgroundColor: colors.primary + "15" }]}>
+            <TouchableOpacity style={[styles.sheetAction, { backgroundColor: colors.primary + "12" }]}>
               <Ionicons name="share-social" size={16} color={colors.primary} />
               <Text style={[styles.sheetActionText, { color: colors.primary }]}>Share</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.sheetActionBtn, { backgroundColor: colors.primary + "15" }]}>
+            <TouchableOpacity style={[styles.sheetAction, { backgroundColor: colors.primary + "12" }]}>
               <Ionicons name="information-circle" size={16} color={colors.primary} />
               <Text style={[styles.sheetActionText, { color: colors.primary }]}>Details</Text>
             </TouchableOpacity>
@@ -223,49 +196,62 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { width: "100%", height: "100%" },
-  layersContainer: {
+  topBar: {
     position: "absolute",
-    top: 60,
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 52,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  circleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+    ...Shadows.md,
+  },
+  searchField: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    ...Shadows.sm,
+  },
+  searchInput: { flex: 1, fontSize: 14, fontWeight: "500" },
+  layersWrap: {
+    position: "absolute",
+    top: 108,
     left: 0,
     right: 0,
   },
   layersScroll: { paddingHorizontal: 16, gap: 8 },
-  layerChip: {
+  layerPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    borderWidth: 1,
     ...Shadows.sm,
   },
-  layerDot: { width: 8, height: 8, borderRadius: 4 },
-  layerText: { fontSize: 13, fontWeight: "600" },
-  searchBar: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    right: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    gap: 10,
-    ...Shadows.md,
-  },
-  searchInput: { flex: 1, fontSize: 15, fontWeight: "500" },
-  searchMic: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  layerLabel: { fontSize: 12, fontWeight: "600" },
   alertBadge: {
     position: "absolute",
-    top: 60,
+    top: 110,
     right: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -275,85 +261,44 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     ...Shadows.sm,
   },
-  alertBadgeText: { fontSize: 12, fontWeight: "700" },
-  legend: {
-    position: "absolute",
-    bottom: 24,
-    left: 16,
-    right: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    ...Shadows.sm,
-  },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 11, fontWeight: "600" },
+  alertBadgeText: { fontSize: 11, fontWeight: "700" },
   markerPin: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    ...Shadows.md,
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, ...Shadows.md,
   },
   bottomSheet: {
     position: "absolute",
-    bottom: 80,
-    left: 16,
-    right: 16,
-    borderRadius: 20,
+    bottom: 24, left: 16, right: 16,
+    borderRadius: 24,
     paddingBottom: 16,
+    ...Shadows.xl,
   },
   sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginTop: 10,
-    marginBottom: 12,
+    width: 36, height: 4, borderRadius: 2,
+    alignSelf: "center", marginTop: 10, marginBottom: 12,
   },
-  sheetContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 12,
+  sheetRow: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 16, gap: 12,
   },
-  sheetIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+  sheetIconBox: {
+    width: 52, height: 52, borderRadius: 16,
+    alignItems: "center", justifyContent: "center",
   },
   sheetInfo: { flex: 1 },
-  sheetTitle: { fontSize: 15, fontWeight: "700" },
-  sheetSubtitle: { fontSize: 12, marginTop: 3 },
-  sheetClose: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+  sheetTitle: { fontSize: 16, fontWeight: "700" },
+  sheetSub: { fontSize: 12, marginTop: 2 },
+  sheetCloseBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: "center", justifyContent: "center",
   },
   sheetActions: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    marginTop: 12,
-    gap: 8,
+    flexDirection: "row", paddingHorizontal: 16, marginTop: 14, gap: 8,
   },
-  sheetActionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 12,
+  sheetAction: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 11, borderRadius: 14,
   },
-  sheetActionText: { fontSize: 12, fontWeight: "600" },
+  sheetActionText: { fontSize: 12, fontWeight: "700" },
 });

@@ -4,40 +4,35 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   Linking,
-  Platform,
   StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 import { useLocation } from "@/hooks/useLocation";
-import SearchBar from "@/components/SearchBar";
 import GradientBackground from "@/components/GradientBackground";
 import { Gradients, Shadows } from "@/constants/theme";
 import { calculateDistance } from "@/services/locationService";
 
 type ServiceCategory = "all" | "hospitals" | "police" | "fire" | "shelters" | "food" | "water";
 
-const CATEGORIES: { key: ServiceCategory; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: "all", label: "All", icon: "grid" },
-  { key: "hospitals", label: "Hospitals", icon: "medkit" },
-  { key: "police", label: "Police", icon: "shield-checkmark" },
-  { key: "fire", label: "Fire", icon: "flame" },
-  { key: "shelters", label: "Shelters", icon: "home" },
-  { key: "food", label: "Food", icon: "restaurant" },
-  { key: "water", label: "Water", icon: "water" },
+const CATEGORIES: { key: ServiceCategory; label: string; icon: keyof typeof Ionicons.glyphMap; color: string }[] = [
+  { key: "all", label: "All", icon: "grid", color: "#64748B" },
+  { key: "hospitals", label: "Hospitals", icon: "medkit", color: "#DC2626" },
+  { key: "police", label: "Police", icon: "shield-checkmark", color: "#1E40AF" },
+  { key: "fire", label: "Fire", icon: "flame", color: "#EA580C" },
+  { key: "shelters", label: "Shelters", icon: "home", color: "#16A34A" },
+  { key: "food", label: "Food", icon: "restaurant", color: "#D97706" },
+  { key: "water", label: "Water", icon: "water", color: "#0EA5E9" },
 ];
 
 interface NearbyService {
-  id: string;
-  name: string;
-  category: ServiceCategory;
-  distance: number;
-  isOpen: boolean;
-  phone: string;
-  address: string;
+  id: string; name: string; category: ServiceCategory;
+  distance: number; isOpen: boolean; phone: string; address: string;
   coordinates: { latitude: number; longitude: number };
 }
 
@@ -52,16 +47,15 @@ const MOCK_SERVICES: NearbyService[] = [
   { id: "8", name: "North Fire Station", category: "fire", distance: 4100, isOpen: true, phone: "101", address: "15 Blaze Street", coordinates: { latitude: 28.625, longitude: 77.205 } },
 ];
 
-const CATEGORY_ICONS: Record<ServiceCategory, keyof typeof Ionicons.glyphMap> = {
-  all: "grid", hospitals: "medkit", police: "shield-checkmark", fire: "flame", shelters: "home", food: "restaurant", water: "water",
-};
-const CATEGORY_COLORS: Record<ServiceCategory, string> = {
-  all: "#64748B", hospitals: "#DC2626", police: "#1E40AF", fire: "#EA580C", shelters: "#16A34A", food: "#D97706", water: "#0EA5E9",
-};
+function formatDist(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+}
 
 export default function NearbyServicesScreen() {
   const { colors, resolvedMode } = useTheme();
   const { location } = useLocation();
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<ServiceCategory>("all");
   const [search, setSearch] = useState("");
 
@@ -87,121 +81,127 @@ export default function NearbyServicesScreen() {
 
   const handleNavigate = useCallback((service: NearbyService) => {
     const { latitude, longitude } = service.coordinates;
-    const url = Platform.select({ ios: `maps:0,0?q=${latitude},${longitude}`, android: `geo:0,0?q=${latitude},${longitude}`, default: `https://www.google.com/maps?q=${latitude},${longitude}` });
-    Linking.openURL(url);
+    Linking.openURL(`https://www.google.com/maps?q=${latitude},${longitude}`);
   }, []);
 
   const handleCall = useCallback((phone: string) => Linking.openURL(`tel:${phone}`), []);
 
-  const formatDistance = (meters: number): string => {
-    if (meters < 1000) return `${Math.round(meters)}m`;
-    return `${(meters / 1000).toFixed(1)}km`;
-  };
-
   return (
     <GradientBackground colors={gradientColors}>
       <StatusBar barStyle={resolvedMode === "dark" ? "light-content" : "dark-content"} />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Nearby Services</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Emergency services near your location</Text>
+
+      <LinearGradient
+        colors={resolvedMode === "dark"
+          ? (["rgba(16,33,59,0.9)", "rgba(16,33,59,0.4)"] as const)
+          : (["rgba(255,255,255,0.9)", "rgba(255,255,255,0.4)"] as const)}
+        style={styles.topBar}
+      >
+        <View style={styles.topRow}>
+          <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => router.back()} activeOpacity={0.7}>
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.topTitle, { color: colors.text }]}>Medical Services</Text>
+        </View>
+        <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={18} color={colors.textMuted} />
+          <View style={[styles.searchInputWrap, { borderLeftColor: colors.border }]}>
+            <TextInput
+              style={{ flex: 1, fontSize: 14, fontWeight: "500", color: colors.text, paddingVertical: 0 }}
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search services..."
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.mapPreview}>
+          <View style={styles.mapInner}>
+            <View style={styles.mapGrid}>
+              <View style={[styles.mapGridLine, styles.mapGridLineH1]} />
+              <View style={[styles.mapGridLine, styles.mapGridLineH2]} />
+              <View style={[styles.mapGridLine, styles.mapGridLineV1]} />
+              <View style={[styles.mapGridLine, styles.mapGridLineV2]} />
+            </View>
+            <View style={[styles.mapRoad, styles.mapRoad1]} />
+            <View style={[styles.mapRoad, styles.mapRoad2]} />
+            <View style={styles.mapPin}>
+              <View style={styles.mapPinShadow} />
+              <Ionicons name="location" size={40} color="#FF3B30" />
+            </View>
+            <View style={styles.mapLabelBox}>
+              <Ionicons name="map" size={14} color="#FFFFFF" />
+              <Text style={styles.mapLabel}>Map View</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Map Placeholder */}
-        <LinearGradient
-          colors={resolvedMode === "dark" ? ["rgba(31,41,55,0.7)", "rgba(17,24,39,0.5)"] : ["rgba(255,255,255,0.8)", "rgba(255,255,255,0.4)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.mapPlaceholder, Shadows.md]}
-        >
-          <Ionicons name="map" size={40} color={colors.textMuted} />
-          <Text style={[styles.mapText, { color: colors.text }]}>Map View</Text>
-          <Text style={[styles.mapSubtext, { color: colors.textMuted }]}>Tap to expand</Text>
-        </LinearGradient>
-
-        {/* Search */}
-        <View style={styles.searchContainer}>
-          <SearchBar value={search} onChangeText={setSearch} placeholder="Search services..."
-            colors={{ card: colors.surface, text: colors.text, textMuted: colors.textMuted, cardAlt: colors.surfaceVariant, accent: colors.primary }} />
-        </View>
-
-        {/* Category Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
           {CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.key;
             return (
               <TouchableOpacity
                 key={cat.key}
-                style={[styles.categoryChip, {
-                  backgroundColor: isActive ? CATEGORY_COLORS[cat.key] + "20" : (resolvedMode === "dark" ? "rgba(31,41,55,0.6)" : "rgba(255,255,255,0.7)"),
-                  borderColor: isActive ? CATEGORY_COLORS[cat.key] : (resolvedMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
+                style={[styles.categoryPill, {
+                  backgroundColor: isActive ? cat.color : colors.surface,
+                  borderColor: isActive ? cat.color : colors.border,
                 }]}
                 onPress={() => setActiveCategory(cat.key)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={cat.icon} size={16} color={isActive ? CATEGORY_COLORS[cat.key] : colors.textMuted} />
-                <Text style={[styles.categoryChipText, { color: isActive ? CATEGORY_COLORS[cat.key] : colors.textMuted }]}>{cat.label}</Text>
+                <Ionicons name={cat.icon} size={15} color={isActive ? "#FFF" : cat.color} />
+                <Text style={[styles.categoryLabel, { color: isActive ? "#FFF" : colors.textMuted }]}>{cat.label}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* Service Cards */}
-        <View style={styles.servicesList}>
-          {services.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="search" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No services found nearby</Text>
-            </View>
-          ) : (
-            services.map((service) => {
-              const catColor = CATEGORY_COLORS[service.category];
-              return (
-                <LinearGradient
-                  key={service.id}
-                  colors={resolvedMode === "dark" ? ["rgba(31,41,55,0.85)", "rgba(17,24,39,0.55)"] : ["rgba(255,255,255,0.9)", "rgba(255,255,255,0.5)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[styles.serviceCard, Shadows.md]}
-                >
-                  <View style={styles.serviceCardTop}>
-                    <View style={[styles.serviceIconContainer, { backgroundColor: catColor + "15" }]}>
-                      <Ionicons name={CATEGORY_ICONS[service.category]} size={22} color={catColor} />
-                    </View>
-                    <View style={styles.serviceInfo}>
-                      <Text style={[styles.serviceName, { color: colors.text }]}>{service.name}</Text>
-                      <Text style={[styles.serviceAddress, { color: colors.textSecondary }]}>{service.address}</Text>
-                    </View>
-                    <View style={[styles.statusBadge, { backgroundColor: service.isOpen ? colors.successLight : colors.errorLight }]}>
-                      <View style={[styles.statusDot, { backgroundColor: service.isOpen ? colors.success : colors.error }]} />
-                      <Text style={{ fontSize: 11, fontWeight: "600", color: service.isOpen ? colors.success : colors.error }}>
-                        {service.isOpen ? "Open" : "Closed"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={[styles.serviceDistance, { borderTopColor: resolvedMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}>
-                    <Ionicons name="navigate" size={14} color={colors.textMuted} />
-                    <Text style={[styles.distanceText, { color: colors.textSecondary }]}>{formatDistance(service.distance)}</Text>
-                  </View>
-
-                  <View style={styles.serviceActions}>
-                    <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => handleNavigate(service)} activeOpacity={0.7}>
-                      <Ionicons name="navigate" size={16} color="#FFFFFF" />
-                      <Text style={styles.actionButtonText}>Navigate</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionButton, { borderWidth: 1.5, borderColor: colors.primary, backgroundColor: "transparent" }]} onPress={() => handleCall(service.phone)} activeOpacity={0.7}>
-                      <Ionicons name="call" size={16} color={colors.primary} />
-                      <Text style={[styles.actionButtonText, { color: colors.primary }]}>Call</Text>
-                    </TouchableOpacity>
-                  </View>
-                </LinearGradient>
-              );
-            })
-          )}
+        <View style={styles.resultHeader}>
+          <Text style={[styles.resultCount, { color: colors.textSecondary }]}>{services.length} services found</Text>
         </View>
 
+        <View style={styles.list}>
+          {services.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="search-outline" size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No services found</Text>
+            </View>
+          ) : (
+            services.map((service) => (
+              <View key={service.id} style={[styles.card, { backgroundColor: colors.surface }]}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.cardIcon, { backgroundColor: (CATEGORIES.find((c) => c.key === service.category)?.color || "#64748B") + "15" }]}>
+                    <Ionicons name={CATEGORIES.find((c) => c.key === service.category)?.icon || "location"} size={22} color={CATEGORIES.find((c) => c.key === service.category)?.color || "#64748B"} />
+                  </View>
+                  <View style={styles.cardInfo}>
+                    <Text style={[styles.cardName, { color: colors.text }]}>{service.name}</Text>
+                    <Text style={[styles.cardAddress, { color: colors.textSecondary }]}>{service.address}</Text>
+                  </View>
+                  <View style={[styles.distanceBadge, { backgroundColor: colors.primary + "12" }]}>
+                    <Ionicons name="navigate" size={12} color={colors.primary} />
+                    <Text style={[styles.distanceText, { color: colors.primary }]}>{formatDist(service.distance)}</Text>
+                  </View>
+                </View>
+                <View style={styles.cardBottom}>
+                  <TouchableOpacity style={[styles.cardAction, { backgroundColor: colors.primary }]} onPress={() => handleNavigate(service)} activeOpacity={0.7}>
+                    <Ionicons name="navigate" size={16} color="#FFFFFF" />
+                    <Text style={styles.cardActionText}>Navigate</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.cardAction, styles.cardActionOutline, { borderColor: colors.primary }]} onPress={() => handleCall(service.phone)} activeOpacity={0.7}>
+                    <Ionicons name="call" size={16} color={colors.primary} />
+                    <Text style={[styles.cardActionText, { color: colors.primary }]}>Call</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
         <View style={{ height: 40 }} />
       </ScrollView>
     </GradientBackground>
@@ -209,54 +209,78 @@ export default function NearbyServicesScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
-  header: { marginTop: 48, marginBottom: 24 },
-  headerTitle: { fontSize: 28, fontWeight: "700", marginBottom: 6, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 15, fontWeight: "500" },
-  mapPlaceholder: {
-    height: 170,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-    gap: 6,
-  },
-  mapText: { fontSize: 16, fontWeight: "600" },
-  mapSubtext: { fontSize: 12 },
-  searchContainer: { marginBottom: 14 },
-  categoriesContainer: { gap: 10, paddingBottom: 20 },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
+  topBar: {
+    paddingTop: 52,
+    paddingBottom: 8,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.04)",
   },
-  categoryChipText: { fontSize: 13, fontWeight: "600" },
-  servicesList: { gap: 14 },
-  serviceCard: { borderRadius: 24, padding: 18 },
-  serviceCardTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 14 },
-  serviceIconContainer: { width: 50, height: 50, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  serviceInfo: { flex: 1 },
-  serviceName: { fontSize: 16, fontWeight: "700", marginBottom: 3 },
-  serviceAddress: { fontSize: 13, fontWeight: "400" },
-  statusBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  serviceDistance: { flexDirection: "row", alignItems: "center", gap: 6, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, marginBottom: 14 },
-  distanceText: { fontSize: 13, fontWeight: "500" },
-  serviceActions: { flexDirection: "row", gap: 12 },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 13,
-    borderRadius: 16,
+  topRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1, ...Shadows.sm },
+  topTitle: { fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
+  searchBar: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
+    borderWidth: 1, ...Shadows.sm,
   },
-  actionButtonText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
-  emptyContainer: { alignItems: "center", paddingVertical: 60, gap: 12 },
+  searchInputWrap: { flex: 1, flexDirection: "row", alignItems: "center", paddingLeft: 10, borderLeftWidth: 1 },
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 },
+  mapPreview: {
+    height: 150, borderRadius: 24, overflow: "hidden", marginBottom: 20,
+    ...Shadows.md,
+  },
+  mapInner: { flex: 1, backgroundColor: "#E8F0E6", position: "relative" },
+  mapGrid: { ...StyleSheet.absoluteFillObject },
+  mapGridLine: { position: "absolute", backgroundColor: "rgba(0,0,0,0.06)" },
+  mapGridLineH1: { left: 0, right: 0, top: "33%", height: 1 },
+  mapGridLineH2: { left: 0, right: 0, top: "66%", height: 1 },
+  mapGridLineV1: { top: 0, bottom: 0, left: "33%", width: 1 },
+  mapGridLineV2: { top: 0, bottom: 0, left: "66%", width: 1 },
+  mapRoad: { position: "absolute", backgroundColor: "rgba(255,255,255,0.7)" },
+  mapRoad1: { left: "10%", right: "10%", top: "25%", height: "5%", borderRadius: 3 },
+  mapRoad2: { top: "10%", bottom: "10%", left: "70%", width: "4%", borderRadius: 3 },
+  mapPin: { position: "absolute", top: "50%", left: "50%", marginLeft: -20, marginTop: -30, alignItems: "center", zIndex: 10 },
+  mapPinShadow: { position: "absolute", bottom: -2, width: 12, height: 4, borderRadius: 6, backgroundColor: "rgba(0,0,0,0.15)" },
+  mapLabelBox: {
+    position: "absolute", bottom: 12, right: 12,
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: "rgba(0,0,0,0.55)", paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 9999,
+  },
+  mapLabel: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+  categoriesScroll: { gap: 8, paddingBottom: 14 },
+  categoryPill: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 9999, borderWidth: 1.5, ...Shadows.sm,
+  },
+  categoryLabel: { fontSize: 12, fontWeight: "600" },
+  resultHeader: { marginBottom: 12 },
+  resultCount: { fontSize: 13, fontWeight: "500" },
+  list: { gap: 12 },
+  card: {
+    borderRadius: 24, padding: 16,
+    ...Shadows.md,
+  },
+  cardTop: { flexDirection: "row", gap: 12, marginBottom: 14 },
+  cardIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  cardInfo: { flex: 1 },
+  cardName: { fontSize: 15, fontWeight: "700", marginBottom: 2 },
+  cardAddress: { fontSize: 12, fontWeight: "400" },
+  distanceBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+    alignSelf: "flex-start",
+  },
+  distanceText: { fontSize: 11, fontWeight: "700" },
+  cardBottom: { flexDirection: "row", gap: 10 },
+  cardAction: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, paddingVertical: 12, borderRadius: 16,
+  },
+  cardActionOutline: { borderWidth: 1.5, backgroundColor: "transparent" },
+  cardActionText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
   emptyText: { fontSize: 16, fontWeight: "500" },
 });

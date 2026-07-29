@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, TouchableOpacity, Text, Easing } from "react-native";
+import { Animated, TouchableOpacity, Image, Easing } from "react-native";
 import * as Haptics from "expo-haptics";
 
 interface SOSTouchableOpacityProps {
@@ -132,16 +132,11 @@ const SOSTouchableOpacity: React.FC<SOSTouchableOpacityProps> = ({
           elevation: 12,
         }}
       >
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "900",
-            color: "#FFFFFF",
-            letterSpacing: 3,
-          }}
-        >
-          SOS
-        </Text>
+        <Image
+          source={require("../../assets/icons/sos.png")}
+          style={{ width: 44, height: 44 }}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
     </Animated.View>
   );

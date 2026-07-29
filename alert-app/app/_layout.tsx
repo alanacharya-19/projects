@@ -23,29 +23,19 @@ function RootLayoutNav() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="forecast" />
-        <Stack.Screen name="alerts" />
-        <Stack.Screen
-          name="map"
-          options={{ animation: 'slide_from_bottom' }}
-        />
-        <Stack.Screen
-          name="emergency"
-          options={{ animation: 'slide_from_bottom' }}
-        />
+        <Stack.Screen name="forecast" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="alerts" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="map" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="emergency" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="survival-guide" />
-        <Stack.Screen name="nearby-services" />
-        <Stack.Screen name="statistics" />
-        <Stack.Screen name="global-feed" />
+        <Stack.Screen name="nearby-services" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="statistics" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="global-feed" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="settings" />
-        <Stack.Screen
-          name="ai-chat"
-          options={{ animation: 'slide_from_bottom' }}
-        />
+        <Stack.Screen name="ai-chat" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="earthquake-monitor" />
         <Stack.Screen name="flood-monitor" />
         <Stack.Screen name="wildfire-monitor" />

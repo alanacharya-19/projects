@@ -8,6 +8,7 @@ import {
   Alert as RNAlert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -17,7 +18,7 @@ import AlertCard, { type AlertData } from '@/components/AlertCard';
 import EmptyState from '@/components/EmptyState';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import GradientBackground from '@/components/GradientBackground';
-import { Gradients } from '@/constants/theme';
+import { Gradients, Shadows } from '@/constants/theme';
 import { formatDistance, getSeverityColor } from '@/utils/helpers';
 import type { Alert, DisasterType, AlertSeverity } from '@/types';
 import { DisasterType as DT } from '@/types';
@@ -39,12 +40,12 @@ const TYPE_FILTERS: FilterChip[] = [
   { key: 'cold', label: 'Cold', icon: 'snow', type: DT.COLD_WAVE },
 ];
 
-const SEVERITY_FILTERS: { key: string; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'critical', label: 'Critical' },
-  { key: 'high', label: 'High' },
-  { key: 'medium', label: 'Medium' },
-  { key: 'low', label: 'Low' },
+const SEVERITY_FILTERS: { key: string; label: string; color: string }[] = [
+  { key: 'all', label: 'All', color: '#64748B' },
+  { key: 'critical', label: 'Critical', color: '#DC2626' },
+  { key: 'high', label: 'High', color: '#F97316' },
+  { key: 'medium', label: 'Medium', color: '#EAB308' },
+  { key: 'low', label: 'Low', color: '#22C55E' },
 ];
 
 function alertToAlertData(alert: Alert): AlertData {
@@ -57,13 +58,9 @@ function alertToAlertData(alert: Alert): AlertData {
   else timeAgo = `${Math.floor(diff / 86400000)}d ago`;
 
   return {
-    id: alert.id,
-    title: alert.title,
-    description: alert.message,
-    severity: alert.severity as AlertData['severity'],
-    type: alert.type,
-    timeAgo,
-    distance: formatDistance(alert.radius),
+    id: alert.id, title: alert.title, description: alert.message,
+    severity: alert.severity as AlertData['severity'], type: alert.type,
+    timeAgo, distance: formatDistance(alert.radius),
   };
 }
 
@@ -97,11 +94,7 @@ export default function AlertsScreen() {
   const handleTypeFilter = useCallback(
     (chip: FilterChip) => {
       setActiveTypeFilter(chip.key);
-      if (chip.key === 'all') {
-        setFilter({ types: undefined });
-      } else if (chip.type) {
-        setFilter({ types: [chip.type] });
-      }
+      setFilter({ types: chip.key === 'all' ? undefined : [chip.type!] });
     },
     [setFilter],
   );
@@ -115,14 +108,10 @@ export default function AlertsScreen() {
 
   const handleDismissAlert = useCallback(
     (alertData: AlertData) => {
-      RNAlert.alert(
-        'Dismiss Alert',
-        'Are you sure you want to dismiss this alert?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Dismiss', style: 'destructive', onPress: () => dismissAlert(alertData.id) },
-        ],
-      );
+      RNAlert.alert('Dismiss Alert', 'Are you sure you want to dismiss this alert?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Dismiss', style: 'destructive', onPress: () => dismissAlert(alertData.id) },
+      ]);
     },
     [dismissAlert],
   );
@@ -134,259 +123,119 @@ export default function AlertsScreen() {
   if (error && filteredAlerts.length === 0) {
     return (
       <EmptyState
-        icon="warning"
-        title="Unable to Load Alerts"
-        description={error}
-        actionText="Retry"
-        onAction={onRefresh}
-        colors={{
-          card: colors.surface,
-          cardAlt: colors.surfaceVariant,
-          text: colors.text,
-          textSecondary: colors.textSecondary,
-          textMuted: colors.textMuted,
-          accent: colors.primary,
-        }}
+        icon="warning" title="Unable to Load Alerts" description={error}
+        actionText="Retry" onAction={onRefresh}
+        colors={{ card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text, textSecondary: colors.textSecondary, textMuted: colors.textMuted, accent: colors.primary }}
       />
     );
   }
 
   return (
-    <GradientBackground
-      colors={resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert}
-    >
+    <GradientBackground colors={resolvedMode === 'dark' ? Gradients.alertDark : Gradients.alert}>
+      <LinearGradient
+        colors={resolvedMode === 'dark'
+          ? (['rgba(16,33,59,0.95)', 'rgba(16,33,59,0.6)', 'rgba(255,239,239,0.05)'] as const)
+          : (['rgba(255,239,239,0.95)', 'rgba(255,255,240,0.6)', 'rgba(247,249,252,0.1)'] as const)}
+        style={{ paddingTop: insets.top + 12, paddingBottom: 2, paddingHorizontal: 20 }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <TouchableOpacity
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, ...Shadows.sm }}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={{ marginLeft: 14 }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.3 }}>Alerts</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 1 }}>
+              {filteredBySeverity.length} active {filteredBySeverity.length === 1 ? 'alert' : 'alerts'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 6, paddingVertical: 4 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 4, alignItems: 'center' }}>
+            {TYPE_FILTERS.map((chip) => {
+              const isActive = activeTypeFilter === chip.key;
+              return (
+                <TouchableOpacity
+                  key={chip.key} activeOpacity={0.7} onPress={() => handleTypeFilter(chip)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 4,
+                    paddingHorizontal: 11, paddingVertical: 5,
+                    borderRadius: 9999,
+                    backgroundColor: isActive ? colors.primary : colors.surface,
+                    borderWidth: 1, borderColor: isActive ? colors.primary : colors.border,
+                    ...Shadows.sm,
+                  }}
+                >
+                  <Ionicons name={chip.icon} size={12} color={isActive ? '#FFFFFF' : colors.textSecondary} />
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: isActive ? '#FFFFFF' : colors.textSecondary }}>{chip.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 4, paddingVertical: 2, paddingBottom: 6 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 4, alignItems: 'center' }}>
+            {SEVERITY_FILTERS.map((sf) => {
+              const isActive = activeSeverityFilter === sf.key;
+              return (
+                <TouchableOpacity
+                  key={sf.key} activeOpacity={0.7} onPress={() => setActiveSeverityFilter(sf.key)}
+                  style={{
+                    paddingHorizontal: 10, paddingVertical: 3,
+                    borderRadius: 9999,
+                    backgroundColor: isActive ? `${sf.color}18` : 'transparent',
+                    borderWidth: 1, borderColor: isActive ? sf.color : colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: isActive ? '700' : '500', color: isActive ? sf.color : colors.textMuted }}>{sf.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </LinearGradient>
+
       <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top + 20,
-          paddingBottom: insets.bottom + 32,
-        }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
-        }
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: '700',
-            color: colors.text,
-            paddingHorizontal: 20,
-            marginBottom: 6,
-          }}
-        >
-          Alerts
-        </Text>
-        <Text
-          style={{
-            fontSize: 15,
-            color: colors.textSecondary,
-            paddingHorizontal: 20,
-            marginBottom: 20,
-            fontWeight: '500',
-          }}
-        >
-          {filteredBySeverity.length} active {filteredBySeverity.length === 1 ? 'alert' : 'alerts'}
-        </Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            gap: 8,
-            marginBottom: 14,
-          }}
-        >
-          {TYPE_FILTERS.map((chip) => {
-            const isActive = activeTypeFilter === chip.key;
-            return (
-              <TouchableOpacity
-                key={chip.key}
-                activeOpacity={0.7}
-                onPress={() => handleTypeFilter(chip)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                  paddingHorizontal: 16,
-                  paddingVertical: 10,
-                  borderRadius: 9999,
-                  backgroundColor: isActive ? colors.primary : colors.surface,
-                  borderWidth: 1,
-                  borderColor: isActive ? colors.primary : colors.border,
-                  shadowColor: isActive ? colors.primary : '#000',
-                  shadowOffset: { width: 0, height: isActive ? 2 : 0 },
-                  shadowOpacity: isActive ? 0.2 : 0.05,
-                  shadowRadius: isActive ? 4 : 2,
-                  elevation: isActive ? 3 : 1,
-                }}
-              >
-                <Ionicons
-                  name={chip.icon}
-                  size={16}
-                  color={isActive ? '#FFFFFF' : colors.textSecondary}
-                />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '600',
-                    color: isActive ? '#FFFFFF' : colors.textSecondary,
-                  }}
-                >
-                  {chip.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            gap: 8,
-            marginBottom: 24,
-          }}
-        >
-          {SEVERITY_FILTERS.map((sf) => {
-            const isActive = activeSeverityFilter === sf.key;
-            return (
-              <TouchableOpacity
-                key={sf.key}
-                activeOpacity={0.7}
-                onPress={() => setActiveSeverityFilter(sf.key)}
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 9999,
-                  backgroundColor: isActive ? colors.surfaceVariant : 'transparent',
-                  borderWidth: 1,
-                  borderColor: isActive ? colors.primary : colors.border,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: isActive ? colors.primary : colors.textMuted,
-                    fontWeight: isActive ? '700' : '500',
-                  }}
-                >
-                  {sf.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
         {filteredBySeverity.length === 0 ? (
-          <View
-            style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 60,
-              paddingHorizontal: 40,
-            }}
-          >
-            <View
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
-                backgroundColor: colors.successLight || '#DCFCE7',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 20,
-              }}
-            >
-              <Ionicons name="checkmark-circle" size={44} color={colors.success} />
-            </View>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text,
-                marginBottom: 8,
-              }}
-            >
-              No active alerts
-            </Text>
-            <Text
-              style={{
-                fontSize: 15,
-                color: colors.textSecondary,
-                textAlign: 'center',
-                lineHeight: 22,
-              }}
-            >
-              {"You're all clear! No active alerts match your current filters."}
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 40 }}>
+            <LinearGradient colors={['#ECFDF5', '#D1FAE5']} style={{ width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+              <Ionicons name="shield-checkmark" size={44} color="#22C55E" />
+            </LinearGradient>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, marginBottom: 8, letterSpacing: -0.3 }}>All Clear</Text>
+            <Text style={{ fontSize: 15, color: colors.textSecondary, textAlign: 'center', lineHeight: 22 }}>
+              {"No active alerts match your current filters."}
             </Text>
           </View>
         ) : (
-          <View style={{ paddingHorizontal: 20, gap: 12 }}>
+          <View style={{ paddingHorizontal: 20, paddingTop: 16, gap: 12 }}>
             {filteredBySeverity.map((alert) => {
               const alertData = alertToAlertData(alert);
               return (
-                <SwipeableAlertCard
-                  key={alert.id}
-                  alertData={alertData}
-                  onPress={handleAlertPress}
-                  onDismiss={handleDismissAlert}
-                  colors={{
-                    card: colors.surface,
-                    cardAlt: colors.surfaceVariant,
-                    text: colors.text,
-                    textSecondary: colors.textSecondary,
-                    textMuted: colors.textMuted,
+                <TouchableOpacity key={alert.id} activeOpacity={0.8} onLongPress={() => handleDismissAlert(alertData)} delayLongPress={600}>
+                  <AlertCard alert={alertData} onPress={handleAlertPress} colors={{
+                    card: colors.surface, cardAlt: colors.surfaceVariant, text: colors.text,
+                    textSecondary: colors.textSecondary, textMuted: colors.textMuted,
                     severityExtreme: getSeverityColor('extreme' as AlertSeverity),
                     severitySevere: getSeverityColor('severe' as AlertSeverity),
                     severityModerate: getSeverityColor('moderate' as AlertSeverity),
                     severityMinor: getSeverityColor('minor' as AlertSeverity),
                     divider: colors.divider,
-                  }}
-                />
+                  }} />
+                </TouchableOpacity>
               );
             })}
           </View>
         )}
       </ScrollView>
     </GradientBackground>
-  );
-}
-
-function SwipeableAlertCard({
-  alertData,
-  onPress,
-  onDismiss,
-  colors,
-}: {
-  alertData: AlertData;
-  onPress: (data: AlertData) => void;
-  onDismiss: (data: AlertData) => void;
-  colors: {
-    card: string;
-    cardAlt: string;
-    text: string;
-    textSecondary: string;
-    textMuted: string;
-    severityExtreme: string;
-    severitySevere: string;
-    severityModerate: string;
-    severityMinor: string;
-    divider: string;
-  };
-}) {
-  const handleLongPress = useCallback(() => {
-    onDismiss(alertData);
-  }, [onDismiss, alertData]);
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onLongPress={handleLongPress}
-      delayLongPress={600}
-    >
-      <AlertCard alert={alertData} onPress={onPress} colors={colors} />
-    </TouchableOpacity>
   );
 }
