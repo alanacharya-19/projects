@@ -340,7 +340,7 @@ export default function EarthquakeMonitorScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { paddingBottom: 40, paddingHorizontal: 20 },
+  scrollContent: { paddingBottom: 40, paddingHorizontal: 20, paddingTop: 30 },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -34,7 +34,6 @@ function RootLayoutNav() {
         <Stack.Screen name="nearby-services" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="statistics" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="global-feed" options={{ animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="settings" />
         <Stack.Screen name="ai-chat" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="earthquake-monitor" />
         <Stack.Screen name="flood-monitor" />

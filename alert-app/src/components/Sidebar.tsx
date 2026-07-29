@@ -11,7 +11,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -40,7 +39,6 @@ const MENU_ITEMS: SidebarItem[] = [
   { id: 'statistics', title: 'Statistics', icon: 'bar-chart', iconColor: '#8B5CF6', route: '/statistics' },
   { id: 'feed', title: 'Global Feed', icon: 'globe', iconColor: '#00C2FF', route: '/global-feed' },
   { id: 'ai', title: 'AI Assistant', icon: 'chatbubble-ellipses', pngIcon: require('../../assets/icons/aiAssistant.png'), iconColor: '#8B5CF6', route: '/ai-chat' },
-  { id: 'settings', title: 'Settings', icon: 'settings', iconColor: '#94A3B8', route: '/settings' },
 ];
 
 interface SidebarProps {
@@ -117,14 +115,9 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
         ]}
       >
         <View style={styles.sidebarHeader}>
-          <LinearGradient
-            colors={['#3B82F6', '#2563EB']}
-            style={styles.logoCircle}
-          >
-            <Ionicons name="shield-checkmark" size={28} color="#FFFFFF" />
-          </LinearGradient>
+          <Image source={require('../../assets/appIcon.png')} style={styles.logoImage} />
           <View style={styles.headerTextContainer}>
-            <Text style={styles.appName}>AlertGuard</Text>
+            <Text style={styles.appName}>GeoAlert</Text>
             <Text style={styles.appVersion}>v1.0.0</Text>
           </View>
         </View>
@@ -218,17 +211,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 14,
   },
-  logoCircle: {
+  logoImage: {
     width: 52,
     height: 52,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
   headerTextContainer: {
     flex: 1,

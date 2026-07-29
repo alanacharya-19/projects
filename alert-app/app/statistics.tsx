@@ -1,11 +1,9 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Animated, Dimensions } from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "expo-router";
-
-const { height: SCREEN_H } = Dimensions.get("window");
 import StatBar from "@/components/StatBar";
 import GradientBackground from "@/components/GradientBackground";
 import { Gradients, Shadows } from "@/constants/theme";
@@ -57,7 +55,6 @@ const MOCK_DATA = {
 export default function StatisticsScreen() {
   const { colors, resolvedMode } = useTheme();
   const router = useRouter();
-  const slideAnim = useRef(new Animated.Value(0)).current;
   const [period, setPeriod] = useState<TimePeriod>("month");
   const data = useMemo(() => MOCK_DATA[period], [period]);
 
@@ -80,15 +77,14 @@ export default function StatisticsScreen() {
   ];
 
   const handleBack = useCallback(() => {
-    Animated.timing(slideAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start(() => router.back());
-  }, [slideAnim, router]);
+    router.back();
+  }, [router]);
 
   const maxRain = Math.max(...data.monthlyBars.map((b) => b.rain), 1);
 
   return (
     <GradientBackground colors={gradientColors}>
       <StatusBar barStyle={resolvedMode === "dark" ? "light-content" : "dark-content"} />
-      <Animated.View style={{ flex: 1, transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, SCREEN_H] }) }] }}>
       <LinearGradient
         colors={resolvedMode === "dark" ? (["rgba(16,33,59,0.9)", "rgba(16,33,59,0.4)"] as const) : (["rgba(255,255,255,0.9)", "rgba(255,255,255,0.4)"] as const)}
         style={styles.headerBar}
@@ -211,7 +207,6 @@ export default function StatisticsScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-      </Animated.View>
     </GradientBackground>
   );
 }

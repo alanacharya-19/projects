@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,6 @@ import {
   Alert,
   Linking,
   Share,
-  Animated,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,8 +16,6 @@ import { useRouter } from "expo-router";
 import { useLocation } from "@/hooks/useLocation";
 import SOSTouchableOpacity from "@/components/SOSTouchableOpacity";
 import type { EmergencyContact } from "@/types";
-
-const { height: SCREEN_H } = Dimensions.get("window");
 
 const EMERGENCY_NUMBERS = [
   { name: "Police", number: "100", icon: "shield-checkmark" as const, gradient: ["#1E40AF", "#1D4ED8"] as const },
@@ -34,7 +30,6 @@ export default function EmergencyScreen() {
   const { location } = useLocation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const slideAnim = useRef(new Animated.Value(0)).current;
   const [contacts] = useState<EmergencyContact[]>([
     { id: "1", name: "Mom", phoneNumber: "+91 98765 43210", relationship: "Family", isPrimary: true },
     { id: "2", name: "Dad", phoneNumber: "+91 98765 43211", relationship: "Family", isPrimary: false },
@@ -54,12 +49,8 @@ export default function EmergencyScreen() {
   }, []);
 
   const handleBack = useCallback(() => {
-    Animated.timing(slideAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => router.back());
-  }, [slideAnim, router]);
+    router.back();
+  }, [router]);
 
   const handleCall = useCallback((phone: string) => {
     Linking.openURL(`tel:${phone}`);
@@ -86,7 +77,6 @@ export default function EmergencyScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#DC2626", "#B91C1C", "#991B1B"]} style={StyleSheet.absoluteFill} />
-      <Animated.View style={{ flex: 1, transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, SCREEN_H] }) }] }}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 12,
@@ -218,7 +208,6 @@ export default function EmergencyScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
-      </Animated.View>
     </View>
   );
 }

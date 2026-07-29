@@ -123,7 +123,7 @@ export default function ForecastScreen() {
       >
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#1E293B" />
+            <Ionicons name="chevron-down" size={22} color="#1E293B" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Weather Forecast</Text>
           <TouchableOpacity style={styles.unitToggle} onPress={toggleUnit} activeOpacity={0.7}>
