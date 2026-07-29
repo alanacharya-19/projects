@@ -6,6 +6,7 @@ import {
   RefreshControl,
   StyleSheet,
   Image,
+  ImageSourcePropType,
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
@@ -35,14 +36,26 @@ function getBannerImage(): number {
   return require('../assets/banner/10pm-5am.jpg');
 }
 
-function getWeatherIcon(code: string): keyof typeof Ionicons.glyphMap {
-  if (code.startsWith('01')) return 'sunny';
-  if (code.startsWith('02')) return 'partly-sunny';
-  if (code.startsWith('03') || code.startsWith('04')) return 'cloudy';
-  if (code.startsWith('09') || code.startsWith('10')) return 'rainy';
-  if (code.startsWith('11')) return 'thunderstorm';
-  if (code.startsWith('13')) return 'snow';
-  return 'partly-sunny';
+function getWeatherIcon(code: string): number {
+  const iconMap: Record<string, number> = {
+    '01d': require('../assets/icons/sunny.png'),
+    '01n': require('../assets/icons/sunny.png'),
+    '02d': require('../assets/icons/partly-sunny.png'),
+    '02n': require('../assets/icons/partly-sunny.png'),
+    '03d': require('../assets/icons/cloudy.png'),
+    '03n': require('../assets/icons/cloudy.png'),
+    '04d': require('../assets/icons/cloudy.png'),
+    '04n': require('../assets/icons/cloudy.png'),
+    '09d': require('../assets/icons/rainy.png'),
+    '09n': require('../assets/icons/rainy.png'),
+    '10d': require('../assets/icons/rainy.png'),
+    '10n': require('../assets/icons/rainy.png'),
+    '11d': require('../assets/icons/thunderstorm.png'),
+    '11n': require('../assets/icons/thunderstorm.png'),
+    '13d': require('../assets/icons/snowing.png'),
+    '13n': require('../assets/icons/snowing.png'),
+  };
+  return iconMap[code] || require('../assets/icons/sunny.png');
 }
 
 function getWeatherEmoji(code: string): string {
@@ -127,6 +140,11 @@ export default function HomeScreen() {
       <LinearGradient colors={['#DDEEFF', '#F8FBFF', '#FFFFFF']} style={StyleSheet.absoluteFill} />
 
       <Image source={getBannerImage()} style={styles.banner} resizeMode="cover" />
+      <View style={styles.bannerOverlay} />
+      <LinearGradient
+        colors={['transparent', 'rgba(221,238,255,0.4)', 'rgba(248,251,255,0.8)', '#F7F9FC']}
+        style={styles.bannerBlur}
+      />
 
       <View style={[styles.navBar, { top: insets.top + 8 }]}>
         <TouchableOpacity style={styles.navIcon} onPress={() => setSidebarVisible(true)} activeOpacity={0.7}>
@@ -183,11 +201,9 @@ export default function HomeScreen() {
                 Feels like {weather ? `${Math.round(weather.current.feelsLike)}°` : '--'}
               </Text>
             </View>
-            <Ionicons
-              name={getWeatherIcon(weather?.current.icon || '01d')}
-              size={52}
-              color="#3B82F6"
-            />
+            <View style={styles.weatherStickerWrap}>
+              <Image source={getWeatherIcon(weather?.current.icon || '01d')} style={styles.weatherSticker} />
+            </View>
           </View>
           <View style={styles.weatherStats}>
             <View style={styles.weatherStat}>
@@ -254,14 +270,14 @@ export default function HomeScreen() {
 
         <View style={styles.quickActionsGrid}>
           {[
-            { icon: 'alert-circle' as const, label: 'SOS', color: '#EF4444', route: '/emergency' },
-            { icon: 'map' as const, label: 'Live Map', color: '#3B82F6', route: '/map' },
-            { icon: 'business' as const, label: 'Nearby Shelters', color: '#22C55E', route: '/nearby-services' },
-            { icon: 'partly-sunny' as const, label: 'Weather', color: '#F97316', route: '/forecast' },
-            { icon: 'medkit' as const, label: 'Medical Services', color: '#3B82F6', route: '/nearby-services' },
-            { icon: 'call' as const, label: 'Emergency Contacts', color: '#22C55E', route: '/emergency' },
-            { icon: 'notifications' as const, label: 'Alerts', color: '#EF4444', route: '/alerts' },
-            { icon: 'chatbubble-ellipses' as const, label: 'AI Assistant', color: '#8B5CF6', route: '/ai-chat' },
+            { source: require('../assets/icons/sos.png'), label: 'SOS', color: '#EF4444', route: '/emergency' },
+            { source: require('../assets/icons/map.png'), label: 'Live Map', color: '#3B82F6', route: '/map' },
+            { source: require('../assets/icons/NearbyShelter.png'), label: 'Nearby Shelters', color: '#22C55E', route: '/nearby-services' },
+            { source: require('../assets/icons/weather.png'), label: 'Weather', color: '#F97316', route: '/forecast' },
+            { source: require('../assets/icons/medicalServices.png'), label: 'Medical Services', color: '#3B82F6', route: '/nearby-services' },
+            { source: require('../assets/icons/emergencyCall.png'), label: 'Emergency Contacts', color: '#22C55E', route: '/emergency' },
+            { source: require('../assets/icons/alerts.png'), label: 'Alerts', color: '#EF4444', route: '/alerts' },
+            { source: require('../assets/icons/aiAssistant.png'), label: 'AI Assistant', color: '#8B5CF6', route: '/ai-chat' },
           ].map((item, index) => (
             <TouchableOpacity
               key={index}
@@ -270,7 +286,7 @@ export default function HomeScreen() {
               onPress={() => router.push(item.route as any)}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: `${item.color}15` }]}>
-                <Ionicons name={item.icon} size={22} color={item.color} />
+                <Image source={item.source} style={styles.quickActionIconImg} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={2}>{item.label}</Text>
             </TouchableOpacity>
@@ -338,6 +354,21 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: SCREEN_H * 0.4,
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_H * 0.4,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  bannerBlur: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 80,
   },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   loadingText: { fontSize: 16, fontWeight: '500', color: '#6B7280' },
@@ -441,18 +472,23 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     zIndex: 20,
-    shadowColor: '#1A2332',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowColor: '#B0BEC5',
+    shadowOffset: { width: 8, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 10,
   },
   weatherCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    overflow: 'hidden',
+    backgroundColor: '#F0F4F8',
+    borderRadius: 28,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: -8, height: -8 },
+    shadowOpacity: 0.7,
+    shadowRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
   weatherTop: {
     flexDirection: 'row',
@@ -465,7 +501,7 @@ const styles = StyleSheet.create({
   weatherLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#94A3B8',
     marginBottom: 4,
   },
   weatherTempRow: {
@@ -476,12 +512,12 @@ const styles = StyleSheet.create({
   weatherTemp: {
     fontSize: 44,
     fontWeight: '700',
-    color: '#1A2332',
+    color: '#1E293B',
   },
   weatherUnit: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#94A3B8',
   },
   weatherDesc: {
     fontSize: 15,
@@ -491,8 +527,20 @@ const styles = StyleSheet.create({
   weatherFeels: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#94A3B8',
     marginTop: 2,
+  },
+  weatherStickerWrap: {
+    width: 200,
+    height: 200,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    marginRight: -50,
+    marginTop: -55,
+  },
+  weatherSticker: {
+    width: 200,
+    height: 200,
   },
   weatherDivider: {
     height: 1,
@@ -521,16 +569,16 @@ const styles = StyleSheet.create({
   weatherStatLabel: {
     fontSize: 9,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#94A3B8',
   },
   weatherStatValue: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1A2332',
+    color: '#1E293B',
   },
   weatherStatDivider: {
     width: 1,
-    height: '60%',
+    height: '50%',
     backgroundColor: '#D1D8E0',
     marginHorizontal: 4,
   },
@@ -564,12 +612,12 @@ const styles = StyleSheet.create({
   sunLabel: {
     fontSize: 9,
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#94A3B8',
   },
   sunValue: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1A2332',
+    color: '#1E293B',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -675,6 +723,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  quickActionIconImg: {
+    width: 36,
+    height: 36,
   },
   quickActionLabel: {
     fontSize: 11,
