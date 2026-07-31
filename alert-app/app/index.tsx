@@ -17,10 +17,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useWeather } from '@/hooks/useWeather';
 import { useLocation } from '@/hooks/useLocation';
 import { calculateDistance } from '@/services/locationService';
-import { DISASTER_COLORS } from '@/constants/theme';
+import { DISASTER_COLORS, Gradients } from '@/constants/theme';
 
 import Sidebar from '@/components/Sidebar';
 import NotificationPanel from '@/components/NotificationPanel';
@@ -100,6 +101,7 @@ function capitalizeType(type: string): string {
 export default function HomeScreen() {
   const { state } = useAppContext();
   const { alerts } = useAlertContext();
+  const { colors, resolvedMode } = useTheme();
   const { isLoading, refresh, airQuality, uvIndex } = useWeather();
   const { isLoading: locationLoading } = useLocation();
   const router = useRouter();
@@ -140,18 +142,22 @@ export default function HomeScreen() {
 
   if ((isLoading || locationLoading) && !weather && !state.location) {
     return (
-      <LinearGradient colors={['#DDEEFF', '#F8FBFF', '#FFFFFF']} style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Ionicons name="cloudy" size={48} color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading weather data...</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <LinearGradient colors={resolvedMode === 'dark' ? Gradients.homeDark : Gradients.home} style={StyleSheet.absoluteFill} />
+
+        <View style={styles.loadingCenter}>
+          <Image source={require('../assets/appIcon.png')} style={styles.loadingAppIcon} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading weather data...</Text>
         </View>
-      </LinearGradient>
+
+        <Text style={[styles.loadingFromAlan, { color: colors.textMuted }]}>from alan</Text>
+      </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#DDEEFF', '#F8FBFF', '#FFFFFF']} style={StyleSheet.absoluteFill} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={resolvedMode === 'dark' ? Gradients.homeDark : Gradients.home} style={StyleSheet.absoluteFill} />
 
       <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} onNavigate={handleNavigate} currentRoute="/" />
       <NotificationPanel visible={notifPanelVisible} onClose={() => setNotifPanelVisible(false)} />
@@ -164,7 +170,9 @@ export default function HomeScreen() {
           <Image source={getBannerImage()} style={styles.banner} resizeMode="stretch" />
           <View style={styles.bannerOverlay} />
           <LinearGradient
-            colors={['transparent', 'rgba(221,238,255,0.4)', 'rgba(248,251,255,0.8)', '#F7F9FC']}
+            colors={resolvedMode === 'dark'
+              ? ['transparent', 'rgba(8,20,38,0.4)', 'rgba(8,20,38,0.8)', colors.background]
+              : ['transparent', 'rgba(221,238,255,0.4)', 'rgba(248,251,255,0.8)', '#F7F9FC']}
             style={styles.bannerBlur}
           />
 
@@ -210,7 +218,7 @@ export default function HomeScreen() {
 
         <View style={styles.contentPad}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
           </View>
 
           <View style={styles.quickActionsGrid}>
@@ -233,58 +241,58 @@ export default function HomeScreen() {
                 <View style={[styles.quickActionIcon, { backgroundColor: `${item.color}15` }]}>
                   <Image source={item.source} style={styles.quickActionIconImg} />
                 </View>
-                <Text style={styles.quickActionLabel} numberOfLines={2}>{item.label}</Text>
+                <Text style={[styles.quickActionLabel, { color: colors.text }]} numberOfLines={2}>{item.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>More Insights</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>More Insights</Text>
           </View>
 
           <View style={styles.insightsRow}>
-            <View style={styles.insightCard}>
+            <View style={[styles.insightCard, { backgroundColor: colors.surface }]}>
               <View style={styles.insightHeader}>
                 <Image source={require('../assets/icons/airQuality.png')} style={styles.insightIcon} />
-                <Text style={styles.insightLabel}>Air Quality</Text>
+                <Text style={[styles.insightLabel, { color: colors.textMuted }]}>Air Quality</Text>
               </View>
               <View style={styles.insightBody}>
-                <Text style={[styles.insightValue, { color: airQuality ? getAQIDescription(airQuality.aqi).color : '#94A3B8' }]}>
+                <Text style={[styles.insightValue, { color: airQuality ? getAQIDescription(airQuality.aqi).color : colors.textMuted }]}>
                   {airQuality ? airQuality.aqi : '--'}
                 </Text>
-                <Text style={[styles.insightBadge, { backgroundColor: airQuality ? `${getAQIDescription(airQuality.aqi).color}20` : '#F1F5F9', color: airQuality ? getAQIDescription(airQuality.aqi).color : '#94A3B8' }]}>
+                <Text style={[styles.insightBadge, { backgroundColor: airQuality ? `${getAQIDescription(airQuality.aqi).color}20` : colors.surfaceVariant, color: airQuality ? getAQIDescription(airQuality.aqi).color : colors.textMuted }]}>
                   {airQuality ? getAQIDescription(airQuality.aqi).label : '--'}
                 </Text>
               </View>
-              <View style={styles.insightFooter}>
-                <Text style={styles.insightFooterValue}>{airQuality ? `${airQuality.pm2_5.toFixed(1)}` : '--'} µg</Text>
-                <Text style={styles.insightFooterLabel}>PM2.5</Text>
+              <View style={[styles.insightFooter, { borderTopColor: colors.divider }]}>
+                <Text style={[styles.insightFooterValue, { color: colors.text }]}>{airQuality ? `${airQuality.pm2_5.toFixed(1)}` : '--'} µg</Text>
+                <Text style={[styles.insightFooterLabel, { color: colors.textMuted }]}>PM2.5</Text>
               </View>
             </View>
 
-            <View style={styles.insightCard}>
+            <View style={[styles.insightCard, { backgroundColor: colors.surface }]}>
               <View style={styles.insightHeader}>
                 <Image source={require('../assets/icons/uvIndex.png')} style={styles.insightIcon} />
-                <Text style={styles.insightLabel}>UV Index</Text>
+                <Text style={[styles.insightLabel, { color: colors.textMuted }]}>UV Index</Text>
               </View>
               <View style={styles.insightBody}>
-                <Text style={[styles.insightValue, { color: uvIndex !== null ? getUVLabel(uvIndex).color : '#94A3B8' }]}>
+                <Text style={[styles.insightValue, { color: uvIndex !== null ? getUVLabel(uvIndex).color : colors.textMuted }]}>
                   {uvIndex !== null ? uvIndex.toFixed(1) : '--'}
                 </Text>
-                <Text style={[styles.insightBadge, { backgroundColor: uvIndex !== null ? `${getUVLabel(uvIndex).color}20` : '#F1F5F9', color: uvIndex !== null ? getUVLabel(uvIndex).color : '#94A3B8' }]}>
+                <Text style={[styles.insightBadge, { backgroundColor: uvIndex !== null ? `${getUVLabel(uvIndex).color}20` : colors.surfaceVariant, color: uvIndex !== null ? getUVLabel(uvIndex).color : colors.textMuted }]}>
                   {uvIndex !== null ? getUVLabel(uvIndex).label : '--'}
                 </Text>
               </View>
-              <View style={styles.insightFooter}>
-                <Text style={styles.insightFooterValue}>of 11+</Text>
-                <Text style={styles.insightFooterLabel}>Scale</Text>
+              <View style={[styles.insightFooter, { borderTopColor: colors.divider }]}>
+                <Text style={[styles.insightFooterValue, { color: colors.text }]}>of 11+</Text>
+                <Text style={[styles.insightFooterLabel, { color: colors.textMuted }]}>Scale</Text>
               </View>
             </View>
 
-            <View style={styles.insightCard}>
+            <View style={[styles.insightCard, { backgroundColor: colors.surface }]}>
               <View style={styles.insightHeader}>
                 <Image source={require('../assets/icons/todayRisk.png')} style={styles.insightIcon} />
-                <Text style={styles.insightLabel}>Today&apos;s Risk</Text>
+                <Text style={[styles.insightLabel, { color: colors.textMuted }]}>Today&apos;s Risk</Text>
               </View>
               <View style={styles.insightBody}>
                 <Text style={[styles.insightValue, { color: getRiskLevel(uvIndex, airQuality?.aqi ?? null).color, fontSize: 16 }]}>
@@ -294,15 +302,15 @@ export default function HomeScreen() {
                   Daily
                 </Text>
               </View>
-              <View style={styles.insightFooter}>
-                <Text style={styles.insightFooterValue}>Overall</Text>
-                <Text style={styles.insightFooterLabel}>Status</Text>
+              <View style={[styles.insightFooter, { borderTopColor: colors.divider }]}>
+                <Text style={[styles.insightFooterValue, { color: colors.text }]}>Overall</Text>
+                <Text style={[styles.insightFooterLabel, { color: colors.textMuted }]}>Status</Text>
+              </View>
             </View>
-          </View>
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Alerts</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Alerts</Text>
             <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/alerts')} activeOpacity={0.7}>
               <Text style={styles.viewAllText}>View All</Text>
               <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
@@ -311,9 +319,9 @@ export default function HomeScreen() {
 
           <View style={styles.alertsRow}>
             {alerts.filter(a => !a.isDismissed).length === 0 ? (
-              <View style={styles.emptyAlertCard}>
+              <View style={[styles.emptyAlertCard, { backgroundColor: colors.surface }]}>
                 <Ionicons name="checkmark-circle" size={24} color="#22C55E" />
-                <Text style={styles.emptyAlertText}>No active alerts</Text>
+                <Text style={[styles.emptyAlertText, { color: colors.textSecondary }]}>No active alerts</Text>
               </View>
             ) : (
               alerts.filter(a => !a.isDismissed).map((alert) => {
@@ -327,7 +335,7 @@ export default function HomeScreen() {
               return (
                 <TouchableOpacity
                   key={alert.id}
-                  style={styles.alertMiniCard}
+                  style={[styles.alertMiniCard, { backgroundColor: colors.surface }]}
                   activeOpacity={0.7}
                   onPress={() => router.push(`/alert/${alert.id}`)}
                 >
@@ -339,11 +347,11 @@ export default function HomeScreen() {
                     )}
                   </View>
                   <View style={styles.alertInfo}>
-                    <Text style={styles.alertName}>{capitalizeType(alert.type)}</Text>
+                    <Text style={[styles.alertName, { color: colors.text }]}>{capitalizeType(alert.type)}</Text>
                     <Text style={[styles.alertSeverity, { color }]}>{getSeverityLabel(alert.severity)}</Text>
-                    {distKm && <Text style={styles.alertDistance}>{distKm} km away</Text>}
+                    {distKm && <Text style={[styles.alertDistance, { color: colors.textSecondary }]}>{distKm} km away</Text>}
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               );
             })
@@ -387,8 +395,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 34,
   },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { fontSize: 16, fontWeight: '500', color: '#6B7280' },
+  loadingCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  loadingAppIcon: {
+    width: 108,
+    height: 108,
+    borderRadius: 28,
+  },
+  loadingText: { fontSize: 15, fontWeight: '500' },
+  loadingFromAlan: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingBottom: 32,
+  },
   navBar: {
     position: 'absolute',
     left: 20,

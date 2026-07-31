@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 import type { WeatherData } from '@/types';
 
 interface WeatherCardProps {
@@ -44,20 +45,21 @@ function formatTime(timestamp: number): string {
 }
 
 export default function WeatherCard({ weather }: WeatherCardProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.cardOuter}>
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
         <View style={styles.topRow}>
           <View style={styles.left}>
-            <Text style={styles.label}>Today&apos;s Weather</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>Today&apos;s Weather</Text>
             <View style={styles.tempRow}>
-              <Text style={styles.temp}>
+              <Text style={[styles.temp, { color: colors.text }]}>
                 {weather ? `${Math.round(weather.current.temperature)}\u00B0` : '--\u00B0'}
-                <Text style={styles.unit}>C</Text>
+                <Text style={[styles.unit, { color: colors.textMuted }]}>C</Text>
               </Text>
               <Text style={styles.desc}>{getWeatherEmoji(weather?.current.icon || '01d')} {weather?.current.main || 'Loading...'}</Text>
             </View>
-            <Text style={styles.feels}>
+            <Text style={[styles.feels, { color: colors.textMuted }]}>
               Feels like {weather ? `${Math.round(weather.current.feelsLike)}\u00B0` : '--'}
             </Text>
           </View>
@@ -69,50 +71,50 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
           <View style={styles.stat}>
             <Image source={require('../../assets/icons/humidity.png')} style={styles.statIcon} />
             <View style={styles.statText}>
-              <Text style={styles.statLabel}>Humidity</Text>
-              <Text style={styles.statValue}>{weather ? `${weather.current.humidity}%` : '--'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>Humidity</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{weather ? `${weather.current.humidity}%` : '--'}</Text>
             </View>
           </View>
-          <View style={styles.statDiv} />
+          <View style={[styles.statDiv, { backgroundColor: colors.divider }]} />
           <View style={styles.stat}>
             <Image source={require('../../assets/icons/wind.png')} style={styles.statIcon} />
             <View style={styles.statText}>
-              <Text style={styles.statLabel}>Wind</Text>
-              <Text style={styles.statValue}>{weather ? `${Math.round(weather.current.windSpeed)}km/h` : '--'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>Wind</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{weather ? `${Math.round(weather.current.windSpeed)}km/h` : '--'}</Text>
             </View>
           </View>
-          <View style={styles.statDiv} />
+          <View style={[styles.statDiv, { backgroundColor: colors.divider }]} />
           <View style={styles.stat}>
             <Image source={require('../../assets/icons/precipitation.png')} style={styles.statIcon} />
             <View style={styles.statText}>
-              <Text style={styles.statLabel}>Precip.</Text>
-              <Text style={styles.statValue}>{weather ? `${weather.hourly?.[0]?.precipitationProbability ?? 0}%` : '--'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>Precip.</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{weather ? `${weather.hourly?.[0]?.precipitationProbability ?? 0}%` : '--'}</Text>
             </View>
           </View>
-          <View style={styles.statDiv} />
+          <View style={[styles.statDiv, { backgroundColor: colors.divider }]} />
           <View style={styles.stat}>
             <Image source={require('../../assets/icons/visibility.png')} style={styles.statIcon} />
             <View style={styles.statText}>
-              <Text style={styles.statLabel}>Visibility</Text>
-              <Text style={styles.statValue}>{weather ? `${(weather.current.visibility / 1000).toFixed(0)}km` : '--'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>Visibility</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{weather ? `${(weather.current.visibility / 1000).toFixed(0)}km` : '--'}</Text>
             </View>
           </View>
         </View>
-        <View style={styles.bottomDiv} />
+        <View style={[styles.bottomDiv, { backgroundColor: colors.divider }]} />
         <View style={styles.sunRow}>
           <View style={styles.sunItem}>
             <Image source={require('../../assets/icons/sunrise.png')} style={styles.sunIcon} />
             <View>
-              <Text style={styles.sunLabel}>Sunrise</Text>
-              <Text style={styles.sunValue}>{weather ? formatTime(weather.current.sunrise) : '--'}</Text>
+              <Text style={[styles.sunLabel, { color: colors.textMuted }]}>Sunrise</Text>
+              <Text style={[styles.sunValue, { color: colors.text }]}>{weather ? formatTime(weather.current.sunrise) : '--'}</Text>
             </View>
           </View>
-          <View style={styles.sunDiv} />
+          <View style={[styles.sunDiv, { backgroundColor: colors.divider }]} />
           <View style={styles.sunItem}>
             <Image source={require('../../assets/icons/sunset.png')} style={styles.sunIcon} />
             <View>
-              <Text style={styles.sunLabel}>Sunset</Text>
-              <Text style={styles.sunValue}>{weather ? formatTime(weather.current.sunset) : '--'}</Text>
+              <Text style={[styles.sunLabel, { color: colors.textMuted }]}>Sunset</Text>
+              <Text style={[styles.sunValue, { color: colors.text }]}>{weather ? formatTime(weather.current.sunset) : '--'}</Text>
             </View>
           </View>
         </View>
@@ -125,23 +127,17 @@ const styles = StyleSheet.create({
   cardOuter: {
     marginHorizontal: 20,
     marginTop: -60,
-    shadowColor: '#B0BEC5',
-    shadowOffset: { width: 8, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 18,
-    elevation: 10,
+    shadowColor: '#1A2332',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   card: {
-    backgroundColor: '#F0F4F8',
     borderRadius: 28,
     paddingHorizontal: 20,
     paddingVertical: 14,
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: -8, height: -8 },
-    shadowOpacity: 0.7,
-    shadowRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
   },
   topRow: {
     flexDirection: 'row',

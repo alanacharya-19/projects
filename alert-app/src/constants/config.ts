@@ -83,6 +83,10 @@ export const STORAGE_KEYS = {
   ONBOARDING_COMPLETED: '@alertguard/onboarding',
   LAST_KNOWN_LOCATION: '@alertguard/last_location',
   THEME: '@alertguard/theme',
+  LAST_WEATHER_SNAPSHOT: '@geoalert/last_weather_snapshot',
+  LAST_WEATHER_NOTIF: '@geoalert/last_weather_notif',
+  SEEN_FEED_IDS: '@geoalert/seen_feed_ids',
+  SEEN_ALERT_IDS: '@geoalert/seen_alert_ids',
 } as const;
 
 export const NOTIFICATION_CONFIG = {

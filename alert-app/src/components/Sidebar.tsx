@@ -9,9 +9,11 @@ import {
   Pressable,
   Image,
   StatusBar,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.78;
@@ -50,6 +52,7 @@ interface SidebarProps {
 
 export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: SidebarProps) {
   const insets = useSafeAreaInsets();
+  const { colors, resolvedMode, setTheme } = useTheme();
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
@@ -110,6 +113,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
             width: SIDEBAR_WIDTH,
             paddingTop: insets.top + 16,
             paddingBottom: insets.bottom + 16,
+            backgroundColor: colors.surface,
             transform: [{ translateX }],
           },
         ]}
@@ -117,12 +121,12 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
         <View style={styles.sidebarHeader}>
           <Image source={require('../../assets/appIcon.png')} style={styles.logoImage} />
           <View style={styles.headerTextContainer}>
-            <Text style={styles.appName}>GeoAlert</Text>
-            <Text style={styles.appVersion}>v1.0.0</Text>
+            <Text style={[styles.appName, { color: colors.text }]}>GeoAlert</Text>
+            <Text style={[styles.appVersion, { color: colors.textMuted }]}>v1.0.0</Text>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
         <Animated.ScrollView
           showsVerticalScrollIndicator={false}
@@ -135,7 +139,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                 key={item.id}
                 style={[
                   styles.menuItem,
-                  isActive && styles.menuItemActive,
+                  isActive && { backgroundColor: colors.surfaceVariant },
                 ]}
                 activeOpacity={0.6}
                 onPress={() => handleItemPress(item.route)}
@@ -143,7 +147,7 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                 <View
                   style={[
                     styles.iconContainer,
-                    { backgroundColor: isActive ? `${item.iconColor}18` : '#F1F5F9' },
+                    { backgroundColor: isActive ? `${item.iconColor}18` : colors.surfaceVariant },
                   ]}
                 >
                   {item.pngIcon ? (
@@ -152,14 +156,14 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
                     <Ionicons
                       name={item.icon}
                       size={20}
-                      color={isActive ? item.iconColor : '#94A3B8'}
+                      color={isActive ? item.iconColor : colors.textMuted}
                     />
                   )}
                 </View>
                 <Text
                   style={[
                     styles.menuLabel,
-                    { color: isActive ? '#1E293B' : '#64748B', fontWeight: isActive ? '700' : '500' },
+                    { color: isActive ? colors.text : colors.textSecondary, fontWeight: isActive ? '700' : '500' },
                   ]}
                 >
                   {item.title}
@@ -170,10 +174,34 @@ export default function Sidebar({ visible, onClose, onNavigate, currentRoute }: 
           })}
         </Animated.ScrollView>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+
+        <TouchableOpacity
+          style={styles.themeToggle}
+          activeOpacity={0.6}
+          onPress={() => setTheme(resolvedMode === 'dark' ? 'light' : 'dark')}
+        >
+          <View style={[styles.themeIconWrap, { backgroundColor: colors.surfaceVariant }]}>
+            <Ionicons
+              name={resolvedMode === 'dark' ? 'moon' : 'sunny'}
+              size={20}
+              color={resolvedMode === 'dark' ? '#8B5CF6' : '#F59E0B'}
+            />
+          </View>
+          <Text style={[styles.themeLabel, { color: colors.text }]}>
+            {resolvedMode === 'dark' ? 'Dark Mode' : 'Light Mode'}
+          </Text>
+          <Switch
+            value={resolvedMode === 'dark'}
+            onValueChange={(value) => setTheme(value ? 'dark' : 'light')}
+            trackColor={{ true: colors.primary, false: colors.border }}
+            thumbColor="#FFFFFF"
+            ios_backgroundColor={colors.border}
+          />
+        </TouchableOpacity>
 
         <View style={styles.sidebarFooter}>
-          <Text style={styles.footerTagline}>Stay safe. Stay informed.</Text>
+          <Text style={[styles.footerTagline, { color: colors.textMuted }]}>Stay safe. Stay informed.</Text>
         </View>
       </Animated.View>
     </>
@@ -195,7 +223,6 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     zIndex: 101,
-    backgroundColor: '#FFFFFF',
     borderTopRightRadius: 28,
     borderBottomRightRadius: 28,
     shadowColor: '#1A2332',
@@ -222,18 +249,15 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1E293B',
     letterSpacing: -0.3,
   },
   appVersion: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#94A3B8',
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
     marginHorizontal: 20,
     marginBottom: 4,
   },
@@ -245,9 +269,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     borderRadius: 14,
     gap: 14,
-  },
-  menuItemActive: {
-    backgroundColor: '#F8FAFC',
   },
   iconContainer: {
     width: 38,
@@ -273,10 +294,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
   },
+  themeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 14,
+    gap: 14,
+  },
+  themeIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
   footerTagline: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#94A3B8',
     textAlign: 'center',
   },
 });

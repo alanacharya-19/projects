@@ -10,7 +10,7 @@ import {
   ImageSourcePropType,
   type ImageStyle,
 } from "react-native";
-import MapView, { Marker, UrlTile, type Region } from "react-native-maps";
+import MapLibreGL from "@maplibre/maplibre-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -19,6 +19,32 @@ import { useLocation } from "@/hooks/useLocation";
 import { Shadows } from "@/constants/theme";
 import { MOCK_FEED, type FeedItem } from "@/constants/mockData";
 import { getSeverityColor, getDisasterEmoji, formatDate } from "@/utils/helpers";
+
+const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY ?? "";
+
+function buildMapStyle(dark: boolean): object {
+  return {
+    version: 8,
+    sources: {
+      geoapify: {
+        type: "raster",
+        tiles: [
+          `https://maps.geoapify.com/v1/tile/${dark ? "osm-dark" : "osm-bright"}/{z}/{x}/{y}.png?apiKey=${GEOAPIFY_API_KEY}`,
+        ],
+        tileSize: 256,
+      },
+    },
+    layers: [
+      {
+        id: "geoapify-tiles",
+        type: "raster",
+        source: "geoapify",
+        minzoom: 0,
+        maxzoom: 20,
+      },
+    ],
+  };
+}
 
 const LAYERS = [
   { key: "earthquake", label: "EQ", color: "#EA580C", iconSource: require("../assets/icons/earthquake.png") },
@@ -29,10 +55,6 @@ const LAYERS = [
   { key: "tsunami", label: "Tsunami", color: "#0EA5E9", iconSource: require("../assets/icons/flood.png") },
   { key: "landslide", label: "Slide", color: "#A855F7", iconSource: require("../assets/icons/earthquake.png") },
 ];
-
-const DEFAULT_REGION: Region = {
-  latitude: 20, longitude: 0, latitudeDelta: 100, longitudeDelta: 100,
-};
 
 const ICON_MAP: Record<string, ImageSourcePropType> = {
   earthquake: require("../assets/icons/earthquake.png"),
@@ -62,11 +84,11 @@ export default function MapScreen() {
   const [showLayers, setShowLayers] = useState(true);
   const [showDisasters, setShowDisasters] = useState(true);
 
-  const region = useMemo((): Region => {
+  const region = useMemo((): { center: [number, number]; zoom: number } => {
     if (location) {
-      return { latitude: location.latitude, longitude: location.longitude, latitudeDelta: 0.12, longitudeDelta: 0.12 };
+      return { center: [location.longitude, location.latitude], zoom: 10 };
     }
-    return DEFAULT_REGION;
+    return { center: [0, 20], zoom: 2 };
   }, [location]);
 
   const filteredFeed = useMemo(() => {
@@ -92,30 +114,38 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView
+      <MapLibreGL.MapView
         style={styles.map}
-        region={region}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        toolbarEnabled={false}
-        mapType="none"
+        styleJSON={buildMapStyle(isDark)}
+        logoEnabled={false}
+        attributionEnabled={false}
+        onPress={() => setSelectedMarker(null)}
       >
-        <UrlTile urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png" maximumZ={20} />
+        <MapLibreGL.Camera
+          centerCoordinate={region.center}
+          zoomLevel={region.zoom}
+        />
         {location && (
-          <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }} anchor={{ x: 0.5, y: 0.5 }}>
+          <MapLibreGL.PointAnnotation
+            id="user-location"
+            coordinate={[location.longitude, location.latitude]}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
             <Image source={require("../assets/icons/your-locations.png")} style={{ width: 32, height: 32 } as ImageStyle} />
-          </Marker>
+          </MapLibreGL.PointAnnotation>
         )}
         {MOCK_FEED.map((item) => (
-          <Marker
+          <MapLibreGL.PointAnnotation
             key={item.id}
-            coordinate={{ latitude: item.coordinates.latitude, longitude: item.coordinates.longitude }}
-            onPress={() => setSelectedMarker(selectedMarker === item.id ? null : item.id)}
+            id={item.id}
+            coordinate={[item.coordinates.longitude, item.coordinates.latitude]}
+            anchor={{ x: 0.5, y: 0.5 }}
+            onSelected={() => setSelectedMarker(selectedMarker === item.id ? null : item.id)}
           >
             <Image source={getMarkerIcon(item.type)} style={{ width: 28, height: 28 } as ImageStyle} />
-          </Marker>
+          </MapLibreGL.PointAnnotation>
         ))}
-      </MapView>
+      </MapLibreGL.MapView>
 
       <LinearGradient
         colors={isDark

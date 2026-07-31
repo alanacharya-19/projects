@@ -23,17 +23,26 @@
     "plugins": [
       "expo-router",
       [
+        "expo-notifications",
+        {
+          "color": "#2E7DFF"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
-          "image": "./assets/appIcon.png",
-          "imageWidth": 200,
+          "image": "./assets/splash-light.png",
+          "imageWidth": 360,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#F0F5FF",
           "dark": {
-            "backgroundColor": "#000000"
+            "image": "./assets/splash-dark.png",
+            "imageWidth": 360,
+            "backgroundColor": "#081426"
           }
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -14,7 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAppContext } from '@/context/AppContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useWeather } from '@/hooks/useWeather';
+import { Gradients } from '@/constants/theme';
 import type { HourlyForecast, DailyForecast } from '@/types';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -63,6 +65,7 @@ function capitalizeWords(s: string): string {
 export default function ForecastScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { colors, resolvedMode } = useTheme();
   const { state, updateSettings } = useAppContext();
   const { isLoading, refresh, hourlyForecast, dailyForecast, uvIndex, airQuality } = useWeather();
   const [refreshing, setRefreshing] = useState(false);
@@ -104,31 +107,31 @@ export default function ForecastScreen() {
   if (isLoading && !weather) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#DDEEFF', '#F8FBFF', '#FFFFFF']} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={resolvedMode === 'dark' ? Gradients.forecastDark : Gradients.forecast} style={StyleSheet.absoluteFill} />
         <View style={styles.center}>
           <Image source={require('../assets/icons/weather.png')} style={styles.loadingIcon} />
-          <Text style={styles.loadingText}>Loading forecast...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading forecast...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#DDEEFF', '#F8FBFF', '#FFFFFF']} style={StyleSheet.absoluteFill} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient colors={resolvedMode === 'dark' ? Gradients.forecastDark : Gradients.forecast} style={StyleSheet.absoluteFill} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
-            <Ionicons name="chevron-down" size={22} color="#1E293B" />
+          <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.surface }]} onPress={() => router.back()} activeOpacity={0.7}>
+            <Ionicons name="chevron-down" size={22} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Weather Forecast</Text>
-          <TouchableOpacity style={styles.unitToggle} onPress={toggleUnit} activeOpacity={0.7}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Weather Forecast</Text>
+          <TouchableOpacity style={[styles.unitToggle, { backgroundColor: colors.surfaceVariant }]} onPress={toggleUnit} activeOpacity={0.7}>
             <Text style={[styles.unitText, isCelsius && styles.unitActive]}>{'\u00B0'}C</Text>
-            <Text style={[styles.unitDivider]}>|</Text>
+            <Text style={[styles.unitDivider, { color: colors.divider }]}>|</Text>
             <Text style={[styles.unitText, !isCelsius && styles.unitActive]}>{'\u00B0'}F</Text>
           </TouchableOpacity>
         </View>
@@ -158,7 +161,7 @@ export default function ForecastScreen() {
 
         {/* Hourly Forecast */}
         <View style={styles.contentPad}>
-          <Text style={styles.sectionTitle}>Hourly Forecast</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Hourly Forecast</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -171,17 +174,17 @@ export default function ForecastScreen() {
               ).map((h: HourlyForecast) => {
                 const now = isNow(h.time);
                 return (
-                  <View key={h.time} style={[styles.hourlyCard, now && styles.hourlyCardActive]}>
-                    <Text style={[styles.hourlyTime, now && styles.hourlyTimeActive]}>
+                  <View key={h.time} style={[styles.hourlyCard, { backgroundColor: colors.surface }, now && styles.hourlyCardActive]}>
+                    <Text style={[styles.hourlyTime, { color: colors.textMuted }, now && styles.hourlyTimeActive]}>
                       {now ? 'Now' : formatHour(h.time)}
                     </Text>
                     <Image source={getWeatherIcon(h.icon)} style={styles.hourlyIcon} />
-                    <Text style={[styles.hourlyTemp, now && styles.hourlyTempActive]}>
+                    <Text style={[styles.hourlyTemp, { color: colors.text }, now && styles.hourlyTempActive]}>
                       {formatTemp(h.temperature)}{'\u00B0'}
                     </Text>
                     {h.precipitationProbability > 0 && (
-                      <View style={styles.rainBadge}>
-                        <Ionicons name="water" size={8} color={now ? '#FFFFFF' : '#3B82F6'} />
+                      <View style={[styles.rainBadge, { backgroundColor: now ? 'rgba(255,255,255,0.25)' : colors.infoLight }]}>
+                        <Ionicons name="water" size={8} color={now ? '#FFFFFF' : colors.info} />
                         <Text style={[styles.rainText, now && styles.rainTextActive]}>
                           {h.precipitationProbability}%
                         </Text>
@@ -192,53 +195,53 @@ export default function ForecastScreen() {
               })
             ) : (
               <View style={styles.emptyRow}>
-                <Text style={styles.emptyText}>No hourly data available</Text>
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>No hourly data available</Text>
               </View>
             )}
           </ScrollView>
 
           {/* 7-Day Forecast */}
-          <Text style={styles.sectionTitle}>7-Day Forecast</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>7-Day Forecast</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dailyList}>
             {dailyForecast.length > 0 ? (
               dailyForecast.map((day: DailyForecast, idx: number) => (
-                <View key={day.date} style={styles.dailyCard}>
+                <View key={day.date} style={[styles.dailyCard, { backgroundColor: colors.surface }]}>
                   <View style={styles.dailyTop}>
-                    <Text style={[styles.dailyDay, idx === 0 && styles.dailyToday]}>
+                    <Text style={[styles.dailyDay, { color: colors.text }, idx === 0 && styles.dailyToday]}>
                       {idx === 0 ? 'Today' : day.dayName}
                     </Text>
-                    <Text style={styles.dailyDate}>{day.date}</Text>
+                    <Text style={[styles.dailyDate, { color: colors.textMuted }]}>{day.date}</Text>
                   </View>
                   <Image source={getWeatherIcon(day.icon)} style={styles.dailyIcon} />
-                  <Text style={styles.dailyDesc} numberOfLines={2}>{capitalizeWords(day.description)}</Text>
+                  <Text style={[styles.dailyDesc, { color: colors.textSecondary }]} numberOfLines={2}>{capitalizeWords(day.description)}</Text>
                   <View style={styles.dailyTempRow}>
-                    <Text style={styles.dailyLow}>{formatTemp(day.tempLow)}{'\u00B0'}</Text>
-                    <Text style={styles.dailyHigh}>{formatTemp(day.tempHigh)}{'\u00B0'}</Text>
+                    <Text style={[styles.dailyLow, { color: colors.textMuted }]}>{formatTemp(day.tempLow)}{'\u00B0'}</Text>
+                    <Text style={[styles.dailyHigh, { color: colors.text }]}>{formatTemp(day.tempHigh)}{'\u00B0'}</Text>
                   </View>
-                  <View style={styles.dailyBar}>
+                  <View style={[styles.dailyBar, { backgroundColor: colors.surfaceVariant }]}>
                     <View style={[styles.dailyBarFill, { width: `${Math.min(((day.tempHigh - day.tempLow) / 20) * 100, 100)}%` }]} />
                   </View>
-                  <View style={styles.dailyMeta}>
+                  <View style={[styles.dailyMeta, { borderTopColor: colors.divider }]}>
                     <View style={styles.dailyMetaItem}>
                       <Image source={require('../assets/icons/humidity.png')} style={styles.dailyMetaIcon} />
-                      <Text style={styles.dailyMetaText}>{day.humidity}%</Text>
+                      <Text style={[styles.dailyMetaText, { color: colors.textSecondary }]}>{day.humidity}%</Text>
                     </View>
                     <View style={styles.dailyMetaItem}>
-                      <Ionicons name="water" size={11} color="#3B82F6" />
-                      <Text style={styles.dailyMetaText}>{day.precipitationProbability}%</Text>
+                      <Ionicons name="water" size={11} color={colors.info} />
+                      <Text style={[styles.dailyMetaText, { color: colors.textSecondary }]}>{day.precipitationProbability}%</Text>
                     </View>
                   </View>
                 </View>
               ))
             ) : (
               <View style={styles.emptyRow}>
-                <Text style={styles.emptyText}>No forecast data available</Text>
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>No forecast data available</Text>
               </View>
             )}
           </ScrollView>
 
           {/* Weather Details */}
-          <Text style={styles.sectionTitle}>Weather Details</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Weather Details</Text>
           <View style={styles.detailsGrid}>
             {weather && (
               <>
@@ -298,11 +301,12 @@ function AISummaryCard({ dailyForecast, isCelsius }: { dailyForecast: DailyForec
 }
 
 function DetailCard({ icon, label, value }: { icon: number; label: string; value: string }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.detailCard}>
+    <View style={[styles.detailCard, { backgroundColor: colors.surface }]}>
       <Image source={icon} style={styles.detailIcon} />
-      <Text style={styles.detailValue}>{value}</Text>
-      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={[styles.detailValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{label}</Text>
     </View>
   );
 }
@@ -323,7 +327,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A2332',
@@ -335,12 +338,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1E293B',
   },
   unitToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -356,7 +357,6 @@ const styles = StyleSheet.create({
   },
   unitDivider: {
     fontSize: 13,
-    color: '#D1D8E0',
   },
   heroCard: {
     marginHorizontal: 20,
@@ -411,7 +411,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1A2332',
     marginTop: 24,
     marginBottom: 14,
   },
@@ -425,7 +424,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 6,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
     gap: 6,
     shadowColor: '#1A2332',
     shadowOffset: { width: 0, height: 2 },
@@ -443,7 +441,6 @@ const styles = StyleSheet.create({
   hourlyTime: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#94A3B8',
     textTransform: 'uppercase',
   },
   hourlyTimeActive: {
@@ -456,7 +453,6 @@ const styles = StyleSheet.create({
   hourlyTemp: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1E293B',
   },
   hourlyTempActive: {
     color: '#FFFFFF',
@@ -468,7 +464,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: '#EFF6FF',
   },
   rainText: {
     fontSize: 9,
@@ -484,7 +479,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#94A3B8',
   },
   dailyList: {
     gap: 10,
@@ -492,7 +486,6 @@ const styles = StyleSheet.create({
   },
   dailyCard: {
     width: 140,
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 14,
     alignItems: 'center',
@@ -509,7 +502,6 @@ const styles = StyleSheet.create({
   dailyDay: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1E293B',
   },
   dailyToday: {
     color: '#3B82F6',
@@ -518,7 +510,6 @@ const styles = StyleSheet.create({
   dailyDate: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#94A3B8',
     marginTop: 1,
   },
   dailyIcon: {
@@ -528,7 +519,6 @@ const styles = StyleSheet.create({
   },
   dailyDesc: {
     fontSize: 11,
-    color: '#6B7280',
     textAlign: 'center',
     height: 30,
   },
@@ -540,13 +530,11 @@ const styles = StyleSheet.create({
   dailyLow: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#94A3B8',
   },
   dailyBar: {
     width: '100%',
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#F1F5F9',
     overflow: 'hidden',
   },
   dailyBarFill: {
@@ -557,14 +545,12 @@ const styles = StyleSheet.create({
   dailyHigh: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1E293B',
   },
   dailyMeta: {
     flexDirection: 'row',
     gap: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
     width: '100%',
     justifyContent: 'center',
   },
@@ -580,7 +566,6 @@ const styles = StyleSheet.create({
   dailyMetaText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#6B7280',
   },
   detailsGrid: {
     flexDirection: 'row',
@@ -589,7 +574,6 @@ const styles = StyleSheet.create({
   },
   detailCard: {
     width: (SCREEN_W - 40 - 10) / 2,
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
     alignItems: 'center',
@@ -607,12 +591,10 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E293B',
   },
   detailLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#94A3B8',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

@@ -1,20 +1,36 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AppProvider } from '@/context/AppContext';
 import { AlertProvider } from '@/context/AlertContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import NotificationWatcher from '@/components/NotificationWatcher';
+import { handleNotificationResponse } from '@/services/notificationService';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { resolvedMode, colors } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
+
+  useEffect(() => {
+    const subscription = handleNotificationResponse((type, data) => {
+      if (data?.feedId || type === 'feed') {
+        router.push('/global-feed');
+      } else if (type === 'weather' || type === 'air_quality') {
+        router.push('/forecast');
+      } else {
+        router.push('/alerts');
+      }
+    });
+    return () => subscription.remove();
+  }, [router]);
 
   return (
     <>
@@ -59,6 +75,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <AppProvider>
           <AlertProvider>
+            <NotificationWatcher />
             <RootLayoutNav />
           </AlertProvider>
         </AppProvider>
