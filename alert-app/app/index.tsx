@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAppContext } from '@/context/AppContext';
 import { useAlertContext } from '@/context/AlertContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useUser } from '@/context/UserContext';
 import { useWeather } from '@/hooks/useWeather';
 import { useLocation } from '@/hooks/useLocation';
 import { calculateDistance } from '@/services/locationService';
@@ -26,6 +27,7 @@ import { DISASTER_COLORS, Gradients } from '@/constants/theme';
 import Sidebar from '@/components/Sidebar';
 import NotificationPanel from '@/components/NotificationPanel';
 import WeatherCard from '@/components/WeatherCard';
+import NamePrompt from '@/components/NamePrompt';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -102,6 +104,7 @@ export default function HomeScreen() {
   const { state } = useAppContext();
   const { alerts } = useAlertContext();
   const { colors, resolvedMode } = useTheme();
+  const { userName, isLoaded: userNameLoaded } = useUser();
   const { isLoading, refresh, airQuality, uvIndex } = useWeather();
   const { isLoading: locationLoading } = useLocation();
   const router = useRouter();
@@ -161,6 +164,7 @@ export default function HomeScreen() {
 
       <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} onNavigate={handleNavigate} currentRoute="/" />
       <NotificationPanel visible={notifPanelVisible} onClose={() => setNotifPanelVisible(false)} />
+      <NamePrompt visible={userNameLoaded && userName === null} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -198,7 +202,7 @@ export default function HomeScreen() {
             <Text style={styles.greetingText}>
               {new Date().getHours() < 12 ? 'Good Morning,' : new Date().getHours() < 17 ? 'Good Afternoon,' : new Date().getHours() < 21 ? 'Good Evening,' : 'Good Night,'}
             </Text>
-            <Text style={styles.userNameText}>User</Text>
+            <Text style={styles.userNameText}>{userName ?? 'User'}</Text>
             <Text style={styles.taglineText}>Stay safe, stay informed.</Text>
 
             <View style={styles.safeZoneCard}>

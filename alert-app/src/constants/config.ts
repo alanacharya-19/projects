@@ -87,6 +87,7 @@ export const STORAGE_KEYS = {
   LAST_WEATHER_NOTIF: '@geoalert/last_weather_notif',
   SEEN_FEED_IDS: '@geoalert/seen_feed_ids',
   SEEN_ALERT_IDS: '@geoalert/seen_alert_ids',
+  USER_NAME: '@geoalert/user_name',
 } as const;
 
 export const NOTIFICATION_CONFIG = {

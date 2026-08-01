@@ -10,7 +10,7 @@ import {
   ImageSourcePropType,
   type ImageStyle,
 } from "react-native";
-import MapLibreGL from "@maplibre/maplibre-react-native";
+import { Map, Camera, ViewAnnotation, type StyleSpecification } from "@maplibre/maplibre-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -22,7 +22,7 @@ import { getSeverityColor, getDisasterEmoji, formatDate } from "@/utils/helpers"
 
 const GEOAPIFY_API_KEY = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY ?? "";
 
-function buildMapStyle(dark: boolean): object {
+function buildMapStyle(dark: boolean): StyleSpecification {
   return {
     version: 8,
     sources: {
@@ -114,38 +114,36 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapLibreGL.MapView
+      <Map
         style={styles.map}
-        styleJSON={buildMapStyle(isDark)}
-        logoEnabled={false}
-        attributionEnabled={false}
+        mapStyle={buildMapStyle(isDark)}
+        logo={false}
+        attribution={false}
+        compass={false}
         onPress={() => setSelectedMarker(null)}
       >
-        <MapLibreGL.Camera
-          centerCoordinate={region.center}
-          zoomLevel={region.zoom}
-        />
+        <Camera center={region.center} zoom={region.zoom} />
         {location && (
-          <MapLibreGL.PointAnnotation
+          <ViewAnnotation
             id="user-location"
-            coordinate={[location.longitude, location.latitude]}
-            anchor={{ x: 0.5, y: 0.5 }}
+            lngLat={[location.longitude, location.latitude]}
+            anchor="center"
           >
             <Image source={require("../assets/icons/your-locations.png")} style={{ width: 32, height: 32 } as ImageStyle} />
-          </MapLibreGL.PointAnnotation>
+          </ViewAnnotation>
         )}
         {MOCK_FEED.map((item) => (
-          <MapLibreGL.PointAnnotation
+          <ViewAnnotation
             key={item.id}
             id={item.id}
-            coordinate={[item.coordinates.longitude, item.coordinates.latitude]}
-            anchor={{ x: 0.5, y: 0.5 }}
-            onSelected={() => setSelectedMarker(selectedMarker === item.id ? null : item.id)}
+            lngLat={[item.coordinates.longitude, item.coordinates.latitude]}
+            anchor="center"
+            onPress={() => setSelectedMarker(selectedMarker === item.id ? null : item.id)}
           >
             <Image source={getMarkerIcon(item.type)} style={{ width: 28, height: 28 } as ImageStyle} />
-          </MapLibreGL.PointAnnotation>
+          </ViewAnnotation>
         ))}
-      </MapLibreGL.MapView>
+      </Map>
 
       <LinearGradient
         colors={isDark

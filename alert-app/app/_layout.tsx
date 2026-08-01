@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AppProvider } from '@/context/AppContext';
 import { AlertProvider } from '@/context/AlertContext';
+import { UserProvider } from '@/context/UserContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import NotificationWatcher from '@/components/NotificationWatcher';
 import { handleNotificationResponse } from '@/services/notificationService';
@@ -73,12 +74,14 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppProvider>
-          <AlertProvider>
-            <NotificationWatcher />
-            <RootLayoutNav />
-          </AlertProvider>
-        </AppProvider>
+        <UserProvider>
+          <AppProvider>
+            <AlertProvider>
+              <NotificationWatcher />
+              <RootLayoutNav />
+            </AlertProvider>
+          </AppProvider>
+        </UserProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
