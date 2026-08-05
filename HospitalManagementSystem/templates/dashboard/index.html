@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="muted">Welcome back, {{ user.get_full_name|default:user.username }}. Here's what's happening today.</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-primary">+ New Appointment</button>
+    </div>
+</div>
+
+<div class="cards-grid">
+    <div class="stat-card">
+        <div class="stat-icon stat-blue">P</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_patients }}</span>
+            <span class="stat-label">Total Patients</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-green">D</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_doctors }}</span>
+            <span class="stat-label">Total Doctors</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-orange">A</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ today_appointments }}</span>
+            <span class="stat-label">Today's Appointments</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-purple">$</div>
+        <div class="stat-info">
+            <span class="stat-value">${{ revenue }}</span>
+            <span class="stat-label">Revenue</span>
+        </div>
+    </div>
+</div>
+
+<div class="panels-grid">
+    <section class="panel">
+        <h2>Recent Activity</h2>
+        <p class="muted">No activity yet. New modules are being built.</p>
+    </section>
+    <section class="panel">
+        <h2>Upcoming Appointments</h2>
+        <p class="muted">No appointments scheduled yet.</p>
+    </section>
+</div>
+{% endblock %}

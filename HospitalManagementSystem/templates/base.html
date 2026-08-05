@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hospital Management System{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-icon">+</span>
+                <span class="brand-text">MediCare HMS</span>
+            </div>
+            <nav class="sidebar-nav">
+                <p class="nav-section">Main</p>
+                <a href="{% url 'dashboard:index' %}" class="nav-link active">
+                    <span class="nav-icon">&#9632;</span> Dashboard
+                </a>
+                {% if user.is_admin %}
+                <p class="nav-section">Management</p>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Patients</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Doctors</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Appointments</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Billing</a>
+                <a href="{% url 'admin:index' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Admin Panel</a>
+                {% elif user.is_doctor %}
+                <p class="nav-section">Clinical</p>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> My Patients</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Appointments</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Prescriptions</a>
+                {% elif user.is_receptionist %}
+                <p class="nav-section">Front Desk</p>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Register Patient</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Appointments</a>
+                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Billing</a>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <div class="main">
+            <header class="navbar">
+                <button class="nav-toggle" id="navToggle" aria-label="Toggle sidebar">&#9776;</button>
+                <div class="navbar-search">
+                    <input type="text" placeholder="Search patients, doctors, appointments...">
+                </div>
+                <div class="navbar-user">
+                    <div class="user-avatar">{{ user.get_full_name|default:user.username|slice:":1" }}</div>
+                    <div class="user-meta">
+                        <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="user-role">{{ user.get_role_display }}</span>
+                    </div>
+                    <form action="{% url 'accounts:logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline btn-sm">Logout</button>
+                    </form>
+                </div>
+            </header>
+
+            <main class="content">
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>
