@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Patients | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Patients</h1>
+        <p class="muted">{{ page_obj.paginator.count }} patient{{ page_obj.paginator.count|pluralize }} on record</p>
+    </div>
+    {% if user.is_admin or user.is_receptionist %}
+    <div class="page-actions">
+        <a href="{% url 'patients:add' %}" class="btn btn-primary">+ Add Patient</a>
+    </div>
+    {% endif %}
+</div>
+
+<form method="get" class="search-bar">
+    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name, phone, email, blood group...">
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if request.GET.q %}<a href="{% url 'patients:list' %}" class="btn btn-outline">Clear</a>{% endif %}
+</form>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Age</th>
+                <th>Phone</th>
+                <th>Blood Group</th>
+                <th>Registered</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+            <tr>
+                <td><a href="{% url 'patients:detail' patient.pk %}" class="table-link">{{ patient.full_name }}</a></td>
+                <td>{{ patient.get_gender_display }}</td>
+                <td>{{ patient.age|default:'—' }}</td>
+                <td>{{ patient.phone }}</td>
+                <td>
+                    {% if patient.blood_group %}
+                        <span class="badge badge-blue">{{ patient.blood_group }}</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>{{ patient.created_at|date:'M d, Y' }}</td>
+                <td class="text-right">
+                    <a href="{% url 'patients:detail' patient.pk %}" class="btn btn-outline btn-sm">View</a>
+                    {% if user.is_admin or user.is_receptionist %}
+                    <a href="{% url 'patients:edit' patient.pk %}" class="btn btn-outline btn-sm">Edit</a>
+                    <a href="{% url 'patients:delete' patient.pk %}" class="btn btn-danger-outline btn-sm">Delete</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-row">No patients found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' with query=request.GET.q %}
+{% endblock %}

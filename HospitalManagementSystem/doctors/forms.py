@@ -28,7 +28,7 @@ class DoctorForm(forms.ModelForm):
     )
     password = forms.CharField(
         required=False,
-        label='Password (leave blank to keep unchanged)',
+        label='Password (required for new accounts)',
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
     )
 
@@ -67,8 +67,8 @@ class DoctorForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        if self.instance and self.instance.pk and cleaned.get('password') and self.instance.user:
-            cleaned['_existing_user'] = self.instance.user
+        if not self.instance.pk and not cleaned.get('password'):
+            raise forms.ValidationError('A password is required when creating a new doctor account.')
         return cleaned
 
     def save(self, commit=True):
@@ -87,7 +87,7 @@ class DoctorForm(forms.ModelForm):
         else:
             user = User.objects.create_user(
                 username=self.cleaned_data['username'],
-                password=password or User.objects.make_random_password(),
+                password=password,
                 email=self.cleaned_data['email'],
                 first_name=self.cleaned_data['first_name'],
                 last_name=self.cleaned_data['last_name'],

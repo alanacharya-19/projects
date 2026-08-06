@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Delete Department | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Delete Department</h1>
+    </div>
+</div>
+
+<div class="panel confirm-panel">
+    <p>Are you sure you want to delete <strong>{{ department.name }}</strong>? Doctors assigned to it will be left unassigned.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'departments:list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Edit Patient{% else %}Add Patient{% endif %} | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% if form.instance.pk %}Edit Patient{% else %}Add Patient{% endif %}</h1>
+        <p class="muted">{% if form.instance.pk %}Update the details for {{ form.instance.full_name }}.{% else %}Register a new patient.{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'patients:list' %}" class="btn btn-outline">&larr; Back to Patients</a>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'address' or field.name == 'medical_history' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="field-errors">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Patient</button>
+            <a href="{% url 'patients:list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

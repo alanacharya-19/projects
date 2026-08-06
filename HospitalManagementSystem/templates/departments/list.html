@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Departments | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Departments</h1>
+        <p class="muted">{{ page_obj.paginator.count }} department{{ page_obj.paginator.count|pluralize }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'departments:add' %}" class="btn btn-primary">+ Add Department</a>
+    </div>
+</div>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Doctors</th>
+                <th>Description</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for department in departments %}
+            <tr>
+                <td><strong>{{ department.name }}</strong></td>
+                <td><span class="badge badge-blue">{{ department.doctors.count }}</span></td>
+                <td class="cell-truncate">{{ department.description|default:'—' }}</td>
+                <td class="text-right">
+                    <a href="{% url 'departments:edit' department.pk %}" class="btn btn-outline btn-sm">Edit</a>
+                    <a href="{% url 'departments:delete' department.pk %}" class="btn btn-danger-outline btn-sm">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="empty-row">No departments yet. Add one to get started.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

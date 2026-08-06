@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ doctor.full_name }} | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ doctor.full_name }}</h1>
+        <p class="muted">{{ doctor.specialty|default:'General Practitioner' }} &middot; {{ doctor.department.name|default:'Unassigned' }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'doctors:list' %}" class="btn btn-outline">&larr; Back</a>
+        {% if user.is_admin %}
+        <a href="{% url 'doctors:edit' doctor.pk %}" class="btn btn-outline">Edit</a>
+        <a href="{% url 'doctors:delete' doctor.pk %}" class="btn btn-danger">Delete</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="profile-card">
+    {% if doctor.profile_picture %}
+        <img src="{{ doctor.profile_picture.url }}" alt="{{ doctor.full_name }}" class="profile-picture">
+    {% else %}
+        <div class="profile-avatar">{{ doctor.full_name|slice:":1" }}</div>
+    {% endif %}
+    <div class="profile-info">
+        <h2>{{ doctor.full_name }}</h2>
+        <p class="muted">@{{ doctor.user.username }}</p>
+        <p>
+            {% if doctor.is_available %}
+                <span class="badge badge-green">Available</span>
+            {% else %}
+                <span class="badge badge-red">Unavailable</span>
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <section class="panel">
+        <h2>Professional Information</h2>
+        <dl class="detail-list">
+            <dt>Department</dt><dd>{{ doctor.department.name|default:'Unassigned' }}</dd>
+            <dt>Specialty</dt><dd>{{ doctor.specialty|default:'—' }}</dd>
+            <dt>License No.</dt><dd>{{ doctor.license_no|default:'—' }}</dd>
+            <dt>Experience</dt><dd>{{ doctor.experience_years }} years</dd>
+            <dt>Consultation Fee</dt><dd>${{ doctor.consultation_fee }}</dd>
+        </dl>
+    </section>
+    <section class="panel">
+        <h2>Contact</h2>
+        <dl class="detail-list">
+            <dt>Email</dt><dd>{{ doctor.user.email|default:'—' }}</dd>
+            <dt>Joined</dt><dd>{{ doctor.created_at|date:'M d, Y' }}</dd>
+        </dl>
+        <h2>About</h2>
+        <p class="muted">{{ doctor.bio|default:'No bio provided.'|linebreaksbr }}</p>
+    </section>
+</div>
+{% endblock %}

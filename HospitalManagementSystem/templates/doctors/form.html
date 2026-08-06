@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Edit Doctor{% else %}Add Doctor{% endif %} | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% if form.instance.pk %}Edit Doctor{% else %}Add Doctor{% endif %}</h1>
+        <p class="muted">{% if form.instance.pk %}Update {{ form.instance.full_name }}'s account and details.{% else %}Create a staff account and profile for a new doctor.{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'doctors:list' %}" class="btn btn-outline">&larr; Back to Doctors</a>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <h2 class="form-section-title">Account</h2>
+        <div class="form-grid">
+            {% for field in form %}
+                {% if field.name in 'username,first_name,last_name,email,password' %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% if field.help_text %}<p class="muted">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <h2 class="form-section-title">Professional Details</h2>
+        <div class="form-grid">
+            {% for field in form %}
+                {% if field.name not in 'username,first_name,last_name,email,password' %}
+                <div class="form-group {% if field.name == 'bio' %}form-group-wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Doctor</button>
+            <a href="{% url 'doctors:list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

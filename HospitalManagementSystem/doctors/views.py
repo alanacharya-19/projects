@@ -48,6 +48,10 @@ class DoctorDeleteView(RoleRequiredMixin, DeleteView):
     roles = ('admin',)
     success_url = reverse_lazy('doctors:list')
 
+    def form_valid(self, form):
+        self.object.user.delete()
+        return super().form_valid(form)
+
 
 class DoctorDetailView(RoleRequiredMixin, DetailView):
     model = Doctor

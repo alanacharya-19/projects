@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}{{ patient.full_name }} | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ patient.full_name }}</h1>
+        <p class="muted">Patient ID #{{ patient.pk }} &middot; Registered {{ patient.created_at|date:'M d, Y' }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'patients:list' %}" class="btn btn-outline">&larr; Back</a>
+        {% if user.is_admin or user.is_receptionist %}
+        <a href="{% url 'patients:edit' patient.pk %}" class="btn btn-outline">Edit</a>
+        <a href="{% url 'patients:delete' patient.pk %}" class="btn btn-danger">Delete</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <section class="panel">
+        <h2>Personal Information</h2>
+        <dl class="detail-list">
+            <dt>Date of Birth</dt><dd>{{ patient.date_of_birth|date:'M d, Y'|default:'—' }} {% if patient.age %}(age {{ patient.age }}){% endif %}</dd>
+            <dt>Gender</dt><dd>{{ patient.get_gender_display }}</dd>
+            <dt>Blood Group</dt><dd>{{ patient.blood_group|default:'—' }}</dd>
+            <dt>Phone</dt><dd>{{ patient.phone }}</dd>
+            <dt>Email</dt><dd>{{ patient.email|default:'—' }}</dd>
+            <dt>Address</dt><dd>{{ patient.address|default:'—' }}</dd>
+        </dl>
+    </section>
+
+    <section class="panel">
+        <h2>Emergency Contact</h2>
+        <dl class="detail-list">
+            <dt>Name</dt><dd>{{ patient.emergency_contact_name|default:'—' }}</dd>
+            <dt>Phone</dt><dd>{{ patient.emergency_contact_phone|default:'—' }}</dd>
+        </dl>
+        <h2>Medical History</h2>
+        <p class="muted">{{ patient.medical_history|default:'No medical history recorded.'|linebreaksbr }}</p>
+    </section>
+</div>
+{% endblock %}

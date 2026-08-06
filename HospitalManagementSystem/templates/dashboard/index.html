@@ -45,12 +45,52 @@
 
 <div class="panels-grid">
     <section class="panel">
-        <h2>Recent Activity</h2>
-        <p class="muted">No activity yet. New modules are being built.</p>
+        <h2>Recent Patients</h2>
+        {% if recent_patients %}
+        <table class="table">
+            <thead>
+                <tr><th>Name</th><th>Phone</th><th>Registered</th></tr>
+            </thead>
+            <tbody>
+                {% for p in recent_patients %}
+                <tr>
+                    <td><a href="{% url 'patients:detail' p.pk %}" class="table-link">{{ p.full_name }}</a></td>
+                    <td>{{ p.phone }}</td>
+                    <td>{{ p.created_at|date:'M d, Y' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">No patients registered yet.</p>
+        {% endif %}
     </section>
     <section class="panel">
-        <h2>Upcoming Appointments</h2>
-        <p class="muted">No appointments scheduled yet.</p>
+        <h2>Doctors on Staff</h2>
+        {% if recent_doctors %}
+        <table class="table">
+            <thead>
+                <tr><th>Doctor</th><th>Department</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for d in recent_doctors %}
+                <tr>
+                    <td><a href="{% url 'doctors:profile' d.pk %}" class="table-link">{{ d.full_name }}</a></td>
+                    <td>{{ d.department.name|default:'Unassigned' }}</td>
+                    <td>
+                        {% if d.is_available %}
+                            <span class="badge badge-green">Available</span>
+                        {% else %}
+                            <span class="badge badge-red">Unavailable</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">No doctors on staff yet.</p>
+        {% endif %}
     </section>
 </div>
 {% endblock %}

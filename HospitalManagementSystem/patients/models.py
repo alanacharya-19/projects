@@ -25,7 +25,7 @@ class Patient(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True)
     address = models.TextField(blank=True)
-    blood_group = models.CharField(max_length=3, choices=BloodGroup.choices, default=BloodGroup.UNKNOWN)
+    blood_group = models.CharField(max_length=3, choices=BloodGroup.choices, default=BloodGroup.UNKNOWN, blank=True)
     emergency_contact_name = models.CharField(max_length=150, blank=True)
     emergency_contact_phone = models.CharField(max_length=20, blank=True)
     medical_history = models.TextField(blank=True)
