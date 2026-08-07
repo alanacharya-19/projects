@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Medical Record | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Medical Record</h1>
+        <p class="muted">
+            <a href="{% url 'patients:detail' record.patient.pk %}" class="table-link">{{ record.patient.full_name }}</a>
+            &middot; {{ record.created_at|date:'M d, Y g:i A' }}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'medical_records:patient_records' record.patient.pk %}" class="btn btn-outline">&larr; Visit History</a>
+    </div>
+</div>
+
+<div class="detail-grid">
+    <section class="panel">
+        <h2>Diagnosis</h2>
+        <p>{{ record.diagnosis|linebreaksbr }}</p>
+
+        <h2 style="margin-top:20px">Prescription</h2>
+        <p>{{ record.prescription|default:'No prescription.'|linebreaksbr }}</p>
+    </section>
+
+    <section class="panel">
+        <h2>Doctor Notes</h2>
+        <p>{{ record.doctor_notes|default:'No notes.'|linebreaksbr }}</p>
+        <dl class="detail-list">
+            <dt>Doctor</dt><dd>{{ record.doctor.full_name|default:'—' }}</dd>
+            <dt>Related Appointment</dt>
+            <dd>
+                {% if record.appointment %}
+                    {{ record.appointment.date|date:'M d, Y' }} at {{ record.appointment.time|time:'g:i A' }}
+                {% else %}
+                    Walk-in / unscheduled
+                {% endif %}
+            </dd>
+        </dl>
+    </section>
+</div>
+{% endblock %}

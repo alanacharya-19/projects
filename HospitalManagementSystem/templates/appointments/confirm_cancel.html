@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Cancel Appointment | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Cancel Appointment</h1>
+    </div>
+</div>
+
+<div class="panel confirm-panel">
+    <p>Cancel the <strong>{{ appointment.date|date:'l, M d, Y' }}</strong> appointment for
+        <strong>{{ appointment.patient.full_name }}</strong> with <strong>{{ appointment.doctor.full_name }}</strong> at
+        <strong>{{ appointment.time|time:'g:i A' }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Cancel Appointment</button>
+            <a href="{% url 'appointments:list' %}" class="btn btn-outline">Keep Appointment</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

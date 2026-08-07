@@ -39,4 +39,43 @@
         <p class="muted">{{ patient.medical_history|default:'No medical history recorded.'|linebreaksbr }}</p>
     </section>
 </div>
+
+<div class="panel" style="margin-top:18px">
+    <div class="page-header" style="margin-bottom:12px">
+        <h2>Visit History</h2>
+        {% if user.is_admin or user.is_doctor %}
+        <div class="page-actions">
+            <a href="{% url 'medical_records:add' patient.pk %}" class="btn btn-primary btn-sm">+ Add Record</a>
+        </div>
+        {% endif %}
+    </div>
+    {% if patient.medical_records.all %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Doctor</th>
+                <th>Diagnosis</th>
+                <th>Prescription</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in patient.medical_records.all %}
+            <tr>
+                <td>{{ record.created_at|date:'M d, Y' }}</td>
+                <td>{{ record.doctor.full_name|default:'—' }}</td>
+                <td class="cell-truncate">{{ record.diagnosis }}</td>
+                <td class="cell-truncate">{{ record.prescription|default:'—' }}</td>
+                <td class="text-right">
+                    <a href="{% url 'medical_records:detail' record.pk %}" class="btn btn-outline btn-sm">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No medical records yet.</p>
+    {% endif %}
+</div>
 {% endblock %}

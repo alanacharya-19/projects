@@ -7,9 +7,11 @@
         <h1>Dashboard</h1>
         <p class="muted">Welcome back, {{ user.get_full_name|default:user.username }}. Here's what's happening today.</p>
     </div>
+    {% if user.is_admin or user.is_receptionist %}
     <div class="page-actions">
-        <button class="btn btn-primary">+ New Appointment</button>
+        <a href="{% url 'appointments:book' %}" class="btn btn-primary">+ Book Appointment</a>
     </div>
+    {% endif %}
 </div>
 
 <div class="cards-grid">
@@ -42,6 +44,41 @@
         </div>
     </div>
 </div>
+
+{% if todays_appointments %}
+<div class="panel" style="margin-bottom:18px">
+    <div class="page-header" style="margin-bottom:12px">
+        <h2>{% if user.is_doctor %}My{% else %}Today's{% endif %} Appointments</h2>
+        <div class="page-actions"><a href="{% url 'appointments:list' %}" class="btn btn-outline btn-sm">View all</a></div>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Time</th>
+                <th>Reason</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appt in todays_appointments %}
+            <tr>
+                <td><a href="{% url 'patients:detail' appt.patient.pk %}" class="table-link">{{ appt.patient.full_name }}</a></td>
+                <td>{{ appt.doctor.full_name }}</td>
+                <td>{{ appt.time|time:'g:i A' }}</td>
+                <td class="cell-truncate">{{ appt.reason|default:'—' }}</td>
+                <td class="text-right">
+                    {% if user.is_admin or user.is_doctor %}
+                    <a href="{% url 'appointments:complete' appt.pk %}" class="btn btn-outline btn-sm">Complete</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 <div class="panels-grid">
     <section class="panel">

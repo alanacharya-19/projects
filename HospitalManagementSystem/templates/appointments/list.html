@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Appointments | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Appointments</h1>
+        <p class="muted">{{ page_obj.paginator.count }} appointment{{ page_obj.paginator.count|pluralize }}
+            {% if user.is_doctor %} assigned to you{% endif %}</p>
+    </div>
+    {% if user.is_admin or user.is_receptionist %}
+    <div class="page-actions">
+        <a href="{% url 'appointments:book' %}" class="btn btn-primary">+ Book Appointment</a>
+    </div>
+    {% endif %}
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="form-group">
+        <label>Doctor</label>
+        <select name="doctor" class="form-control">
+            <option value="">All doctors</option>
+            {% for d in doctors %}
+            <option value="{{ d.pk }}" {% if filter_doctor == d.pk|stringformat:'s' %}selected{% endif %}>Dr. {{ d.user.get_full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Date</label>
+        <input type="date" name="date" class="form-control" value="{{ filter_date }}">
+    </div>
+    <div class="form-group">
+        <label>Status</label>
+        <select name="status" class="form-control">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group filter-submit">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        {% if filter_doctor or filter_date or filter_status %}<a href="{% url 'appointments:list' %}" class="btn btn-outline">Clear</a>{% endif %}
+    </div>
+</form>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appt in appointments %}
+            <tr>
+                <td><a href="{% url 'patients:detail' appt.patient.pk %}" class="table-link">{{ appt.patient.full_name }}</a></td>
+                <td>{{ appt.doctor.full_name }}</td>
+                <td>{{ appt.date|date:'M d, Y' }}</td>
+                <td>{{ appt.time|time:'g:i A' }}</td>
+                <td class="cell-truncate">{{ appt.reason|default:'—' }}</td>
+                <td>
+                    {% if appt.status == 'scheduled' %}<span class="badge badge-blue">Scheduled</span>
+                    {% elif appt.status == 'completed' %}<span class="badge badge-green">Completed</span>
+                    {% else %}<span class="badge badge-red">Cancelled</span>{% endif %}
+                </td>
+                <td class="text-right">
+                    {% if appt.is_scheduled %}
+                        {% if user.is_admin or user.is_doctor %}
+                        <a href="{% url 'appointments:complete' appt.pk %}" class="btn btn-outline btn-sm">Complete</a>
+                        {% endif %}
+                        {% if user.is_admin or user.is_receptionist or user.is_doctor %}
+                        <a href="{% url 'appointments:cancel' appt.pk %}" class="btn btn-danger-outline btn-sm">Cancel</a>
+                        {% endif %}
+                    {% elif appt.status == 'completed' and appt.medical_records.exists %}
+                        <a href="{% url 'medical_records:detail' appt.medical_records.first.pk %}" class="btn btn-outline btn-sm">View Record</a>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-row">No appointments found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

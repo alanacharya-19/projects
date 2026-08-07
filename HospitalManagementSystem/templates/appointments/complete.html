@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Complete Appointment | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Complete Appointment</h1>
+        <p class="muted">Record the outcome of the visit to complete it.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'appointments:list' %}" class="btn btn-outline">&larr; Back to Appointments</a>
+    </div>
+</div>
+
+<div class="profile-card">
+    <div class="profile-info">
+        <h2>{{ appointment.patient.full_name }}</h2>
+        <p class="muted">
+            with {{ appointment.doctor.full_name }}
+            &middot; {{ appointment.date|date:'M d, Y' }} at {{ appointment.time|time:'g:i A' }}
+        </p>
+        {% if appointment.reason %}<p class="muted">Reason: {{ appointment.reason }}</p>{% endif %}
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name != 'doctor' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Record &amp; Complete</button>
+            <a href="{% url 'appointments:list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
