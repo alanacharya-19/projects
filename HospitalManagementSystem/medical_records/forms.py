@@ -25,6 +25,8 @@ class MedicalRecordForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if self.user and self.user.is_doctor():
+            profile = getattr(self.user, 'doctor_profile', None)
             self.fields['doctor'].required = False
             self.fields['doctor'].disabled = True
-            self.fields['doctor'].initial = self.user.doctor_profile_id
+            if profile:
+                self.fields['doctor'].initial = profile.pk

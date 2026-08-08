@@ -30,3 +30,24 @@ class AppointmentForm(forms.ModelForm):
         if date < timezone.localdate():
             raise forms.ValidationError('Appointment date cannot be in the past.')
         return date
+
+    def clean(self):
+        cleaned = super().clean()
+        doctor = cleaned.get('doctor')
+        date = cleaned.get('date')
+        time = cleaned.get('time')
+
+        if doctor and date and time:
+            conflict = Appointment.objects.filter(
+                doctor=doctor,
+                date=date,
+                time=time,
+                status=Appointment.Status.SCHEDULED,
+            )
+            if self.instance and self.instance.pk:
+                conflict = conflict.exclude(pk=self.instance.pk)
+            if conflict.exists():
+                raise forms.ValidationError(
+                    f'{doctor} already has a scheduled appointment at {time:%H:%M} on {date}.'
+                )
+        return cleaned

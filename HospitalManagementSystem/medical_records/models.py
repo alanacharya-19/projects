@@ -7,7 +7,7 @@ from patients.models import Patient
 
 
 class MedicalRecord(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='medical_records')
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name='medical_records')
     doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, related_name='medical_records')
     appointment = models.ForeignKey(
         Appointment,

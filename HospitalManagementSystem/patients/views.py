@@ -1,4 +1,7 @@
+from django.contrib import messages
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
@@ -51,6 +54,17 @@ class PatientDeleteView(RoleRequiredMixin, DeleteView):
     template_name = 'patients/confirm_delete.html'
     roles = ('admin', 'receptionist')
     success_url = reverse_lazy('patients:list')
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except ProtectedError as exc:
+            messages.error(
+                self.request,
+                f'Cannot delete {self.object.full_name}: they have related '
+                'appointments or medical records. Cancel appointments first.',
+            )
+            return redirect('patients:detail', pk=self.object.pk)
 
 
 class PatientDetailView(RoleRequiredMixin, DetailView):

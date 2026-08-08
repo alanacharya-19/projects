@@ -1,4 +1,4 @@
-from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
@@ -48,7 +48,7 @@ class MedicalRecordCreateView(RoleRequiredMixin, CreateView):
         record = form.save(commit=False)
         record.patient = self.patient
         if self.request.user.is_doctor():
-            record.doctor = self.request.user.doctor_profile
+            record.doctor = getattr(self.request.user, 'doctor_profile', None)
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -65,4 +65,4 @@ class MedicalRecordDetailView(RoleRequiredMixin, DetailView):
 
 
 def get_patient(patient_id):
-    return Patient.objects.get(pk=patient_id)
+    return get_object_or_404(Patient, pk=patient_id)
