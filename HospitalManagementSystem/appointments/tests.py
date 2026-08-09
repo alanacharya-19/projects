@@ -129,28 +129,37 @@ class AppointmentWorkflowTests(TestCase):
 class AppointmentFilterTests(TestCase):
     def setUp(self):
         self.client.force_login(create_admin())
-        self.patient = create_patient()
+        self.patient_a = create_patient(full_name='Alpha Patient')
+        self.patient_b = create_patient(full_name='Beta Patient')
         self.doctor_a = create_doctor(create_doctor_user(username='doc_a', first_name='Alice'))
         self.doctor_b = create_doctor(create_doctor_user(username='doc_b', first_name='Bob'))
         today = timezone.localdate()
-        create_appointment(self.patient, self.doctor_a, on_date=today)
-        create_appointment(self.patient, self.doctor_b, on_date=today + timezone.timedelta(days=3))
+        create_appointment(self.patient_a, self.doctor_a, on_date=today)
+        create_appointment(self.patient_b, self.doctor_b, on_date=today + timezone.timedelta(days=3))
 
     def test_filter_by_doctor(self):
         response = self.client.get(reverse('appointments:list'), {'doctor': self.doctor_a.pk})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Alice')
-        self.assertNotContains(response, 'Bob')
+        self.assertContains(response, 'Alpha Patient')
+        self.assertNotContains(response, 'Beta Patient')
 
     def test_filter_by_status(self):
-        response = self.client.get(reverse('appointments:list'), {'status': 'scheduled'})
-        self.assertContains(response, 'Scheduled')
-        self.assertNotContains(response, 'Cancelled')
+        create_appointment(
+            self.patient_b, self.doctor_b,
+            on_date=timezone.localdate() + timezone.timedelta(days=1),
+            status=Appointment.Status.CANCELLED,
+        )
+        response = self.client.get(reverse('appointments:list'), {'status': 'cancelled'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Beta Patient')
+        self.assertNotContains(response, 'Alpha Patient')
 
     def test_doctor_sees_only_own_appointments(self):
         self.client.force_login(create_doctor_user(username='doc_view', first_name='View'))
         response = self.client.get(reverse('appointments:list'))
-        self.assertNotContains(response, 'Alice')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Alpha Patient')
+        self.assertNotContains(response, 'Beta Patient')
 
 
 class AppointmentRoleGuardTests(TestCase):

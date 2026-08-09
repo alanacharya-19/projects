@@ -33,8 +33,8 @@ def create_receptionist(**kwargs):
     return create_user('receptionist', User.Role.RECEPTIONIST, **kwargs)
 
 
-def create_doctor_user(**kwargs):
-    return create_user('doctor', User.Role.DOCTOR, **kwargs)
+def create_doctor_user(username='doctor', **kwargs):
+    return create_user(username, User.Role.DOCTOR, **kwargs)
 
 
 def create_department(name='Cardiology', **kwargs):
