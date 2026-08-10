@@ -6,6 +6,7 @@ from django.urls import include, path
 from django.views.defaults import permission_denied
 
 handler403 = 'hospital.views.permission_denied'
+handler404 = 'hospital.views.page_not_found'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,6 +17,8 @@ urlpatterns = [
     path('patients/', include('patients.urls')),
     path('appointments/', include('appointments.urls')),
     path('records/', include('medical_records.urls')),
+    path('billing/', include('billing.urls')),
+    path('notifications/', include('notifications.urls')),
 ]
 
 if settings.DEBUG:

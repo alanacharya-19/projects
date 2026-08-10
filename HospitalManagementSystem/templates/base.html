@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hospital Management System{% endblock %}</title>
     <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="layout">
@@ -17,32 +20,65 @@
             </div>
             <nav class="sidebar-nav">
                 <p class="nav-section">Main</p>
-                <a href="{% url 'dashboard:index' %}" class="nav-link active">
-                    <span class="nav-icon">&#9632;</span> Dashboard
+                <a href="{% url 'dashboard:index' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+                    Dashboard
                 </a>
+                <a href="{% url 'appointments:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+                    {% if user.is_doctor %}My Appointments{% else %}Appointments{% endif %}
+                </a>
+                <a href="{% url 'patients:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                    Patients
+                </a>
+
                 {% if user.is_admin %}
                 <p class="nav-section">Management</p>
-                <a href="{% url 'dashboard:index' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Dashboard</a>
-                <a href="{% url 'appointments:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Appointments</a>
-                <a href="{% url 'patients:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Patients</a>
-                <a href="{% url 'doctors:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Doctors</a>
-                <a href="{% url 'departments:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Departments</a>
-                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Billing</a>
-                <a href="{% url 'admin:index' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Admin Panel</a>
+                <a href="{% url 'doctors:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+                    Doctors
+                </a>
+                <a href="{% url 'departments:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 9h2M15 13h2"/></svg></span>
+                    Departments
+                </a>
+                <a href="{% url 'billing:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+                    Billing
+                </a>
+                <p class="nav-section">System</p>
+                <a href="{% url 'admin:index' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+                    Admin Panel
+                </a>
+
                 {% elif user.is_doctor %}
                 <p class="nav-section">Clinical</p>
-                <a href="{% url 'dashboard:index' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Dashboard</a>
-                <a href="{% url 'appointments:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> My Appointments</a>
-                <a href="{% url 'patients:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Patients</a>
+                <a href="{% url 'doctors:profile' user.doctor_profile.pk %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+                    My Profile
+                </a>
+
                 {% elif user.is_receptionist %}
                 <p class="nav-section">Front Desk</p>
-                <a href="{% url 'dashboard:index' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Dashboard</a>
-                <a href="{% url 'patients:add' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Register Patient</a>
-                <a href="{% url 'appointments:book' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Book Appointment</a>
-                <a href="{% url 'appointments:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Appointments</a>
-                <a href="{% url 'patients:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Patients</a>
-                <a href="{% url 'doctors:list' %}" class="nav-link"><span class="nav-icon">&#9632;</span> Doctors</a>
-                <a href="#" class="nav-link"><span class="nav-icon">&#9632;</span> Billing</a>
+                <a href="{% url 'patients:add' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                    Register Patient
+                </a>
+                <a href="{% url 'appointments:book' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M12 14v3M10.5 15.5h3"/></svg></span>
+                    Book Appointment
+                </a>
+                <p class="nav-section">Overview</p>
+                <a href="{% url 'doctors:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+                    Doctors
+                </a>
+                <a href="{% url 'billing:list' %}" class="nav-link">
+                    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+                    Billing
+                </a>
                 {% endif %}
             </nav>
         </aside>
@@ -50,19 +86,49 @@
         <div class="main">
             <header class="navbar">
                 <button class="nav-toggle" id="navToggle" aria-label="Toggle sidebar">&#9776;</button>
-                <div class="navbar-search">
-                    <input type="text" placeholder="Search patients, doctors, appointments...">
-                </div>
-                <div class="navbar-user">
-                    <div class="user-avatar">{{ user.get_full_name|default:user.username|slice:":1" }}</div>
-                    <div class="user-meta">
-                        <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
-                        <span class="user-role">{{ user.get_role_display }}</span>
+                <form class="navbar-search" action="{% url 'dashboard:search' %}" method="get">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search patients, doctors, appointments, invoices..." aria-label="Search">
+                </form>
+                <div class="navbar-actions">
+                    <a href="{% url 'notifications:list' %}" class="nav-bell" aria-label="Notifications">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        {% if unread_count %}<span class="bell-badge">{{ unread_count }}</span>{% endif %}
+                    </a>
+                    <div class="navbar-user">
+                        <div class="user-avatar">{{ user.get_full_name|default:user.username|slice:":1" }}</div>
+                        <div class="user-meta">
+                            <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+                            <span class="user-role">{{ user.get_role_display }}</span>
+                        </div>
+                        <div class="user-menu">
+                            <button class="user-menu-btn" id="userMenuBtn" aria-label="Account menu">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div class="dropdown" id="userDropdown">
+                                <div class="dropdown-header">{{ user.get_full_name|default:user.username }}</div>
+                                <a href="{% url 'accounts:profile' %}" class="dropdown-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    My Profile
+                                </a>
+                                <a href="{% url 'accounts:change_password' %}" class="dropdown-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                    Change Password
+                                </a>
+                                <a href="{% url 'notifications:list' %}" class="dropdown-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                    Notifications
+                                </a>
+                                <form action="{% url 'accounts:logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item danger" style="width:100%; border:none; background:none; cursor:pointer">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    <form action="{% url 'accounts:logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline btn-sm">Logout</button>
-                    </form>
                 </div>
             </header>
 
@@ -78,6 +144,7 @@
             </main>
         </div>
     </div>
+    {% block extra_js %}{% endblock %}
     <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

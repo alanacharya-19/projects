@@ -10,6 +10,7 @@
 
 <div class="panel confirm-panel">
     <p>Are you sure you want to delete <strong>{{ doctor.full_name }}</strong> and their login account? This action cannot be undone.</p>
+    <p class="muted">Doctors with appointments on record cannot be deleted. Cancel their appointments first.</p>
     <form method="post">
         {% csrf_token %}
         <div class="form-actions">

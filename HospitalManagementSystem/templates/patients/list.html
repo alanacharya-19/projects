@@ -9,6 +9,7 @@
     </div>
     {% if user.is_admin or user.is_receptionist %}
     <div class="page-actions">
+        <a href="{% url 'patients:export' %}{% if request.GET.q %}?q={{ request.GET.q|urlencode }}{% endif %}" class="btn btn-outline">Export CSV</a>
         <a href="{% url 'patients:add' %}" class="btn btn-primary">+ Add Patient</a>
     </div>
     {% endif %}

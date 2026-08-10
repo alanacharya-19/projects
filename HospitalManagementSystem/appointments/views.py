@@ -1,4 +1,5 @@
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views import View
@@ -8,6 +9,7 @@ from accounts.mixins import RoleRequiredMixin
 from appointments.forms import AppointmentForm
 from appointments.models import Appointment
 from doctors.models import Doctor
+from hospital.export import csv_response
 from medical_records.forms import MedicalRecordForm
 from medical_records.models import MedicalRecord
 
@@ -124,3 +126,30 @@ class AppointmentCompleteView(RoleRequiredMixin, FormView):
         self.appointment.status = Appointment.Status.COMPLETED
         self.appointment.save(update_fields=['status', 'updated_at'])
         return super().form_valid(form)
+
+
+class AppointmentExportView(RoleRequiredMixin, View):
+    roles = ('admin', 'receptionist')
+
+    def get(self, request, *args, **kwargs):
+        qs = Appointment.objects.select_related(
+            'patient', 'doctor__user', 'doctor__department',
+        ).all()
+        doctor = request.GET.get('doctor', '').strip()
+        date = request.GET.get('date', '').strip()
+        status = request.GET.get('status', '').strip()
+        if doctor:
+            qs = qs.filter(doctor_id=doctor)
+        if date:
+            qs = qs.filter(date=date)
+        if status:
+            qs = qs.filter(status=status)
+        rows = [[
+            a.patient.full_name, a.doctor.full_name, a.date, a.time.strftime('%I:%M %p'),
+            a.reason, a.get_status_display(),
+        ] for a in qs]
+        return csv_response(
+            'appointments.csv',
+            ['Patient', 'Doctor', 'Date', 'Time', 'Reason', 'Status'],
+            rows,
+        )

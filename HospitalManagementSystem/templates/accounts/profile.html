@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}My Profile | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>My Profile</h1>
+        <p class="muted">Update your personal details.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'accounts:change_password' %}" class="btn btn-outline">Change Password</a>
+    </div>
+</div>
+
+<div class="profile-card">
+    <div class="profile-avatar">{{ user.get_full_name|default:user.username|slice:":1" }}</div>
+    <div class="profile-info">
+        <h2>{{ user.get_full_name|default:user.username }}</h2>
+        <p class="muted">@{{ user.username }} &middot; {{ user.get_role_display }}</p>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'address' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

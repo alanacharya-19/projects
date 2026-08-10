@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Search | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Search Results</h1>
+        <p class="muted">
+            {% if query %}{{ total_results }} result{{ total_results|pluralize }} for "{{ query }}"{% else %}Type something in the search bar to find patients, doctors, appointments or invoices.{% endif %}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'dashboard:index' %}" class="btn btn-outline">&larr; Dashboard</a>
+    </div>
+</div>
+
+{% if query %}
+<div class="search-results-section">
+    <h2>Patients <span class="badge badge-blue">{{ patients|length }}</span></h2>
+    {% if patients %}
+    <div class="panel table-panel">
+        <table class="table">
+            <tbody>
+                {% for p in patients %}
+                <tr>
+                    <td><a href="{% url 'patients:detail' p.pk %}" class="result-link">{{ p.full_name }}</a></td>
+                    <td>{{ p.phone }}</td>
+                    <td class="text-right"><a href="{% url 'patients:detail' p.pk %}" class="btn btn-ghost btn-sm">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No matching patients.</p>
+    {% endif %}
+</div>
+
+<div class="search-results-section">
+    <h2>Doctors <span class="badge badge-green">{{ doctors|length }}</span></h2>
+    {% if doctors %}
+    <div class="panel table-panel">
+        <table class="table">
+            <tbody>
+                {% for d in doctors %}
+                <tr>
+                    <td><a href="{% url 'doctors:profile' d.pk %}" class="result-link">{{ d.full_name }}</a></td>
+                    <td>{{ d.specialty|default:'—' }}</td>
+                    <td>{{ d.department.name|default:'Unassigned' }}</td>
+                    <td class="text-right"><a href="{% url 'doctors:profile' d.pk %}" class="btn btn-ghost btn-sm">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No matching doctors.</p>
+    {% endif %}
+</div>
+
+<div class="search-results-section">
+    <h2>Appointments <span class="badge badge-orange">{{ appointments|length }}</span></h2>
+    {% if appointments %}
+    <div class="panel table-panel">
+        <table class="table">
+            <tbody>
+                {% for a in appointments %}
+                <tr>
+                    <td><a href="{% url 'patients:detail' a.patient.pk %}" class="result-link">{{ a.patient.full_name }}</a></td>
+                    <td>{{ a.doctor.full_name }}</td>
+                    <td>{{ a.date|date:'M d, Y' }} at {{ a.time|time:'g:i A' }}</td>
+                    <td>
+                        {% if a.status == 'scheduled' %}<span class="badge badge-blue">Scheduled</span>
+                        {% elif a.status == 'completed' %}<span class="badge badge-green">Completed</span>
+                        {% else %}<span class="badge badge-red">Cancelled</span>{% endif %}
+                    </td>
+                    <td class="text-right"><a href="{% url 'appointments:list' %}" class="btn btn-ghost btn-sm">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No matching appointments.</p>
+    {% endif %}
+</div>
+
+<div class="search-results-section">
+    <h2>Invoices <span class="badge badge-purple">{{ invoices|length }}</span></h2>
+    {% if invoices %}
+    <div class="panel table-panel">
+        <table class="table">
+            <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td><a href="{% url 'billing:detail' inv.pk %}" class="result-link">{{ inv.invoice_no }}</a></td>
+                    <td>{{ inv.patient.full_name }}</td>
+                    <td>${{ inv.total }}</td>
+                    <td class="text-right"><a href="{% url 'billing:detail' inv.pk %}" class="btn btn-ghost btn-sm">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="muted">No matching invoices.</p>
+    {% endif %}
+</div>
+{% else %}
+<div class="panel" style="min-height:0">
+    <p class="muted">Try searching for a patient name, doctor name, invoice number, or specialty.</p>
+</div>
+{% endif %}
+{% endblock %}

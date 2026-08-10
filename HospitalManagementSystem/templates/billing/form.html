@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Edit Invoice{% else %}New Invoice{% endif %} | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% if form.instance.pk %}Edit Invoice{% else %}New Invoice{% endif %}</h1>
+        <p class="muted">{% if form.instance.pk %}Update {{ form.instance.invoice_no }}.{% else %}Create an invoice for a completed visit.{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'billing:list' %}" class="btn btn-outline">&larr; Back to Billing</a>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <h2 class="form-section-title">Invoice Details</h2>
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'notes' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <h2 class="form-section-title">Line Items</h2>
+        {{ items_formset.management_form }}
+        <div class="table-panel" style="border:1px solid var(--border); border-radius:12px">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th style="width:110px">Qty</th>
+                        <th style="width:140px">Unit Price</th>
+                        <th style="width:60px">Del</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-items">
+                    {% for item_form in items_formset %}
+                    <tr class="item-row">
+                        <td>
+                            {{ item_form.id }}
+                            <div class="form-group" style="margin:0">
+                                {{ item_form.description }}
+                                {% if item_form.description.errors %}<div class="field-errors">{{ item_form.description.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group" style="margin:0">
+                                {{ item_form.quantity }}
+                                {% if item_form.quantity.errors %}<div class="field-errors">{{ item_form.quantity.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group" style="margin:0">
+                                {{ item_form.unit_price }}
+                                {% if item_form.unit_price.errors %}<div class="field-errors">{{ item_form.unit_price.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </td>
+                        <td class="text-right">
+                            {{ item_form.DELETE }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if items_formset.non_form_errors %}
+            <div class="field-errors">{{ items_formset.non_form_errors }}</div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Save Changes{% else %}Create Invoice{% endif %}</button>
+            <a href="{% url 'billing:list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

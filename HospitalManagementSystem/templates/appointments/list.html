@@ -10,6 +10,7 @@
     </div>
     {% if user.is_admin or user.is_receptionist %}
     <div class="page-actions">
+        <a href="{% url 'appointments:export' %}" class="btn btn-outline">Export CSV</a>
         <a href="{% url 'appointments:book' %}" class="btn btn-primary">+ Book Appointment</a>
     </div>
     {% endif %}
@@ -80,6 +81,9 @@
                         {% endif %}
                     {% elif appt.status == 'completed' and appt.medical_records.exists %}
                         <a href="{% url 'medical_records:detail' appt.medical_records.first.pk %}" class="btn btn-outline btn-sm">View Record</a>
+                        {% if user.is_admin or user.is_receptionist %}
+                        <a href="{% url 'billing:create' %}?appointment={{ appt.pk }}" class="btn btn-outline btn-sm">Invoice</a>
+                        {% endif %}
                     {% else %}
                         —
                     {% endif %}

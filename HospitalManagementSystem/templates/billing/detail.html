@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}{{ invoice.invoice_no }} | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ invoice.invoice_no }}</h1>
+        <p class="muted">
+            {% if invoice.status == 'paid' %}<span class="badge badge-green">Paid</span>
+            {% elif invoice.status == 'partial' %}<span class="badge badge-blue">Partially Paid</span>
+            {% elif invoice.status == 'cancelled' %}<span class="badge badge-red">Cancelled</span>
+            {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+            &middot; Issued {{ invoice.created_at|date:'M d, Y' }}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'billing:list' %}" class="btn btn-outline">&larr; Back</a>
+        {% if user.is_admin or user.is_receptionist %}
+            {% if not invoice.is_settled %}
+            <a href="{% url 'billing:pay' invoice.pk %}" class="btn btn-primary">Record Payment</a>
+            {% endif %}
+        {% endif %}
+        {% if user.is_admin %}
+        <a href="{% url 'billing:edit' invoice.pk %}" class="btn btn-outline">Edit</a>
+        {% if not invoice.is_settled %}
+        <a href="{% url 'billing:cancel' invoice.pk %}" class="btn btn-danger-outline">Cancel</a>
+        {% endif %}
+        <a href="{% url 'billing:delete' invoice.pk %}" class="btn btn-danger-outline">Delete</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid">
+    <section class="panel">
+        <h2>Billing To</h2>
+        <dl class="detail-list">
+            <dt>Patient</dt>
+            <dd><a href="{% url 'patients:detail' invoice.patient.pk %}" class="table-link">{{ invoice.patient.full_name }}</a></dd>
+            <dt>Phone</dt><dd>{{ invoice.patient.phone }}</dd>
+            <dt>Related Appointment</dt>
+            <dd>
+                {% if invoice.appointment %}
+                    {{ invoice.appointment.date|date:'M d, Y' }} at {{ invoice.appointment.time|time:'g:i A' }} with {{ invoice.appointment.doctor.full_name }}
+                {% else %}
+                    Walk-in / unscheduled
+                {% endif %}
+            </dd>
+        </dl>
+    </section>
+
+    <section class="panel">
+        <h2>Payment Summary</h2>
+        <dl class="detail-list">
+            <dt>Subtotal</dt><dd>${{ invoice.subtotal }}</dd>
+            <dt>Discount</dt><dd>${{ invoice.discount }}</dd>
+            <dt>Tax</dt><dd>${{ invoice.tax }}</dd>
+            <dt>Total</dt><dd><strong>${{ invoice.total }}</strong></dd>
+            <dt>Paid</dt><dd>${{ invoice.paid_amount }}</dd>
+            <dt>Balance Due</dt><dd><strong>${{ invoice.balance }}</strong></dd>
+            <dt>Payment Method</dt><dd>{{ invoice.get_payment_method_display }}</dd>
+            {% if invoice.due_date %}<dt>Due Date</dt><dd>{{ invoice.due_date|date:'M d, Y' }}</dd>{% endif %}
+        </dl>
+    </section>
+</div>
+
+<div class="panel table-panel" style="margin-top:20px">
+    <div class="panel-header">
+        <h2>Line Items</h2>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Price</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">{{ item.quantity }}</td>
+                <td class="text-right">${{ item.unit_price }}</td>
+                <td class="text-right">${{ item.line_total }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="empty-row">No line items on this invoice.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if invoice.notes %}
+<div class="panel" style="margin-top:20px; min-height:0">
+    <h2>Notes</h2>
+    <p class="muted">{{ invoice.notes|linebreaksbr }}</p>
+</div>
+{% endif %}
+{% endblock %}

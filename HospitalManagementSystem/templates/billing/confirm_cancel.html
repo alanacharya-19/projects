@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Cancel Invoice | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Cancel Invoice</h1>
+    </div>
+</div>
+
+<div class="panel confirm-panel">
+    <p>Cancel <strong>{{ invoice.invoice_no }}</strong> for
+        <strong>{{ invoice.patient.full_name }}</strong> (balance ${{ invoice.balance }})? A cancelled invoice cannot be collected.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Cancel Invoice</button>
+            <a href="{% url 'billing:detail' invoice.pk %}" class="btn btn-outline">Keep Invoice</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

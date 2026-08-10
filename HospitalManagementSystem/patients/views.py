@@ -3,9 +3,11 @@ from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from accounts.mixins import RoleRequiredMixin
+from hospital.export import csv_response
 from patients.forms import PatientForm
 from patients.models import Patient
 
@@ -74,3 +76,28 @@ class PatientDetailView(RoleRequiredMixin, DetailView):
 
     def get_queryset(self):
         return Patient.objects.select_related('created_by')
+
+
+class PatientExportView(RoleRequiredMixin, View):
+    roles = ('admin', 'receptionist')
+
+    def get(self, request, *args, **kwargs):
+        qs = Patient.objects.all()
+        q = request.GET.get('q', '').strip()
+        if q:
+            qs = qs.filter(
+                Q(full_name__icontains=q)
+                | Q(phone__icontains=q)
+                | Q(email__icontains=q)
+                | Q(blood_group__icontains=q)
+            )
+        rows = [[
+            p.full_name, p.get_gender_display(), p.age or '', p.phone,
+            p.email, p.blood_group, p.address,
+            p.created_at.date(),
+        ] for p in qs]
+        return csv_response(
+            'patients.csv',
+            ['Name', 'Gender', 'Age', 'Phone', 'Email', 'Blood Group', 'Address', 'Registered'],
+            rows,
+        )

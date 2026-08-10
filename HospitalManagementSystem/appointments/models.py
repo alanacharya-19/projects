@@ -12,7 +12,7 @@ class Appointment(models.Model):
         CANCELLED = 'cancelled', 'Cancelled'
 
     patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name='appointments')
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='appointments')
+    doctor = models.ForeignKey(Doctor, on_delete=models.PROTECT, related_name='appointments')
     date = models.DateField()
     time = models.TimeField()
     reason = models.TextField(blank=True)

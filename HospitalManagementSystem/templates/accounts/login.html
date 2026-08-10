@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Hospital Management System</title>
     <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body class="auth-page">
@@ -14,11 +16,17 @@
             <span class="brand-icon">+</span>
             <span class="brand-text">MediCare HMS</span>
         </div>
-        <h1>Sign in to your account</h1>
-        <p class="muted">Hospital Management System</p>
+        <h1>Welcome back</h1>
+        <p class="muted auth-sub">Sign in to continue to your dashboard</p>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
         {% if form.errors %}
-            <div class="alert alert-error">
+            <div class="alert alert-danger">
                 Invalid username or password. Please try again.
             </div>
         {% endif %}
