@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ prescription.prescription_no }} | Pharmacy{% endblock %}
+
+{% block content %}
+<div class="page-header"><div><h1>Delete Prescription</h1></div></div>
+
+<div class="panel confirm-panel">
+    <p>Are you sure you want to delete <strong>{{ prescription.prescription_no }}</strong> for {{ prescription.patient.full_name }}? This cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'pharmacy:prescription_detail' prescription.pk %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

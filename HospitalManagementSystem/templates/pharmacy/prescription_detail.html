@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ prescription.prescription_no }} | Pharmacy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ prescription.prescription_no }}</h1>
+        <p class="muted">Issued {{ prescription.created_at|date:"F j, Y" }} for {{ prescription.patient.full_name }}</p>
+    </div>
+    <div class="page-actions">
+        {% if prescription.status == 'active' and user.is_admin or prescription.status == 'active' and user.is_receptionist %}
+        <form method="post" action="{% url 'pharmacy:prescription_dispense' prescription.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Dispense</button>
+        </form>
+        {% endif %}
+        {% if user.is_admin %}
+        <a href="{% url 'pharmacy:prescription_delete' prescription.pk %}" class="btn btn-danger-outline">Delete</a>
+        {% endif %}
+        <a href="{% url 'pharmacy:prescription_list' %}" class="btn btn-outline">&larr; Back</a>
+    </div>
+</div>
+
+<div class="detail-grid" style="margin-bottom:20px">
+    <div class="panel">
+        <h2>Prescription</h2>
+        <dl class="detail-list">
+            <dt>Patient</dt><dd><a href="{% url 'patients:detail' prescription.patient.pk %}">{{ prescription.patient.full_name }}</a></dd>
+            <dt>Doctor</dt><dd>{{ prescription.doctor|default:"—" }}</dd>
+            <dt>Status</dt>
+            <dd>
+                {% if prescription.status == 'active' %}<span class="badge badge-blue">Active</span>
+                {% elif prescription.status == 'dispensed' %}<span class="badge badge-green">Dispensed</span>
+                {% else %}<span class="badge badge-red">Cancelled</span>{% endif %}
+            </dd>
+            <dt>Created by</dt><dd>{% if prescription.created_by %}{{ prescription.created_by.get_full_name|default:prescription.created_by.username }}{% else %}—{% endif %}</dd>
+            {% if prescription.medical_record %}
+            <dt>Medical record</dt><dd><a href="{% url 'medical_records:detail' prescription.medical_record.pk %}">View record</a></dd>
+            {% endif %}
+            {% if prescription.notes %}<dt>Notes</dt><dd>{{ prescription.notes }}</dd>{% endif %}
+        </dl>
+    </div>
+</div>
+
+<div class="panel table-panel">
+    <div class="panel-header"><h2>Medicines</h2></div>
+    <table class="table">
+        <thead>
+            <tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Days</th><th>Qty</th><th>Instructions</th></tr>
+        </thead>
+        <tbody>
+            {% for item in prescription.items.select_related %}
+            <tr>
+                <td>{{ item.medicine.name }}</td>
+                <td>{{ item.dosage|default:"—" }}</td>
+                <td>{{ item.frequency|default:"—" }}</td>
+                <td>{{ item.duration_days }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.instructions|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-row">No medicines on this prescription.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -55,10 +55,12 @@
 
                 {% elif user.is_doctor %}
                 <p class="nav-section">Clinical</p>
+                {% if user.doctor_profile %}
                 <a href="{% url 'doctors:profile' user.doctor_profile.pk %}" class="nav-link">
                     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
                     My Profile
                 </a>
+                {% endif %}
 
                 {% elif user.is_receptionist %}
                 <p class="nav-section">Front Desk</p>

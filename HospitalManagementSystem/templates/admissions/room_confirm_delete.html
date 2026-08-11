@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Delete Room {{ room.room_number }} | Admissions{% endblock %}
+
+{% block content %}
+<div class="page-header"><div><h1>Delete Room</h1></div></div>
+
+<div class="panel confirm-panel">
+    <p>Are you sure you want to delete room <strong>{{ room.room_number }}</strong>? This cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'admissions:room_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

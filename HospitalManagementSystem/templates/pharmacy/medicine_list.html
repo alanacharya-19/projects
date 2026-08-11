@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Pharmacy | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Pharmacy</h1>
+        <p class="muted">Medicines, stock levels and prescriptions.</p>
+    </div>
+    <div class="page-actions">
+        {% if user.is_admin %}
+        <a href="{% url 'pharmacy:medicine_add' %}" class="btn btn-primary">+ Add Medicine</a>
+        {% endif %}
+        {% if user.is_admin or user.is_doctor %}
+        <a href="{% url 'pharmacy:prescription_create' %}" class="btn btn-outline">New Prescription</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="cards-grid">
+    <div class="stat-card">
+        <div class="stat-icon stat-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v2M14 2v2M4 7h16M6 7v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ total_items }}</span><span class="stat-label">Medicines</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V8H6a2 2 0 0 1-2-2 2 2 0 0 1 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ low_stock_count }}</span><span class="stat-label">Low stock</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ stock_value|floatformat:2 }}</span><span class="stat-label">Stock value ({{ hospital.currency }})</span></div>
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    <form method="get" class="search-bar" style="margin:0">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search medicine, generic name, batch...">
+        <label class="flex" style="white-space:nowrap"><input type="checkbox" name="low" value="1" class="form-check-input" {% if low_only %}checked{% endif %}> Low stock only</label>
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{% url 'pharmacy:medicine_list' %}" class="btn btn-outline">Reset</a>
+    </form>
+</div>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for medicine in medicines %}
+            <tr>
+                <td>
+                    <a href="{% url 'pharmacy:medicine_detail' medicine.pk %}" class="table-link">{{ medicine.name }}</a>
+                    {% if medicine.generic_name %}<div class="muted">{{ medicine.generic_name }}</div>{% endif %}
+                </td>
+                <td>{{ medicine.get_category_display }}</td>
+                <td>{{ medicine.price|floatformat:2 }}</td>
+                <td>
+                    {% if medicine.is_low_stock %}<span class="badge badge-red">{{ medicine.stock_quantity }} (low)</span>
+                    {% else %}<span class="badge badge-green">{{ medicine.stock_quantity }} {{ medicine.unit }}</span>{% endif %}
+                </td>
+                <td>{{ medicine.expiry_date|default:"—" }}</td>
+                <td>{% if medicine.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-slate">Inactive</span>{% endif %}</td>
+                <td class="text-right">
+                    {% if user.is_admin %}<a href="{% url 'pharmacy:medicine_edit' medicine.pk %}" class="btn btn-outline btn-sm">Edit</a>{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-row">No medicines found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Edit Prescription{% else %}New Prescription{% endif %} | Pharmacy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% if form.instance.pk %}Edit Prescription{% else %}New Prescription{% endif %}</h1>
+        <p class="muted">Prescribe medicines for a patient.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'pharmacy:prescription_list' %}" class="btn btn-outline">&larr; Back</a>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+        <h2 class="form-section-title">Prescription</h2>
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'notes' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <h2 class="form-section-title">Medicines</h2>
+        {{ items_formset.management_form }}
+        <div class="table-panel" style="border:1px solid var(--border); border-radius:12px">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th style="width:130px">Dosage</th>
+                        <th style="width:140px">Frequency</th>
+                        <th style="width:80px">Days</th>
+                        <th style="width:80px">Qty</th>
+                        <th style="width:170px">Instructions</th>
+                        <th style="width:50px">Del</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_form in items_formset %}
+                    <tr>
+                        <td>
+                            {{ item_form.id }}
+                            <div class="form-group" style="margin:0">{{ item_form.medicine }}{% if item_form.medicine.errors %}<div class="field-errors">{{ item_form.medicine.errors|striptags }}</div>{% endif %}</div>
+                        </td>
+                        <td><div class="form-group" style="margin:0">{{ item_form.dosage }}</div></td>
+                        <td><div class="form-group" style="margin:0">{{ item_form.frequency }}</div></td>
+                        <td><div class="form-group" style="margin:0">{{ item_form.duration_days }}</div></td>
+                        <td><div class="form-group" style="margin:0">{{ item_form.quantity }}</div></td>
+                        <td><div class="form-group" style="margin:0">{{ item_form.instructions }}</div></td>
+                        <td class="text-right">{{ item_form.DELETE }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if items_formset.non_form_errors %}<div class="field-errors">{{ items_formset.non_form_errors }}</div>{% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Save Changes{% else %}Create Prescription{% endif %}</button>
+            <a href="{% url 'pharmacy:prescription_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Hospital Settings | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Hospital Settings</h1>
+        <p class="muted">Configure the name, contact details and branding shown across the system.</p>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name in 'address footer_text' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.help_text %}<div class="muted">{{ field.help_text }}</div>{% endif %}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Lab Orders | Laboratory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Lab Orders</h1>
+        <p class="muted">{% if user.is_doctor %}Tests ordered by you.{% else %}All laboratory test orders.{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        {% if user.is_admin or user.is_doctor %}<a href="{% url 'laboratory:order_create' %}" class="btn btn-primary">+ New Order</a>{% endif %}
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    <form method="get" class="filter-bar" style="box-shadow:none; padding:0; margin-bottom:0; border:none; background:none">
+        <div class="form-group">
+            <label for="id_status">Status</label>
+            <select name="status" id="id_status" class="form-control">
+                <option value="">All statuses</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="id_q">Search</label>
+            <input type="text" name="q" id="id_q" class="form-control" value="{{ request.GET.q }}" placeholder="Patient or order no...">
+        </div>
+        <div class="filter-submit">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'laboratory:order_list' %}" class="btn btn-outline">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr><th>Order No</th><th>Patient</th><th>Doctor</th><th>Tests</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><a href="{% url 'laboratory:order_detail' order.pk %}" class="table-link">{{ order.order_no }}</a></td>
+                <td><a href="{% url 'patients:detail' order.patient.pk %}">{{ order.patient.full_name }}</a></td>
+                <td>{{ order.doctor|default:"—" }}</td>
+                <td>{{ order.items.count }}</td>
+                <td>{{ order.total|floatformat:2 }}</td>
+                <td>
+                    {% if order.status == 'ordered' %}<span class="badge badge-blue">Ordered</span>
+                    {% elif order.status == 'in_progress' %}<span class="badge badge-warning">In Progress</span>
+                    {% elif order.status == 'completed' %}<span class="badge badge-green">Completed</span>
+                    {% else %}<span class="badge badge-red">Cancelled</span>{% endif %}
+                </td>
+                <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                <td class="text-right"><a href="{% url 'laboratory:order_detail' order.pk %}" class="btn btn-outline btn-sm">View</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="empty-row">No lab orders found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

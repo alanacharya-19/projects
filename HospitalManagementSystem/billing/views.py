@@ -17,6 +17,7 @@ class InvoiceListView(RoleRequiredMixin, ListView):
     template_name = 'billing/list.html'
     context_object_name = 'invoices'
     paginate_by = 15
+    roles = ('admin', 'receptionist')
 
     def get_queryset(self):
         qs = Invoice.objects.select_related('patient', 'created_by').all()
@@ -114,6 +115,7 @@ class InvoiceDetailView(RoleRequiredMixin, DetailView):
     model = Invoice
     template_name = 'billing/detail.html'
     context_object_name = 'invoice'
+    roles = ('admin', 'receptionist')
 
     def get_queryset(self):
         return Invoice.objects.select_related('patient', 'appointment', 'created_by').prefetch_related('items')
@@ -133,10 +135,11 @@ class InvoicePayView(RoleRequiredMixin, View):
         if invoice.is_settled:
             messages.warning(request, f'{invoice.invoice_no} is already settled.')
             return redirect('billing:detail', pk=invoice.pk)
+        previous_paid = invoice.paid_amount
         form = InvoicePaymentForm(request.POST, instance=invoice)
         if form.is_valid():
             amount = form.cleaned_data['paid_amount']
-            invoice.paid_amount = (invoice.paid_amount or 0) + amount
+            invoice.paid_amount = previous_paid + amount
             invoice.payment_method = form.cleaned_data['payment_method']
             if invoice.paid_amount >= invoice.total:
                 invoice.status = Invoice.Status.PAID

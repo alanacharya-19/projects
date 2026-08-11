@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Rooms | Admissions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Rooms</h1>
+        <p class="muted">Ward and room availability.</p>
+    </div>
+    <div class="page-actions">
+        {% if user.is_admin %}<a href="{% url 'admissions:room_add' %}" class="btn btn-primary">+ Add Room</a>{% endif %}
+    </div>
+</div>
+
+<div class="cards-grid">
+    <div class="stat-card">
+        <div class="stat-icon stat-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ available_count }}</span><span class="stat-label">Available</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ occupied_count }}</span><span class="stat-label">Occupied</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-slate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ maintenance_count }}</span><span class="stat-label">Maintenance</span></div>
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    <form method="get" class="filter-bar" style="box-shadow:none; padding:0; margin-bottom:0; border:none; background:none">
+        <div class="form-group">
+            <label for="id_room_type">Room type</label>
+            <select name="room_type" id="id_room_type" class="form-control">
+                <option value="">All types</option>
+                {% for value, label in room_type_choices %}
+                <option value="{{ value }}" {% if filter_room_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="id_q">Search</label>
+            <input type="text" name="q" id="id_q" class="form-control" value="{{ request.GET.q }}" placeholder="Room number or floor...">
+        </div>
+        <div class="filter-submit">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'admissions:room_list' %}" class="btn btn-outline">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr><th>Room</th><th>Type</th><th>Floor</th><th>Rate / day</th><th>Occupancy</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for room in rooms %}
+            <tr>
+                <td class="table-link">{{ room.room_number }}</td>
+                <td>{{ room.get_room_type_display }}</td>
+                <td>{{ room.floor|default:"—" }}</td>
+                <td>{{ hospital.currency }}{{ room.rate_per_day|floatformat:2 }}</td>
+                <td>{{ room.active_admissions }} / {{ room.capacity }}</td>
+                <td>
+                    {% if room.status == 'maintenance' %}<span class="badge badge-slate">Maintenance</span>
+                    {% elif room.is_full %}<span class="badge badge-red">Occupied</span>
+                    {% else %}<span class="badge badge-green">Available</span>{% endif %}
+                </td>
+                <td class="text-right">
+                    {% if user.is_admin %}<a href="{% url 'admissions:room_edit' room.pk %}" class="btn btn-outline btn-sm">Edit</a>{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-row">No rooms found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

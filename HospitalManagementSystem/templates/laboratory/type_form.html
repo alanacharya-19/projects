@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Edit {{ form.instance.name }}{% else %}Add Test{% endif %} | Laboratory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% if form.instance.pk %}Edit Test{% else %}Add Test{% endif %}</h1>
+        <p class="muted">{% if form.instance.pk %}Update {{ form.instance.name }}.{% else %}Register a new lab test in the catalog.{% endif %}</p>
+    </div>
+    <div class="page-actions"><a href="{% url 'laboratory:type_list' %}" class="btn btn-outline">&larr; Back</a></div>
+</div>
+
+<div class="panel form-panel">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-group {% if field.name in 'description reference_range' %}form-group-wide{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Save Changes{% else %}Add Test{% endif %}</button>
+            <a href="{% url 'laboratory:type_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

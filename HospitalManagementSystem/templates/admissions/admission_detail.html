@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}{{ admission.admission_no }} | Admissions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ admission.admission_no }}</h1>
+        <p class="muted">Admitted {{ admission.admitted_at|date:"F j, Y H:i" }} for {{ admission.patient.full_name }}</p>
+    </div>
+    <div class="page-actions">
+        {% if admission.status == 'admitted' and user.is_admin or admission.status == 'admitted' and user.is_receptionist %}
+        <form method="post" action="{% url 'admissions:admission_discharge' admission.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Discharge</button>
+        </form>
+        {% endif %}
+        {% if admission.status == 'admitted' and user.is_admin %}
+        <form method="post" action="{% url 'admissions:admission_cancel' admission.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger-outline">Cancel Admission</button>
+        </form>
+        {% endif %}
+        <a href="{% url 'admissions:admission_list' %}" class="btn btn-outline">&larr; Back</a>
+    </div>
+</div>
+
+<div class="detail-grid" style="margin-bottom:20px">
+    <div class="panel">
+        <h2>Admission</h2>
+        <dl class="detail-list">
+            <dt>Patient</dt><dd><a href="{% url 'patients:detail' admission.patient.pk %}">{{ admission.patient.full_name }}</a></dd>
+            <dt>Room</dt><dd>{{ admission.room.room_number }} ({{ admission.room.get_room_type_display }})</dd>
+            <dt>Doctor</dt><dd>{{ admission.assigned_doctor|default:"—" }}</dd>
+            <dt>Status</dt>
+            <dd>
+                {% if admission.status == 'admitted' %}<span class="badge badge-blue">Admitted</span>
+                {% elif admission.status == 'discharged' %}<span class="badge badge-green">Discharged</span>
+                {% else %}<span class="badge badge-red">Cancelled</span>{% endif %}
+            </dd>
+            <dt>Days stayed</dt><dd>{{ admission.days_stayed }}</dd>
+            <dt>Room charge</dt><dd>{{ hospital.currency }}{{ admission.stay_charge|floatformat:2 }}</dd>
+            {% if admission.expected_discharge %}<dt>Expected discharge</dt><dd>{{ admission.expected_discharge }}</dd>{% endif %}
+            {% if admission.discharged_at %}<dt>Discharged at</dt><dd>{{ admission.discharged_at|date:"F j, Y H:i" }}</dd>{% endif %}
+            {% if admission.reason %}<dt>Reason</dt><dd>{{ admission.reason }}</dd>{% endif %}
+            <dt>Created by</dt><dd>{% if admission.created_by %}{{ admission.created_by.get_full_name|default:admission.created_by.username }}{% else %}—{% endif %}</dd>
+            {% if admission.notes %}<dt>Notes</dt><dd>{{ admission.notes }}</dd>{% endif %}
+        </dl>
+    </div>
+</div>
+
+{% if admission.status == 'admitted' and user.is_admin or admission.status == 'admitted' and user.is_receptionist %}
+<div class="panel form-panel">
+    <h2>Transfer Room</h2>
+    <form method="post" action="{% url 'admissions:admission_transfer' admission.pk %}" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+            {% for field in transfer_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-outline">Transfer</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

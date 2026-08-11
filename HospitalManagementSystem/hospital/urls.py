@@ -19,6 +19,8 @@ urlpatterns = [
     path('records/', include('medical_records.urls')),
     path('billing/', include('billing.urls')),
     path('notifications/', include('notifications.urls')),
+    path('lab/', include('laboratory.urls')),
+    path('admissions/', include('admissions.urls')),
 ]
 
 if settings.DEBUG:

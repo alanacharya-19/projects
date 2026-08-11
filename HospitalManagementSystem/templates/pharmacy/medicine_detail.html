@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}{{ medicine.name }} | Pharmacy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ medicine.name }}</h1>
+        <p class="muted">{{ medicine.generic_name|default:"—" }}</p>
+    </div>
+    <div class="page-actions">
+        {% if user.is_admin %}
+        <a href="{% url 'pharmacy:medicine_edit' medicine.pk %}" class="btn btn-outline">Edit</a>
+        <a href="{% url 'pharmacy:medicine_delete' medicine.pk %}" class="btn btn-danger-outline">Delete</a>
+        {% endif %}
+        <a href="{% url 'pharmacy:medicine_list' %}" class="btn btn-outline">&larr; Back</a>
+    </div>
+</div>
+
+<div class="detail-grid" style="margin-bottom:20px">
+    <div class="panel">
+        <h2>Details</h2>
+        <dl class="detail-list">
+            <dt>Category</dt><dd>{{ medicine.get_category_display }}</dd>
+            <dt>Unit</dt><dd>{{ medicine.unit }}</dd>
+            <dt>Price</dt><dd>{{ hospital.currency }}{{ medicine.price|floatformat:2 }}</dd>
+            <dt>Stock quantity</dt><dd>{{ medicine.stock_quantity }} {{ medicine.unit }}</dd>
+            <dt>Reorder level</dt><dd>{{ medicine.reorder_level }}</dd>
+            <dt>Batch number</dt><dd>{{ medicine.batch_number|default:"—" }}</dd>
+            <dt>Expiry date</dt><dd>{{ medicine.expiry_date|default:"—" }}</dd>
+            <dt>Supplier</dt><dd>{{ medicine.supplier|default:"—" }}</dd>
+            <dt>Stock value</dt><dd>{{ hospital.currency }}{{ medicine.stock_value|floatformat:2 }}</dd>
+            <dt>Active</dt><dd>{% if medicine.is_active %}Yes{% else %}No{% endif %}</dd>
+        </dl>
+    </div>
+    {% if user.is_admin %}
+    <div class="panel">
+        <h2>Add Stock</h2>
+        <form method="post" action="{% url 'pharmacy:medicine_stock' medicine.pk %}">
+            {% csrf_token %}
+            {% for field in adjust_form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }} *</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Add Stock</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<div class="panel table-panel">
+    <div class="panel-header">
+        <h2>Stock Movements</h2>
+    </div>
+    <table class="table">
+        <thead>
+            <tr><th>Date</th><th>Qty</th><th>Reason</th><th>By</th></tr>
+        </thead>
+        <tbody>
+            {% for movement in movements %}
+            <tr>
+                <td>{{ movement.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{% if movement.quantity > 0 %}<span class="badge badge-green">+{{ movement.quantity }}</span>{% else %}<span class="badge badge-red">{{ movement.quantity }}</span>{% endif %}</td>
+                <td>{{ movement.reason }}</td>
+                <td>{% if movement.user %}{{ movement.user.get_full_name|default:movement.user.username }}{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="empty-row">No stock movements yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

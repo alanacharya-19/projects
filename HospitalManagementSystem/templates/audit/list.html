@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Audit Log</h1>
+        <p class="muted">Every create, update and delete performed by staff.</p>
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    <form method="get" class="filter-bar" style="box-shadow:none; padding:0; margin-bottom:0; border:none; background:none">
+        <div class="form-group">
+            <label for="id_action">Action</label>
+            <select name="action" id="id_action" class="form-control">
+                <option value="">All actions</option>
+                {% for value, label in action_choices %}
+                <option value="{{ value }}" {% if filter_action == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="id_model">Model</label>
+            <select name="model" id="id_model" class="form-control">
+                <option value="">All models</option>
+                {% for model in model_choices %}
+                <option value="{{ model }}" {% if filter_model == model %}selected{% endif %}>{{ model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="id_q">Search user or record</label>
+            <input type="text" name="q" id="id_q" class="form-control" value="{{ request.GET.q }}" placeholder="username, record...">
+        </div>
+        <div class="filter-submit">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'audit:list' %}" class="btn btn-outline">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Object</th>
+                <th>Details</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{% if log.user %}{{ log.user.get_full_name|default:log.user.username }}{% else %}System{% endif %}</td>
+                <td>
+                    {% if log.action == 'created' %}<span class="badge badge-green">Created</span>
+                    {% elif log.action == 'updated' %}<span class="badge badge-blue">Updated</span>
+                    {% else %}<span class="badge badge-red">Deleted</span>{% endif %}
+                </td>
+                <td>{{ log.app_label }}.{{ log.model_name }} #{{ log.object_id }}</td>
+                <td class="cell-truncate">{{ log.object_repr }}</td>
+                <td>{{ log.ip_address|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-row">No audit entries found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}

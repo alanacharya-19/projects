@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ test_type.name }} | Laboratory{% endblock %}
+
+{% block content %}
+<div class="page-header"><div><h1>Delete Test</h1></div></div>
+
+<div class="panel confirm-panel">
+    <p>Are you sure you want to delete <strong>{{ test_type.name }}</strong> from the catalog? This cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'laboratory:type_list' %}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

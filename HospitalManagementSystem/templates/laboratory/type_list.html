@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Lab Test Catalog | Laboratory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Lab Test Catalog</h1>
+        <p class="muted">Available tests and their prices.</p>
+    </div>
+    <div class="page-actions">
+        {% if user.is_admin %}<a href="{% url 'laboratory:type_add' %}" class="btn btn-primary">+ Add Test</a>{% endif %}
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    <form method="get" class="search-bar" style="margin:0">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name, code or category...">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{% url 'laboratory:type_list' %}" class="btn btn-outline">Reset</a>
+    </form>
+</div>
+
+<div class="panel table-panel">
+    <table class="table">
+        <thead>
+            <tr><th>Test</th><th>Code</th><th>Category</th><th>Price</th><th>Reference range</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for test in test_types %}
+            <tr>
+                <td>{{ test.name }}{% if test.description %}<div class="muted cell-truncate">{{ test.description }}</div>{% endif %}</td>
+                <td>{{ test.code|default:"—" }}</td>
+                <td>{{ test.get_category_display }}</td>
+                <td>{{ test.price|floatformat:2 }}</td>
+                <td>{{ test.reference_range|default:"—" }}</td>
+                <td>{% if test.is_active %}<span class="badge badge-green">Active</span>{% else %}<span class="badge badge-slate">Inactive</span>{% endif %}</td>
+                <td class="text-right">
+                    {% if user.is_admin %}
+                    <a href="{% url 'laboratory:type_edit' test.pk %}" class="btn btn-outline btn-sm">Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-row">No tests in the catalog yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'includes/pagination.html' %}
+{% endblock %}
