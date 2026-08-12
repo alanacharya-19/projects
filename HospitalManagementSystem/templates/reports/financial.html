@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Financial Report | Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Financial Report</h1>
+        <p class="muted">Billing, collections and outstanding balances from {{ start }} to {{ end }}.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'reports:index' %}" class="btn btn-outline">&larr; Reports</a>
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    {% include 'reports/filter_bar.html' with reset_url=reset_url export_url=export_url %}
+</div>
+
+<div class="cards-grid">
+    <div class="stat-card">
+        <div class="stat-icon stat-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ hospital.currency }}{{ total_billed|floatformat:2 }}</span><span class="stat-label">Total billed</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ hospital.currency }}{{ total_collected|floatformat:2 }}</span><span class="stat-label">Collected</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ hospital.currency }}{{ outstanding|floatformat:2 }}</span><span class="stat-label">Outstanding ({{ pending_count }} invoices)</span></div>
+    </div>
+</div>
+
+<div class="chart-grid">
+    <section class="panel">
+        <div class="panel-header"><h2>Monthly Collections</h2></div>
+        <div class="bar-chart">
+            {% for point in monthly_series %}
+            <div class="bar-row">
+                <span class="bar-label">{{ point.label }}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ point.pct }}%"></div>
+                </div>
+                <span class="bar-value">{{ hospital.currency }}{{ point.value|floatformat:0 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="panel">
+        <h2>Collections by Payment Method</h2>
+        <table class="table">
+            <tbody>
+                {% for method in payment_breakdown %}
+                <tr>
+                    <td>{{ method.label }}</td>
+                    <td class="text-right">{{ hospital.currency }}{{ method.total|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td class="empty-row">No payments in this period.</td></tr>
+                {% endfor %}
+                <tr><td class="muted">Cancelled invoices</td><td class="text-right">{{ cancelled_count }}</td></tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<div class="panel table-panel">
+    <div class="panel-header"><h2>Invoices ({{ invoice_count }})</h2></div>
+    <table class="table">
+        <thead>
+            <tr><th>Invoice</th><th>Patient</th><th>Status</th><th>Date</th><th>Total</th><th>Paid</th><th>Balance</th></tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td><a href="{% url 'billing:detail' invoice.pk %}" class="table-link">{{ invoice.invoice_no }}</a></td>
+                <td>{{ invoice.patient.full_name }}</td>
+                <td>{{ invoice.get_status_display }}</td>
+                <td>{{ invoice.created_at|date:"Y-m-d" }}</td>
+                <td>{{ hospital.currency }}{{ invoice.total|floatformat:2 }}</td>
+                <td>{{ hospital.currency }}{{ invoice.paid_amount|floatformat:2 }}</td>
+                <td>{{ hospital.currency }}{{ invoice.balance|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="empty-row">No invoices in this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Clinical Report | Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Clinical Report</h1>
+        <p class="muted">Appointments, prescriptions and lab activity from {{ start }} to {{ end }}.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'reports:index' %}" class="btn btn-outline">&larr; Reports</a>
+    </div>
+</div>
+
+<div class="panel" style="padding:18px; margin-bottom:20px">
+    {% include 'reports/filter_bar.html' with reset_url=reset_url export_url=export_url %}
+</div>
+
+<div class="cards-grid">
+    <div class="stat-card">
+        <div class="stat-icon stat-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ appointment_count }}</span><span class="stat-label">Appointments</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v2M14 2v2M4 7h16M6 7v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ prescription_count }}</span><span class="stat-label">Prescriptions</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon stat-slate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">{{ lab_order_count }}</span><span class="stat-label">Lab orders</span></div>
+    </div>
+</div>
+
+<div class="chart-grid">
+    <section class="panel">
+        <div class="panel-header"><h2>Appointments by Status</h2></div>
+        <table class="table">
+            <tbody>
+                {% for label, count in appointment_status.items %}
+                <tr><td>{{ label }}</td><td class="text-right">{{ count }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section class="panel">
+        <h2>Prescriptions by Status</h2>
+        <table class="table">
+            <tbody>
+                {% for label, count in prescription_status.items %}
+                <tr><td>{{ label }}</td><td class="text-right">{{ count }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section class="panel">
+        <h2>Lab Orders by Status</h2>
+        <table class="table">
+            <tbody>
+                {% for label, count in lab_status.items %}
+                <tr><td>{{ label }}</td><td class="text-right">{{ count }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<div class="panel table-panel">
+    <div class="panel-header"><h2>Recent Appointments</h2></div>
+    <table class="table">
+        <thead>
+            <tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+            {% for appointment in recent_appointments %}
+            <tr>
+                <td>{{ appointment.patient.full_name }}</td>
+                <td>Dr. {{ appointment.doctor.user.get_full_name }}</td>
+                <td>{{ appointment.date }}</td>
+                <td>{{ appointment.time }}</td>
+                <td>{{ appointment.get_status_display }}</td>
+                <td>{{ appointment.reason|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="empty-row">No appointments in this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

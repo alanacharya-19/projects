@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Reports & Analytics | Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Reports &amp; Analytics</h1>
+        <p class="muted">Financial, clinical and operational insights.</p>
+    </div>
+</div>
+
+<div class="cards-grid">
+    {% if user.is_admin or user.is_receptionist %}
+    <a href="{% url 'reports:financial' %}" class="stat-card stat-link">
+        <div class="stat-icon stat-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">Financial</span><span class="stat-label">Revenue, collections and outstanding balances</span></div>
+    </a>
+    {% endif %}
+    {% if user.is_admin or user.is_doctor %}
+    <a href="{% url 'reports:clinical' %}" class="stat-card stat-link">
+        <div class="stat-icon stat-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">Clinical</span><span class="stat-label">Appointments, prescriptions and lab activity</span></div>
+    </a>
+    {% endif %}
+    {% if user.is_admin %}
+    <a href="{% url 'reports:operations' %}" class="stat-card stat-link">
+        <div class="stat-icon stat-slate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg></div>
+        <div class="stat-info-block"><span class="stat-value">Operations</span><span class="stat-label">Room occupancy and pharmacy stock</span></div>
+    </a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -54,8 +54,12 @@ INSTALLED_APPS = [
     'medical_records',
     'billing',
     'notifications',
+    'hospital_settings',
+    'audit',
+    'pharmacy',
     'laboratory',
     'admissions',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +70,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'audit.middleware.AuditMiddleware',
 ]
 
 ROOT_URLCONF = 'hospital.urls'
@@ -81,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'notifications.context_processors.unread_notifications',
+                'hospital_settings.context_processors.hospital_settings',
             ],
         },
     },
