@@ -47,7 +47,7 @@ class Medicine(models.Model):
 
     @property
     def stock_value(self):
-        return Decimal(self.stock_quantity) * self.price
+        return Decimal(self.stock_quantity) * Decimal(self.price)
 
 
 class Prescription(models.Model):
@@ -128,7 +128,7 @@ class PrescriptionItem(models.Model):
 
     @property
     def line_total(self):
-        return Decimal(self.quantity) * self.medicine.price
+        return Decimal(self.quantity) * Decimal(self.medicine.price)
 
 
 class StockMovement(models.Model):

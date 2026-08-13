@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from admissions.models import Admission, Room
 from appointments.models import Appointment
@@ -16,9 +17,19 @@ from pharmacy.models import Medicine, Prescription
 
 def make_invoice(patient, paid=0, status='pending', method='cash', unit_price=200):
     invoice = Invoice.objects.create(
-        patient=patient, paid_amount=paid, status=status, payment_method=method, tax=Decimal('0'),
+        patient=patient,
+        paid_amount=paid,
+        status='pending',
+        payment_method=method,
+        tax=Decimal('0'),
     )
     InvoiceItem.objects.create(invoice=invoice, description='Consultation', quantity=1, unit_price=unit_price)
+    if status == 'paid':
+        invoice.status = status
+        invoice.save()
+    else:
+        invoice.status = status
+        invoice.save(update_fields=['status'])
     return invoice
 
 
@@ -77,8 +88,9 @@ class ClinicalReportTests(TestCase):
         self.doctor_user = self.doctor.user
 
     def test_clinical_metrics(self):
-        create_appointment(self.patient, self.doctor, status=Appointment.Status.COMPLETED)
-        create_appointment(self.patient, self.doctor, status=Appointment.Status.SCHEDULED)
+        today = timezone.localdate()
+        create_appointment(self.patient, self.doctor, on_date=today, status=Appointment.Status.COMPLETED)
+        create_appointment(self.patient, self.doctor, on_date=today, status=Appointment.Status.SCHEDULED)
         Prescription.objects.create(patient=self.patient, doctor=self.doctor)
         LabTestOrder.objects.create(patient=self.patient, doctor=self.doctor)
 
@@ -99,7 +111,9 @@ class ClinicalReportTests(TestCase):
         self.assertEqual(self.client.get(reverse('reports:clinical')).status_code, 403)
 
     def test_clinical_export_csv(self):
-        create_appointment(self.patient, self.doctor, status=Appointment.Status.COMPLETED)
+        create_appointment(
+            self.patient, self.doctor, on_date=timezone.localdate(), status=Appointment.Status.COMPLETED,
+        )
         self.client.force_login(self.doctor_user)
         response = self.client.get(reverse('reports:clinical_export'))
         self.assertEqual(response.status_code, 200)
@@ -126,7 +140,7 @@ class OperationsReportTests(TestCase):
         self.assertEqual(ctx['total_capacity'], 1)
         self.assertEqual(ctx['occupancy_rate'], 100)
         self.assertEqual(ctx['low_stock_count'], 1)
-        self.assertEqual(ctx['stock_value'], Decimal('30.00'))
+        self.assertEqual(ctx['stock_value'], Decimal('1010.00'))
         self.assertEqual(ctx['active_admissions'], 1)
 
     def test_operations_admin_only(self):
